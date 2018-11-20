@@ -50,7 +50,7 @@ public final class Aggregations {
     /**
      * @return true if the symbol is found in the group by, if the symbol is a scalar function all column arguments must be found in the group by.
      */
-    public static boolean matchGroupBySymbol(Symbol s, List<Symbol> groupBy) {
+    public static boolean outputContainedInGroupBy(Symbol s, List<Symbol> groupBy) {
         return GROUP_BY_MATCHER.process(s, groupBy);
     }
 

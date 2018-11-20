@@ -21,6 +21,7 @@
 
 package io.crate.planner.consumer;
 
+import io.crate.expression.symbol.AliasSymbol;
 import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Symbol;
@@ -90,6 +91,14 @@ public class OrderByWithAggregationValidator {
                 String template = context.isDistinct ? INVALID_FIELD_IN_DISTINCT_TEMPLATE : INVALID_FIELD_TEMPLATE;
                 throw new UnsupportedOperationException(SymbolFormatter.format(template, field));
             }
+        }
+
+        @Override
+        public Void visitAlias(AliasSymbol aliasSymbol, ValidatorContext context) {
+            if (context.outputSymbols.contains(aliasSymbol)) {
+                return null;
+            }
+            return process(aliasSymbol.child(), context);
         }
 
         @Override

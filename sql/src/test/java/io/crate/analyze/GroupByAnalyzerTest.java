@@ -118,7 +118,7 @@ public class GroupByAnalyzerTest extends CrateDummyClusterServiceUnitTest {
     public void testGroupByScalarAliasedWithRealColumnNameFailsIfScalarColumnIsNotGrouped() {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage(
-            "'(1 / height)' must appear in the GROUP BY clause");
+            "'(1 / height) AS age' must appear in the GROUP BY clause");
         analyze("select 1/height as age from foo.users group by age");
     }
 

@@ -31,6 +31,7 @@ import io.crate.expression.operator.any.AnyOperator;
 import io.crate.expression.predicate.MatchPredicate;
 import io.crate.expression.scalar.SubscriptFunction;
 import io.crate.expression.symbol.Aggregation;
+import io.crate.expression.symbol.AliasSymbol;
 import io.crate.expression.symbol.DynamicReference;
 import io.crate.expression.symbol.FetchReference;
 import io.crate.expression.symbol.Field;
@@ -263,6 +264,14 @@ public final class SymbolPrinter {
             } else {
                 context.builder.append(field.path().outputName());
             }
+            return null;
+        }
+
+        @Override
+        public Void visitAlias(AliasSymbol aliasSymbol, SymbolPrinterContext context) {
+            process(aliasSymbol.child(), context);
+            context.builder.append(" AS ");
+            context.builder.append(aliasSymbol.alias());
             return null;
         }
 
