@@ -79,5 +79,9 @@ public class SymbolVisitor<C, R> {
     public R visitSelectSymbol(SelectSymbol selectSymbol, C context) {
         return visitSymbol(selectSymbol, context);
     }
+
+    public R visitAlias(AliasSymbol aliasSymbol, C context) {
+        return visitSymbol(aliasSymbol.child(), context);
+    }
 }
 

@@ -22,8 +22,8 @@
 
 package io.crate.expression.symbol;
 
-import io.crate.metadata.FunctionInfo;
 import io.crate.expression.scalar.arithmetic.ArrayFunction;
+import io.crate.metadata.FunctionInfo;
 
 import java.util.List;
 
@@ -115,6 +115,14 @@ public final class Aggregations {
         @Override
         public Boolean visitLiteral(Literal symbol, List<Symbol> context) {
             return true;
+        }
+
+        @Override
+        public Boolean visitAlias(AliasSymbol aliasSymbol, List<Symbol> context) {
+            if (context.contains(aliasSymbol)) {
+                return true;
+            }
+            return process(aliasSymbol.child(), context);
         }
 
         @Override

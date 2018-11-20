@@ -458,14 +458,14 @@ public class RelationAnalyzer extends DefaultTraversalVisitor<AnalyzedRelation, 
                                                      List<Symbol> groupBy) throws IllegalArgumentException {
         for (int i = 0; i < outputSymbols.size(); i++) {
             Symbol output = outputSymbols.get(i);
-            if (groupBy == null || !groupBy.contains(output)) {
+            boolean outputContainedInGroupBy = Aggregations.matchGroupBySymbol(output, groupBy);
+            if (groupBy == null || !outputContainedInGroupBy) {
                 if (output.symbolType().isValueSymbol()) {
                     // values are allowed even if not present in group by
                     continue;
                 }
-
-                if (Aggregations.containsAggregationOrscalar(output) == false ||
-                    Aggregations.matchGroupBySymbol(output, groupBy) == false) {
+                boolean outputContainsAggregationOrScalar = Aggregations.containsAggregationOrscalar(output);
+                if (outputContainsAggregationOrScalar == false) {
                     String offendingSymbolName = symbolPrinter.printUnqualified(output);
                     if (output instanceof Function) {
                         Function function = (Function) output;
