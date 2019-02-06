@@ -51,7 +51,7 @@ public class TablesNeedUpgradeSysCheckTest extends SQLTransportIntegrationTest {
 
     @After
     public void shutdown() throws IOException {
-        internalCluster().stopCurrentMasterNode();
+        //internalCluster().stopCurrentMasterNode();
     }
 
     @Test
