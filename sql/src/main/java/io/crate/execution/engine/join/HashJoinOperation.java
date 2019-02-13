@@ -37,7 +37,6 @@ import io.crate.metadata.TransactionContext;
 import org.elasticsearch.common.breaker.CircuitBreaker;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -104,16 +103,16 @@ public class HashJoinOperation implements CompletionListenable {
                                                                     InputFactory inputFactory,
                                                                     List<Symbol> inputs) {
         InputFactory.Context<? extends CollectExpression<Row, ?>> ctx = inputFactory.ctxForInputColumns(txnCtx, inputs);
-        Object[] values = new Object[ctx.topLevelInputs().size()];
-
         return row -> {
             for (int i = 0; i < ctx.expressions().size(); i++) {
                 ctx.expressions().get(i).setNextRow(row);
             }
+            int result = 1;
             for (int i = 0; i < ctx.topLevelInputs().size(); i++) {
-                values[i] = ctx.topLevelInputs().get(i).value();
+                Object value = ctx.topLevelInputs().get(i).value();
+                result = 31 * result + (value == null ? 0 : value.hashCode());
             }
-            return Objects.hash(values);
+            return result;
         };
     }
 
