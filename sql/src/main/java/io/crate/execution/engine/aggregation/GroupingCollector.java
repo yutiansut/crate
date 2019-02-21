@@ -118,9 +118,9 @@ public class GroupingCollector<K> implements Collector<Row, Map<K, Object[]>, It
     }
 
     private static List<Object> evalKeyInputs(List<Input<?>> keyInputs) {
-        List<Object> key = new ArrayList<>(keyInputs.size());
-        for (Input<?> keyInput : keyInputs) {
-            key.add(keyInput.value());
+        var key = new ArrayList<>(keyInputs.size());
+        for (int i = 0; i < keyInputs.size(); i++) {
+            key.add(keyInputs.get(i).value());
         }
         return key;
     }
@@ -253,11 +253,9 @@ public class GroupingCollector<K> implements Collector<Row, Map<K, Object[]>, It
                 assert input != null : "input must not be null";
 
                 applyKeyToCells.accept(input.getKey(), cells);
-                int c = numKeyColumns;
                 Object[] states = input.getValue();
-                for (int i = 0; i < states.length; i++) {
+                for (int i = 0, c = numKeyColumns; i < states.length; i++, c++) {
                     cells[c] = mode.finishCollect(ramAccountingContext, aggregations[i], states[i]);
-                    c++;
                 }
                 return row;
             }
