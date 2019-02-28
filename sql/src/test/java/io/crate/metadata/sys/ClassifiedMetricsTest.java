@@ -22,13 +22,11 @@
 
 package io.crate.metadata.sys;
 
-import io.crate.metadata.sys.ClassifiedMetrics.Metrics;
 import io.crate.planner.Plan;
 import io.crate.planner.operators.StatementClassifier;
 import org.HdrHistogram.Histogram;
 import org.junit.Test;
 
-import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -66,7 +64,7 @@ public class ClassifiedMetricsTest {
         histograms.recordValue(
             new StatementClassifier.Classification(Plan.StatementType.UPDATE), SECONDS.toMillis(25));
 
-        for (Metrics metrics : histograms) {
+        for (MetricsView metrics : histograms) {
             if (metrics.classification().type().equals(Plan.StatementType.SELECT)) {
                 assertThat(metrics.sumOfDurations(), is(SECONDS.toMillis(45)));
             } else {

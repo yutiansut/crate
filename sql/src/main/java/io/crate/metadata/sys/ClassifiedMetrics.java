@@ -24,15 +24,14 @@ package io.crate.metadata.sys;
 
 import io.crate.planner.operators.StatementClassifier.Classification;
 import org.HdrHistogram.ConcurrentHistogram;
-import org.HdrHistogram.Histogram;
 
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class ClassifiedMetrics implements Iterable<ClassifiedMetrics.Metrics> {
+public class ClassifiedMetrics implements Iterable<MetricsView> {
 
     private static final long HIGHEST_TRACKABLE_VALUE = TimeUnit.MINUTES.toMillis(10);
     private static final int NUMBER_OF_SIGNIFICANT_VALUE_DIGITS = 3;
@@ -45,9 +44,11 @@ public class ClassifiedMetrics implements Iterable<ClassifiedMetrics.Metrics> {
         private final ConcurrentHistogram histogram;
         private final LongAdder sumOfDurations = new LongAdder();
         private final LongAdder failedCount = new LongAdder();
+        private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+        private final ReentrantReadWriteLock.WriteLock exclusiveLock = rwLock.writeLock();
+        private final ReentrantReadWriteLock.ReadLock multiAccessLock = rwLock.readLock();
 
         /**
-         * @param classification
          * @param highestTrackableValue          represents the highest value to track
          * @param numberOfSignificantValueDigits the precision to use
          */
@@ -60,10 +61,18 @@ public class ClassifiedMetrics implements Iterable<ClassifiedMetrics.Metrics> {
             // We use start and end time to calculate the duration (since we track them anyway)
             // If the system time is adjusted this can lead to negative durations
             // so we protect here against it.
-            histogram.recordValue(Math.min(Math.max(0, duration), HIGHEST_TRACKABLE_VALUE));
+            long nonNegativeDuration = Math.max(0, duration);
+            long trackableDuration = Math.min(nonNegativeDuration, HIGHEST_TRACKABLE_VALUE);
+
+            multiAccessLock.lock();
+            try {
+                histogram.recordValue(trackableDuration);
+            } finally {
+                multiAccessLock.unlock();
+            }
             // we record the real duration (with no upper capping) in the sum of durations as there are no upper limits
             // for the values we record as it is the case with the histogram
-            sumOfDurations.add(Math.max(0, duration));
+            sumOfDurations.add(nonNegativeDuration);
         }
 
         public void recordFailedExecution(long duration) {
@@ -71,20 +80,18 @@ public class ClassifiedMetrics implements Iterable<ClassifiedMetrics.Metrics> {
             failedCount.increment();
         }
 
-        public Histogram histogram() {
-            return histogram;
-        }
-
-        public Classification classification() {
-            return classification;
-        }
-
-        public long sumOfDurations() {
-            return sumOfDurations.longValue();
-        }
-
-        public long failedCount() {
-            return failedCount.longValue();
+        MetricsView createMetricsView() {
+            exclusiveLock.lock();
+            try {
+                return new MetricsView(
+                    histogram.copy(),
+                    sumOfDurations.longValue(),
+                    failedCount.longValue(),
+                    classification
+                );
+            } finally {
+                exclusiveLock.unlock();
+            }
         }
     }
 
@@ -110,10 +117,10 @@ public class ClassifiedMetrics implements Iterable<ClassifiedMetrics.Metrics> {
     }
 
     @Override
-    public Iterator<Metrics> iterator() {
-        return metrics.entrySet()
+    public Iterator<MetricsView> iterator() {
+        return metrics.values()
             .stream()
-            .map(Map.Entry::getValue)
+            .map(Metrics::createMetricsView)
             .iterator();
     }
 }

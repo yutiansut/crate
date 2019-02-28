@@ -34,6 +34,7 @@ import io.crate.expression.reference.sys.operation.OperationContext;
 import io.crate.expression.reference.sys.operation.OperationContextLog;
 import io.crate.metadata.sys.ClassifiedMetrics;
 import io.crate.metadata.sys.ClassifiedMetrics.Metrics;
+import io.crate.metadata.sys.MetricsView;
 import io.crate.planner.Plan;
 import io.crate.planner.Plan.StatementType;
 import io.crate.planner.operators.StatementClassifier;
@@ -411,7 +412,7 @@ public class JobsLogsTest extends CrateDummyClusterServiceUnitTest {
         jobsLogs.updateJobsLog(new QueueSink<>(q, ramAccountingContext::close));
         jobsLogs.logPreExecutionFailure(UUID.randomUUID(), "select foo", "stmt error", user);
 
-        List<Metrics> metrics = ImmutableList.copyOf(jobsLogs.metrics().iterator());
+        List<MetricsView> metrics = ImmutableList.copyOf(jobsLogs.metrics().iterator());
         assertThat(metrics.size(), is(1));
         assertThat(metrics.get(0).failedCount(), is(1L));
         assertThat(metrics.get(0).histogram().getTotalCount(), is(1L));

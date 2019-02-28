@@ -22,14 +22,23 @@
 
 package io.crate.integrationtests;
 
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
+import io.crate.concurrent.CompletableFutures;
 import io.crate.execution.engine.collect.stats.JobsLogService;
-import io.crate.metadata.sys.ClassifiedMetrics;
-import io.crate.metadata.sys.ClassifiedMetrics.Metrics;
+import io.crate.metadata.sys.MetricsView;
 import io.crate.planner.Plan;
+import io.crate.testing.SQLResponse;
+import org.elasticsearch.threadpool.ThreadPool;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.core.Is.is;
 
@@ -91,7 +100,7 @@ public class MetricsITest extends SQLTransportIntegrationTest {
         assertBusy(() -> {
             long cnt = 0;
             for (JobsLogService jobsLogService : internalCluster().getInstances(JobsLogService.class)) {
-                for (Metrics metrics: jobsLogService.get().metrics()) {
+                for (MetricsView metrics: jobsLogService.get().metrics()) {
                     if (metrics.classification().type() == Plan.StatementType.SELECT) {
                         cnt += metrics.histogram().getTotalCount();
                     }
@@ -102,5 +111,34 @@ public class MetricsITest extends SQLTransportIntegrationTest {
 
         execute("SELECT sum(total_count) FROM sys.jobs_metrics WHERE classification['type'] = 'SELECT'");
         assertThat(response.rows()[0][0], Matchers.is((long) numQueries));
+    }
+
+    @Test
+    @Repeat (iterations = 500)
+    public void testSysJobsMetricsIsGuardedAgainstConcurrentModifications() throws Exception{
+        int concurrency = 25;
+        var threadPool = internalCluster().getInstance(ThreadPool.class);
+        var executor = threadPool.executor(ThreadPool.Names.GENERIC);
+        var running = new AtomicBoolean(true);
+        var threadsFinished = new CountDownLatch(concurrency);
+        for (int i = 0; i < concurrency; i++) {
+            executor.execute(() -> {
+                while (running.get()) {
+                    execute("select 1");
+                }
+                threadsFinished.countDown();
+            });
+        }
+        var responses = new ArrayList<CompletableFuture<SQLResponse>>();
+        for (int i = 0; i < 50; i++) {
+            responses.add(CompletableFuture.supplyAsync(
+                () -> execute("select sum(failed_count) from sys.jobs_metrics"),
+                threadPool.executor(ThreadPool.Names.GET)));
+        }
+        for (SQLResponse sqlResponse : CompletableFutures.allAsList(responses).get(5, TimeUnit.SECONDS)) {
+            assertThat(sqlResponse.rows()[0][0], is(0L));
+        }
+        running.set(false);
+        threadsFinished.await(5, TimeUnit.SECONDS);
     }
 }

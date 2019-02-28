@@ -21,7 +21,7 @@ package io.crate.beans;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableSet;
 import io.crate.execution.engine.collect.stats.JobsLogs;
-import io.crate.metadata.sys.ClassifiedMetrics.Metrics;
+import io.crate.metadata.sys.MetricsView;
 import io.crate.planner.Plan.StatementType;
 import io.crate.planner.operators.StatementClassifier;
 import org.HdrHistogram.Histogram;
@@ -140,7 +140,7 @@ public class QueryStats implements QueryStatsMBean {
         );
     }
 
-    static Map<StatementType, Metric> createMetricsMap(Iterable<Metrics> metrics,
+    static Map<StatementType, Metric> createMetricsMap(Iterable<MetricsView> metrics,
                                                        Map<StatementType, Metric> previouslyReadMetrics,
                                                        long currentTs,
                                                        long lastUpdateTs) {
@@ -148,7 +148,7 @@ public class QueryStats implements QueryStatsMBean {
         long elapsedSinceLastUpdateInMs = currentTs - lastUpdateTs;
 
         Metric total = new Metric(previouslyReadMetrics.get(StatementType.ALL), 0, 0, 0, elapsedSinceLastUpdateInMs);
-        for (Metrics classifiedMetrics : metrics) {
+        for (MetricsView classifiedMetrics : metrics) {
             Histogram histogram = classifiedMetrics.histogram();
             long sumOfDurations = classifiedMetrics.sumOfDurations();
             long failedCount = classifiedMetrics.failedCount();
