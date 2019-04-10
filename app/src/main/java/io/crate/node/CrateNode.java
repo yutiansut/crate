@@ -27,9 +27,10 @@ import io.crate.plugin.BlobPlugin;
 import io.crate.plugin.CrateCommonPlugin;
 import io.crate.plugin.HttpTransportPlugin;
 import io.crate.plugin.PluginLoaderPlugin;
+import io.crate.plugin.SrvPlugin;
 import io.crate.udc.plugin.UDCPlugin;
 import org.elasticsearch.analysis.common.CommonAnalysisPlugin;
-import org.elasticsearch.common.logging.LogConfigurator;
+import org.elasticsearch.discovery.ec2.Ec2DiscoveryPlugin;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.plugin.repository.url.URLRepositoryPlugin;
@@ -46,11 +47,11 @@ public class CrateNode extends Node {
         CrateCommonPlugin.class,
         HttpTransportPlugin.class,
         BlobPlugin.class,
-        //SrvPlugin.class,
+        SrvPlugin.class,
         UDCPlugin.class,
         URLRepositoryPlugin.class,
         S3RepositoryPlugin.class,
-        //Ec2DiscoveryPlugin.class,
+        Ec2DiscoveryPlugin.class,
         CommonAnalysisPlugin.class,
         Netty4Plugin.class);
 

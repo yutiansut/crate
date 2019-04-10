@@ -27,14 +27,16 @@ import com.amazonaws.services.ec2.model.GroupIdentifier;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.Tag;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.logging.log4j.util.Supplier;
-import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.SingleObjectCache;
-import org.elasticsearch.discovery.zen.UnicastHostsProvider;
+import org.elasticsearch.discovery.SeedHostsProvider;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.ArrayList;
@@ -44,13 +46,15 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.disjoint;
-import static org.elasticsearch.discovery.ec2.AwsEc2Service.HostType.TAG_PREFIX;
 import static org.elasticsearch.discovery.ec2.AwsEc2Service.HostType.PRIVATE_DNS;
 import static org.elasticsearch.discovery.ec2.AwsEc2Service.HostType.PRIVATE_IP;
 import static org.elasticsearch.discovery.ec2.AwsEc2Service.HostType.PUBLIC_DNS;
 import static org.elasticsearch.discovery.ec2.AwsEc2Service.HostType.PUBLIC_IP;
+import static org.elasticsearch.discovery.ec2.AwsEc2Service.HostType.TAG_PREFIX;
 
-class AwsEc2UnicastHostsProvider extends AbstractComponent implements UnicastHostsProvider {
+class AwsEc2SeedHostsProvider implements SeedHostsProvider {
+
+    private static final Logger logger = LogManager.getLogger(AwsEc2SeedHostsProvider.class);
 
     private final TransportService transportService;
 
@@ -68,8 +72,7 @@ class AwsEc2UnicastHostsProvider extends AbstractComponent implements UnicastHos
 
     private final TransportAddressesCache dynamicHosts;
 
-    AwsEc2UnicastHostsProvider(Settings settings, TransportService transportService, AwsEc2Service awsEc2Service) {
-        super(settings);
+    AwsEc2SeedHostsProvider(Settings settings, TransportService transportService, AwsEc2Service awsEc2Service) {
         this.transportService = transportService;
         this.awsEc2Service = awsEc2Service;
 
@@ -87,12 +90,12 @@ class AwsEc2UnicastHostsProvider extends AbstractComponent implements UnicastHos
 
         if (logger.isDebugEnabled()) {
             logger.debug("using host_type [{}], tags [{}], groups [{}] with any_group [{}], availability_zones [{}]", hostType, tags,
-                    groups, bindAnyGroup, availabilityZones);
+                         groups, bindAnyGroup, availabilityZones);
         }
     }
 
     @Override
-    public List<TransportAddress> buildDynamicHosts(HostsResolver hostsResolver) {
+    public List<TransportAddress> getSeedAddresses(HostsResolver hostsResolver) {
         return dynamicHosts.getOrRefresh();
     }
 
@@ -107,14 +110,14 @@ class AwsEc2UnicastHostsProvider extends AbstractComponent implements UnicastHos
             // NOTE: we don't filter by security group during the describe instances request for two reasons:
             // 1. differences in VPCs require different parameters during query (ID vs Name)
             // 2. We want to use two different strategies: (all security groups vs. any security groups)
-            descInstances = clientReference.client().describeInstances(buildDescribeInstancesRequest());
+            descInstances = SocketAccess.doPrivileged(() -> clientReference.client().describeInstances(buildDescribeInstancesRequest()));
         } catch (final AmazonClientException e) {
             logger.info("Exception while retrieving instance list from AWS API: {}", e.getMessage());
             logger.debug("Full exception:", e);
             return dynamicHosts;
         }
 
-        logger.trace("building dynamic unicast discovery nodes...");
+        logger.trace("finding seed nodes...");
         for (final Reservation reservation : descInstances.getReservations()) {
             for (final Instance instance : reservation.getInstances()) {
                 // lets see if we can filter based on groups
@@ -129,9 +132,9 @@ class AwsEc2UnicastHostsProvider extends AbstractComponent implements UnicastHos
                     if (bindAnyGroup) {
                         // We check if we can find at least one group name or one group id in groups.
                         if (disjoint(securityGroupNames, groups)
-                                && disjoint(securityGroupIds, groups)) {
+                            && disjoint(securityGroupIds, groups)) {
                             logger.trace("filtering out instance {} based on groups {}, not part of {}", instance.getInstanceId(),
-                                    instanceSecurityGroups, groups);
+                                         instanceSecurityGroups, groups);
                             // continue to the next instance
                             continue;
                         }
@@ -139,7 +142,7 @@ class AwsEc2UnicastHostsProvider extends AbstractComponent implements UnicastHos
                         // We need tp match all group names or group ids, otherwise we ignore this instance
                         if (!(securityGroupNames.containsAll(groups) || securityGroupIds.containsAll(groups))) {
                             logger.trace("filtering out instance {} based on groups {}, does not include all of {}",
-                                    instance.getInstanceId(), instanceSecurityGroups, groups);
+                                         instance.getInstanceId(), instanceSecurityGroups, groups);
                             // continue to the next instance
                             continue;
                         }

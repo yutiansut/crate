@@ -36,9 +36,9 @@ dependencies {
     compile project(':blob')
     compile project(':http')
     compile project(':udc')
-//    compile project(':azure-discovery')
-//    compile project(':dns-discovery')
-//    compile project(':es:es-discovery-ec2')
+    compile project(':azure-discovery')
+    compile project(':dns-discovery')
+    compile project(':es:es-discovery-ec2')
     compile project(':es:es-repository-url')
     compile project(':es:es-repository-s3')
     compile project(':es:es-transport')
@@ -75,8 +75,8 @@ dependencies {
     compileNotTransitive project(':blob')
     compileNotTransitive project(':http')
     compileNotTransitive project(':udc')
-//    compileNotTransitive project(':dns-discovery')
-//    compileNotTransitive project(':es:es-discovery-ec2')
+    compileNotTransitive project(':dns-discovery')
+    compileNotTransitive project(':es:es-discovery-ec2')
     compileNotTransitive project(':es:es-repository-url')
     compileNotTransitive project(':es:es-repository-s3')
     compileNotTransitive project(':es:es-transport')
@@ -320,7 +320,7 @@ collectEnterpriseModules.outputs.dir('enterprise')
 task downloadPlugins(
     dependsOn: ['downloadAdminUI',
                 ':es:es-repository-hdfs:jar',
-                //':azure-discovery:jar',
+                ':azure-discovery:jar',
                 ':enterprise:jmx-monitoring:jar',
                 ':enterprise:lang-js:jar',
                 ':enterprise:functions:jar']) {
@@ -337,10 +337,10 @@ task downloadPlugins(
 
         copy {
             // jar file
-            //from(project(':azure-discovery').tasks.jar.archivePath)
+            from(project(':azure-discovery').tasks.jar.archivePath)
             // generated plugin-descriptor.properties
-            //from(project(':azure-discovery').buildDir.path + '/tmp/plugin-descriptor.properties')
-            //into 'plugins/crate-azure-discovery'
+            from(project(':azure-discovery').buildDir.path + '/tmp/plugin-descriptor.properties')
+            into 'plugins/crate-azure-discovery'
         }
 
         copy {

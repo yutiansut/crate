@@ -53,7 +53,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableMap;
 
@@ -610,6 +609,7 @@ public class ThreadPool implements Scheduler, Closeable {
         public SizeValue getQueueSize() {
             return this.queueSize;
         }
+
     }
 
     /**
