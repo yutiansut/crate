@@ -24,19 +24,25 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
+import org.elasticsearch.action.ShardOperationFailedException;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class ExceptionsHelper {
@@ -235,6 +241,13 @@ public final class ExceptionsHelper {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * See {@link #maybeError(Throwable, Logger)}. Uses the class-local logger.
+     */
+    public static Optional<Error> maybeError(final Throwable cause) {
+        return maybeError(cause, logger);
     }
 
     /**

@@ -22,14 +22,13 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
 import com.carrotsearch.randomizedtesting.SysGlobals;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.SuppressForbidden;
-import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.mocksocket.MockServerSocket;
 import org.elasticsearch.test.NodeConfigurationSource;
-import org.elasticsearch.transport.TcpTransport;
+import org.elasticsearch.transport.TransportSettings;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -136,8 +135,8 @@ public class ClusterDiscoveryConfiguration extends NodeConfigurationSource {
                         + unicastHostPorts.length + "]");
             } else {
                 // we need to pin the node port & host so we'd know where to point things
-                builder.put(TcpTransport.PORT.getKey(), unicastHostPorts[nodeOrdinal]);
-                builder.put(TcpTransport.HOST.getKey(), IP_ADDR); // only bind on one IF we use v4 here by default
+                builder.put(TransportSettings.PORT.getKey(), unicastHostPorts[nodeOrdinal]);
+                builder.put(TransportSettings.HOST.getKey(), IP_ADDR); // only bind on one IF we use v4 here by default
                 for (int i = 0; i < unicastHostOrdinals.length; i++) {
                     unicastHosts[i] = IP_ADDR + ":" + (unicastHostPorts[unicastHostOrdinals[i]]);
                 }

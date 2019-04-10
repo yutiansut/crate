@@ -184,7 +184,7 @@ public class BootstrapProxy {
         node = new CrateNode(environment) {
 
             @Override
-            protected void validateNodeBeforeAcceptingRequests(Settings settings,
+            protected void validateNodeBeforeAcceptingRequests(BootstrapContext context,
                                                                BoundTransportAddress boundTransportAddress,
                                                                List<BootstrapCheck> bootstrapChecks) throws NodeValidationException {
                 BootstrapChecks.check(settings, boundTransportAddress, bootstrapChecks);

@@ -19,6 +19,12 @@
 
 package org.elasticsearch.common.transport;
 
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Streamable;
+
+import java.io.IOException;
+
 /**
  * A bounded transport address is a tuple of {@link TransportAddress}, one array that represents
  * the addresses the transport is bound to, and the other is the published one that represents the address clients

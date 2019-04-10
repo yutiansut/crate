@@ -25,7 +25,6 @@ package io.crate.integrationtests;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClients;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.discovery.zen.ElectMasterService;
 import org.elasticsearch.http.HttpServerTransport;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESIntegTestCase;
@@ -46,7 +45,7 @@ public class BelowMinNumberOfNodesITest extends SQLTransportIntegrationTest {
     protected Settings nodeSettings(int nodeOrdinal) {
         return Settings.builder()
             .put(super.nodeSettings(nodeOrdinal))
-            .put(ElectMasterService.DISCOVERY_ZEN_MINIMUM_MASTER_NODES_SETTING.getKey(), 2)
+            .put("min_master_nodes", 2)
             .build();
     }
 
