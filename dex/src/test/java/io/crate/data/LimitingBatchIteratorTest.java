@@ -22,15 +22,25 @@
 
 package io.crate.data;
 
+import com.pholser.junit.quickcheck.Property;
+import com.pholser.junit.quickcheck.generator.InRange;
+import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
 import io.crate.testing.BatchIteratorTester;
 import io.crate.testing.BatchSimulatingIterator;
 import io.crate.testing.TestingBatchIterators;
+import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@RunWith(JUnitQuickcheck.class)
 public class LimitingBatchIteratorTest {
 
     private int limit = 5;
@@ -49,11 +59,20 @@ public class LimitingBatchIteratorTest {
     public void testLimitingBatchIteratorWithBatchedSource() throws Exception {
         BatchIteratorTester tester = new BatchIteratorTester(
             () -> {
-                BatchSimulatingIterator batchSimulatingIt = new BatchSimulatingIterator(
+                BatchSimulatingIterator<Row> batchSimulatingIt = new BatchSimulatingIterator<>(
                     TestingBatchIterators.range(0, 10), 2, 5, null);
                 return LimitingBatchIterator.newInstance(batchSimulatingIt, limit);
             }
         );
         tester.verifyResultAndEdgeCaseBehaviour(expectedResult);
+    }
+
+    @Property
+    public void testLimitBehavesLikeStreamLimit(ArrayList<Integer> numbers, @InRange(minInt = 0) int limit) throws Exception {
+        var it = LimitingBatchIterator.newInstance(InMemoryBatchIterator.of(numbers, null), limit);
+        List<Integer> result = BatchIterators.collect(it, Collectors.toList()).get(5, TimeUnit.SECONDS);
+        List<Integer> expectedResult = numbers.stream().limit(limit).collect(Collectors.toList());
+
+        assertThat(result, Matchers.is(expectedResult));
     }
 }
