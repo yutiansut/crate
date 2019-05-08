@@ -835,6 +835,25 @@ public abstract class ESTestCase extends LuceneTestCase {
         }
     }
 
+    public static class AwaitBusyBuilder {
+        long atMost = 10;
+        TimeUnit timeUnit = TimeUnit.SECONDS;
+
+        public AwaitBusyBuilder atMost(long atMost, TimeUnit timeUnit) {
+            this.atMost = atMost;
+            this.timeUnit = timeUnit;
+            return this;
+        }
+
+        public boolean until(BooleanSupplier breakSupplier) throws InterruptedException {
+            return ESTestCase.awaitBusy(breakSupplier, atMost, timeUnit);
+        }
+    }
+
+    public static AwaitBusyBuilder awaitBusy() {
+        return new AwaitBusyBuilder();
+    }
+
     public static boolean awaitBusy(BooleanSupplier breakSupplier) throws InterruptedException {
         return awaitBusy(breakSupplier, 10, TimeUnit.SECONDS);
     }

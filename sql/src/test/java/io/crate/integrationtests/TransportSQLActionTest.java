@@ -53,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.carrotsearch.randomizedtesting.RandomizedTest.$;
 import static io.crate.testing.TestingHelpers.printedTable;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -663,11 +664,11 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
         execute("SELECT * FROM test WHERE pk_col=? OR pk_col=?", new Object[]{"1", "2"});
         assertEquals(2, response.rowCount());
 
-        awaitBusy(() -> {
+        awaitBusy().atMost(10, SECONDS).until(() -> {
             execute("SELECT * FROM test WHERE (pk_col=? OR pk_col=?) OR pk_col=?", new Object[]{"1", "2", "3"});
             return response.rowCount() == 3
                    && Joiner.on(',').join(Arrays.asList(response.cols())).equals("message,pk_col");
-        }, 10, TimeUnit.SECONDS);
+        });
     }
 
     @Test
