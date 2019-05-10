@@ -25,6 +25,7 @@ package io.crate.planner.operators;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import io.crate.analyze.QueriedTable;
 import io.crate.analyze.TableDefinitions;
+import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.data.Row;
 import io.crate.execution.dsl.projection.builder.ProjectionBuilder;
 import io.crate.execution.engine.pipeline.TopN;
@@ -37,8 +38,6 @@ import io.crate.testing.ProjectionMatchers;
 import io.crate.testing.SQLExecutor;
 import org.junit.Test;
 
-import java.util.Collections;
-
 import static io.crate.planner.operators.LogicalPlannerTest.isPlan;
 import static org.hamcrest.Matchers.contains;
 
@@ -49,21 +48,23 @@ public class LimitTest extends CrateDummyClusterServiceUnitTest {
         SQLExecutor e = SQLExecutor.builder(clusterService, 2, RandomizedTest.getRandom())
             .addTable(TableDefinitions.USER_TABLE_DEFINITION)
             .build();
-        QueriedTable queriedDocTable = e.analyze("select name from users");
+        QueriedTable<?> queriedDocTable = e.analyze("select name from users");
+        QueriedTable<?> normalizedRelation =
+            e.normalize(queriedDocTable, e.getPlannerContext(clusterService.state()).transactionContext());
 
         LogicalPlan plan = Limit.create(
             Limit.create(
-                Collect.create(queriedDocTable.tableRelation(), queriedDocTable.outputs(), queriedDocTable.where()),
+                Collect.create(normalizedRelation.tableRelation(), normalizedRelation.outputs(), normalizedRelation.where()),
                 Literal.of(10L),
                 Literal.of(5L)
             ),
             Literal.of(20L),
             Literal.of(7L)
-        ).build(new TableStats(), Collections.emptySet());
+        ).build(new TableStats());
 
         assertThat(plan, isPlan(e.functions(), "Limit[20;7]\n" +
                                                "Limit[10;5]\n" +
-                                               "Collect[doc.users | [_fetchid] | All]\n"));
+                                               "Collect[doc.users | [name] | All]\n"));
 
         PlannerContext ctx = e.getPlannerContext(clusterService.state());
         Merge merge = (Merge) plan.build(

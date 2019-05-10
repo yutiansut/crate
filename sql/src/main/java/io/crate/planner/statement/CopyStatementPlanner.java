@@ -60,7 +60,6 @@ import io.crate.planner.Merge;
 import io.crate.planner.Plan;
 import io.crate.planner.PlannerContext;
 import io.crate.planner.SubqueryPlanner;
-import io.crate.planner.consumer.FetchMode;
 import io.crate.planner.node.dql.Collect;
 import io.crate.planner.operators.LogicalPlan;
 import io.crate.planner.operators.LogicalPlanner;
@@ -381,8 +380,7 @@ public final class CopyStatementPlanner {
             statement.outputNames(),
             outputFormat);
 
-        LogicalPlan logicalPlan = logicalPlanner.normalizeAndPlan(
-            statement.subQueryRelation(), context, subqueryPlanner, FetchMode.NEVER_CLEAR);
+        LogicalPlan logicalPlan = logicalPlanner.normalizeAndPlan(statement.subQueryRelation(), context, subqueryPlanner);
         ExecutionPlan executionPlan = logicalPlan.build(
             context, projectionBuilder, 0, 0, null, null, params, SubQueryResults.EMPTY);
         executionPlan.addProjection(projection);
