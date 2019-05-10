@@ -49,6 +49,7 @@ import java.util.UUID;
 import static com.carrotsearch.randomizedtesting.RandomizedTest.$;
 import static io.crate.testing.TestingHelpers.printedTable;
 import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
@@ -1222,8 +1223,8 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
         execute("select p from geo_point_table order by id desc");
 
         assertThat(response.rowCount(), is(2L));
-        assertThat(((Object[]) response.rows()[0][0]), arrayContaining(new Object[]{57.22, 7.12}));
-        assertThat(((Object[]) response.rows()[1][0]), arrayContaining(new Object[]{47.22, 12.09}));
+        assertThat(((Double[]) response.rows()[0][0]), arrayContaining(closeTo(57.22, 0.01), closeTo(7.12, 0.01)));
+        assertThat(((Double[]) response.rows()[1][0]), arrayContaining(closeTo(47.22, 0.01), closeTo(12.09, 0.01)));
     }
 
     @Test
@@ -1271,14 +1272,14 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
         execute("select p from t where distance(p, 'POINT (11 21)') > 0.0");
         assertThat(response.rowCount(), is(1L));
         row = Arrays.copyOf((Object[]) response.rows()[0][0], 2, Double[].class);
-        assertThat(row[0], is(10.0d));
-        assertThat(row[1], is(20.0d));
+        assertThat(row[0], closeTo(10.0d, 0.01d));
+        assertThat(row[1], closeTo(20.0d, 0.01d));
 
         execute("select p from t where distance(p, 'POINT (11 21)') < 10.0");
         assertThat(response.rowCount(), is(1L));
         row = Arrays.copyOf((Object[]) response.rows()[0][0], 2, Double[].class);
-        assertThat(row[0], is(11.0d));
-        assertThat(row[1], is(21.0d));
+        assertThat(row[0], closeTo(11.0d, 0.01d));
+        assertThat(row[1], closeTo(21.0d, 0.01d));
 
         execute("select p from t where distance(p, 'POINT (11 21)') < 10.0 or distance(p, 'POINT (11 21)') > 10.0");
         assertThat(response.rowCount(), is(2L));
@@ -1286,18 +1287,17 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
         execute("select p from t where distance(p, 'POINT (10 20)') >= 0.0 and distance(p, 'POINT (10 20)') <= 0.1");
         assertThat(response.rowCount(), is(1L));
         row = Arrays.copyOf((Object[]) response.rows()[0][0], 2, Double[].class);
-        assertThat(row[0], is(10.0d));
-        assertThat(row[1], is(20.0d));
+        assertThat(row[0], closeTo(10.0d, 0.01d));
+        assertThat(row[1], closeTo(20.0d, 0.01d));
 
         execute("select p from t where distance(p, 'POINT (10 20)') = 0.0");
         assertThat(response.rowCount(), is(1L));
         row = Arrays.copyOf((Object[]) response.rows()[0][0], 2, Double[].class);
-        assertThat(row[0], is(10.0d));
-        assertThat(row[1], is(20.0d));
+        assertThat(row[0], closeTo(10.0d, 0.01d));
+        assertThat(row[1], closeTo(20.0d, 0.01d));
 
         execute("select p from t where distance(p, 'POINT (10 20)') = 152354.3209044634");
-        assertThat(printedTable(response.rows()),
-            is("[11.0, 21.0]\n"));
+        assertThat((Double[]) response.rows()[0][0], arrayContaining(closeTo(11.0, 0.01), closeTo(21.0, 0.01)));
     }
 
     @Test

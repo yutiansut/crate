@@ -23,11 +23,12 @@ package io.crate.integrationtests;
 
 import io.crate.testing.TestingHelpers;
 import org.elasticsearch.common.collect.MapBuilder;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import java.util.Arrays;
 
+import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.core.Is.is;
 
 public class WherePKIntegrationTest extends SQLTransportIntegrationTest {
@@ -174,7 +175,7 @@ public class WherePKIntegrationTest extends SQLTransportIntegrationTest {
         assertThat((String) response.rows()[0][0], is("123"));
         //noinspection unchecked
         String[] tags = Arrays.copyOf((Object[]) response.rows()[0][1], 2, String[].class);
-        assertThat(tags, Matchers.arrayContaining("small", "blue"));
+        assertThat(tags, arrayContaining("small", "blue"));
     }
 
     @Test
@@ -221,7 +222,7 @@ public class WherePKIntegrationTest extends SQLTransportIntegrationTest {
 
 
         execute("select * from auto_id where _id=''");
-        assertThat(response.cols(), is(Matchers.arrayContaining("location", "name")));
+        assertThat(response.cols(), is(arrayContaining("location", "name")));
         assertThat(response.rowCount(), is(0L));
     }
 
@@ -236,13 +237,13 @@ public class WherePKIntegrationTest extends SQLTransportIntegrationTest {
         execute("insert into explicit_routing (name, location) values (',', [36.567, 52.998]), ('Dornbirn', [54.45, 4.567])");
         execute("refresh table explicit_routing");
         execute("select * from explicit_routing where name=''");
-        assertThat(response.cols(), is(Matchers.arrayContaining("location", "name")));
+        assertThat(response.cols(), is(arrayContaining("location", "name")));
         assertThat(response.rowCount(), is(0L));
 
         execute("select * from explicit_routing where name=','");
-        assertThat(response.cols(), is(Matchers.arrayContaining("location", "name")));
+        assertThat(response.cols(), is(arrayContaining("location", "name")));
         assertThat(response.rowCount(), is(1L));
-        assertThat(TestingHelpers.printedTable(response.rows()), is("[36.567, 52.998]| ,\n"));
+        assertThat((Double[]) (response.rows()[0][0]), arrayContaining(closeTo(36.567, 0.01), closeTo(52.998, 0.01)));
     }
 
     @Test
