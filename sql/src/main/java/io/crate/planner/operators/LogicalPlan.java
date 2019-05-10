@@ -36,8 +36,10 @@ import io.crate.planner.PlannerContext;
 import io.crate.planner.TableStats;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * LogicalPlan is a tree of "Operators"
@@ -102,6 +104,16 @@ public interface LogicalPlan extends Plan {
                         SubQueryResults subQueryResults);
 
     List<Symbol> outputs();
+
+    /**
+     * All the columns that an operator actively uses.
+     *
+     * E.g. A filter `x > 10` actively uses `x`.
+     * But the outputs could be a superset (e.g. [x, y, z] if y and z are outputs from the source and not used in the predicate
+     */
+    Collection<Symbol> usedColumns();
+
+    LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates);
 
     /**
      * Indicates if the operators which are added on top of this LogicalPlan should operate on a shard level.

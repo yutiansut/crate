@@ -110,8 +110,6 @@ public class JoinPlanBuilder implements LogicalPlan.Builder {
 
         final QualifiedName lhsName = it.next();
         final QualifiedName rhsName = it.next();
-        AnalyzedRelation lhs = mss.sources().get(lhsName);
-        AnalyzedRelation rhs = mss.sources().get(rhsName);
         Set<QualifiedName> joinNames = new HashSet<>();
         joinNames.add(lhsName);
         joinNames.add(rhsName);
@@ -127,9 +125,8 @@ public class JoinPlanBuilder implements LogicalPlan.Builder {
             joinCondition = joinLhsRhs.condition();
         }
 
-        // use NEVER_CLEAR as fetchMode to prevent intermediate fetches
-        // This is necessary; because due to how the fetch-reader-allocation works it's not possible to
-        // have more than 1 fetchProjection within a single execution
+        AnalyzedRelation lhs = mss.sources().get(lhsName);
+        AnalyzedRelation rhs = mss.sources().get(rhsName);
         LogicalPlan lhsPlan = LogicalPlanner.plan(lhs, subqueryPlanner, false, functions, txnCtx)
             .build(tableStats);
         LogicalPlan rhsPlan = LogicalPlanner.plan(rhs, subqueryPlanner, false, functions, txnCtx)

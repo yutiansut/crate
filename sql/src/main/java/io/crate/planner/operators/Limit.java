@@ -41,17 +41,22 @@ import io.crate.types.DataType;
 import io.crate.types.DataTypes;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static io.crate.analyze.SymbolEvaluator.evaluate;
 import static io.crate.planner.operators.LogicalPlanner.NO_LIMIT;
+import static io.crate.planner.operators.LogicalPlanner.extractColumns;
 
 public class Limit extends ForwardingLogicalPlan {
 
     final Symbol limit;
     final Symbol offset;
+    private final Set<Symbol> usedColumns;
 
     static LogicalPlan.Builder create(LogicalPlan.Builder source, @Nullable Symbol limit, @Nullable Symbol offset) {
         if (limit == null && offset == null) {
@@ -66,6 +71,8 @@ public class Limit extends ForwardingLogicalPlan {
         super(source);
         this.limit = limit;
         this.offset = offset;
+        this.usedColumns = extractColumns(List.of(limit, offset));
+        this.usedColumns.addAll(source.usedColumns());
     }
 
     @Override

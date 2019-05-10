@@ -55,11 +55,11 @@ public final class Lists2 {
         return xs;
     }
 
-    public static <T> List<T> concatUnique(List<? extends T> list1, List<? extends T> list2) {
-        List<T> result = new ArrayList<>(list1.size() + list2.size());
-        result.addAll(list1);
-        for (T item : list2) {
-            if (!list1.contains(item)) {
+    public static <T> List<T> concatUnique(Collection<? extends T> xs, Collection<? extends T> ys) {
+        List<T> result = new ArrayList<>(xs.size() + ys.size());
+        result.addAll(xs);
+        for (T item : ys) {
+            if (!xs.contains(item)) {
                 result.add(item);
             }
         }
