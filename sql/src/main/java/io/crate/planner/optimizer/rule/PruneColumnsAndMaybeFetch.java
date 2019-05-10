@@ -22,15 +22,17 @@
 
 package io.crate.planner.optimizer.rule;
 
-import io.crate.collections.Lists2;
+import io.crate.expression.symbol.FetchIdStub;
 import io.crate.expression.symbol.Symbol;
 import io.crate.planner.operators.LogicalPlan;
 import io.crate.planner.optimizer.Rule;
 import io.crate.planner.optimizer.matcher.Captures;
 import io.crate.planner.optimizer.matcher.Pattern;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 import static io.crate.planner.operators.LogicalPlanner.extractColumns;
 import static io.crate.planner.optimizer.matcher.Pattern.typeOf;
@@ -59,6 +61,22 @@ public final class PruneColumnsAndMaybeFetch implements Rule<LogicalPlan> {
         Collection<Symbol> usedColumns = plan.usedColumns();
         HashSet<Symbol> fetchCandidates = new HashSet<>(plan.outputs());
         fetchCandidates.removeAll(usedColumns);
-        return plan.replaceSources(Lists2.map(plan.sources(), p -> p.pruneOutputs(p.usedColumns(), fetchCandidates)));
+
+        boolean anySourcePruned = false;
+        List<LogicalPlan> prunedSources = new ArrayList<>();
+        for (LogicalPlan source : plan.sources()) {
+            LogicalPlan prunedSource = source.pruneOutputs(usedColumns, fetchCandidates);
+            prunedSources.add(prunedSource);
+            anySourcePruned = anySourcePruned || source != prunedSource;
+        }
+        if (anySourcePruned) {
+            LogicalPlan prunedPlan = plan.replaceSources(prunedSources);
+            if (prunedPlan.outputs().stream().anyMatch(p -> p instanceof FetchIdStub)) {
+                System.out.println("Insert fetch after=" + prunedPlan);
+            }
+            return prunedPlan;
+        } else {
+            return null;
+        }
     }
 }

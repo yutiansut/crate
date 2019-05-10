@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Insert implements LogicalPlan {
 
@@ -88,6 +89,16 @@ public class Insert implements LogicalPlan {
     @Override
     public List<Symbol> outputs() {
         return MergeCountProjection.OUTPUTS;
+    }
+
+    @Override
+    public Collection<Symbol> usedColumns() {
+        return source.outputs();
+    }
+
+    @Override
+    public LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates) {
+        return this;
     }
 
     @Override

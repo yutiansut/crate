@@ -47,7 +47,7 @@ public class FetchIdStub extends Symbol {
 
     @Override
     public <C, R> R accept(SymbolVisitor<C, R> visitor, C context) {
-        return null;
+        return visitor.visitFetchIdStub(this, context);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class FetchIdStub extends Symbol {
 
     @Override
     public String representation() {
-        return "_fetchId{" + relation.tableInfo().ident() + ", refs=" + fetchCandidates + '}';
+        return "_fetchId";
     }
 
     @Override

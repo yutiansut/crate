@@ -296,7 +296,8 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
         LogicalPlanner logicalPlanner = new LogicalPlanner(getFunctions(), tableStats);
         SubqueryPlanner subqueryPlanner = new SubqueryPlanner((s) -> logicalPlanner.planSubSelect(s, context));
 
-        return logicalPlanner.normalizeAndPlan(relation, context, subqueryPlanner);
+        return LogicalPlanner.FETCH_OPTIMIZER.optimize(
+            logicalPlanner.normalizeAndPlan(relation, context, subqueryPlanner));
     }
 
     public static Matcher<LogicalPlan> isPlan(Functions functions, String expectedPlan) {

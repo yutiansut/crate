@@ -159,6 +159,9 @@ public class Collect implements LogicalPlan {
 
     @Override
     public LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates) {
+        if (outputs.stream().anyMatch(s -> s instanceof FetchIdStub)) {
+            return this;
+        }
         final List<Symbol> outputs;
         if (relation instanceof DocTableRelation) {
             outputs = new ArrayList<>(columnsUsedByParent);

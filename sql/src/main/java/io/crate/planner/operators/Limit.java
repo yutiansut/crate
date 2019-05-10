@@ -42,7 +42,6 @@ import io.crate.types.DataTypes;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -124,6 +123,11 @@ public class Limit extends ForwardingLogicalPlan {
     @Override
     public LogicalPlan replaceSources(List<LogicalPlan> sources) {
         return new Limit(Lists2.getOnlyElement(sources), limit, offset);
+    }
+
+    @Override
+    public Collection<Symbol> usedColumns() {
+        return usedColumns;
     }
 
     @Override
