@@ -23,7 +23,6 @@
 package io.crate.planner.operators;
 
 import io.crate.analyze.OrderBy;
-import io.crate.analyze.QueriedTable;
 import io.crate.analyze.relations.AbstractTableRelation;
 import io.crate.analyze.relations.DocTableRelation;
 import io.crate.analyze.where.DocKeys;
@@ -40,7 +39,6 @@ import io.crate.metadata.RelationName;
 import io.crate.metadata.doc.DocTableInfo;
 import io.crate.planner.ExecutionPlan;
 import io.crate.planner.PlannerContext;
-import io.crate.planner.TableStats;
 import io.crate.planner.node.dql.Collect;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.lucene.uid.Versions;
@@ -51,9 +49,11 @@ import org.elasticsearch.index.shard.ShardNotFoundException;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Get implements LogicalPlan {
 
@@ -62,11 +62,11 @@ public class Get implements LogicalPlan {
     final long estimatedSizePerRow;
     private final List<Symbol> outputs;
 
-    Get(QueriedTable<DocTableRelation> table, DocKeys docKeys, List<Symbol> outputs, TableStats tableStats) {
+    Get(DocTableRelation table, DocKeys docKeys, List<Symbol> outputs, long estimatedSizePerRow) {
         this.outputs = outputs;
-        this.tableRelation = table.tableRelation();
+        this.tableRelation = table;
         this.docKeys = docKeys;
-        this.estimatedSizePerRow = tableStats.estimatedSizePerRow(tableRelation.tableInfo().ident());
+        this.estimatedSizePerRow = estimatedSizePerRow;
     }
 
     @Override
@@ -149,6 +149,21 @@ public class Get implements LogicalPlan {
     @Override
     public List<Symbol> outputs() {
         return outputs;
+    }
+
+    @Override
+    public Collection<Symbol> usedColumns() {
+        return List.of();
+    }
+
+    @Override
+    public LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates) {
+        return new Get(
+            tableRelation,
+            docKeys,
+            Lists2.concatUnique(columnsUsedByParent, fetchCandidates),
+            estimatedSizePerRow
+        );
     }
 
     @Override

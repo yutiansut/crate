@@ -46,6 +46,9 @@ public enum SymbolType {
     DYNAMIC_REFERENCE(DynamicReference::new),
     MATCH_PREDICATE(null),
     FETCH_REFERENCE(null),
+    FETCH_ID_STUB(in -> {
+        throw new UnsupportedOperationException("FetchIdStub is not streamable");
+    }),
     INDEX_REFERENCE(IndexReference::new),
     GEO_REFERENCE(GeoReference::new),
     GENERATED_REFERENCE(GeneratedReference::new),

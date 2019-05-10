@@ -47,15 +47,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+
+import static io.crate.planner.operators.LogicalPlanner.extractColumns;
 
 public class HashAggregate extends ForwardingLogicalPlan {
 
     private static final String MERGE_PHASE_NAME = "mergeOnHandler";
     final List<Function> aggregates;
+    private final Set<Symbol> usedColumns;
 
     HashAggregate(LogicalPlan source, List<Function> aggregates) {
         super(source);
         this.aggregates = aggregates;
+        this.usedColumns = extractColumns(aggregates);
     }
 
     @Override
@@ -131,6 +136,11 @@ public class HashAggregate extends ForwardingLogicalPlan {
     @Override
     public List<Symbol> outputs() {
         return new ArrayList<>(aggregates);
+    }
+
+    @Override
+    public Collection<Symbol> usedColumns() {
+        return usedColumns;
     }
 
     @Override

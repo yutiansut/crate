@@ -43,9 +43,11 @@ import io.crate.planner.node.dql.CountPlan;
 import io.crate.types.DataTypes;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * An optimized version for "select count(*) from t where ..."
@@ -112,6 +114,16 @@ public class Count implements LogicalPlan {
     @Override
     public List<Symbol> outputs() {
         return outputs;
+    }
+
+    @Override
+    public Collection<Symbol> usedColumns() {
+        return List.of();
+    }
+
+    @Override
+    public LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates) {
+        return this;
     }
 
     @Override

@@ -54,6 +54,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static io.crate.planner.operators.Limit.limitAndOffset;
 import static io.crate.planner.operators.LogicalPlanner.NO_LIMIT;
@@ -220,6 +221,16 @@ public class NestedLoopJoin implements LogicalPlan {
     @Override
     public List<Symbol> outputs() {
         return outputs;
+    }
+
+    @Override
+    public Collection<Symbol> usedColumns() {
+        return null;
+    }
+
+    @Override
+    public LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates) {
+        return null;
     }
 
     @Override

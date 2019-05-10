@@ -46,8 +46,10 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static io.crate.planner.operators.LogicalPlanner.NO_LIMIT;
+import static io.crate.planner.operators.LogicalPlanner.extractColumns;
 
 public class GroupHashAggregate extends ForwardingLogicalPlan {
 
@@ -55,6 +57,7 @@ public class GroupHashAggregate extends ForwardingLogicalPlan {
     final List<Function> aggregates;
     final List<Symbol> groupKeys;
     private final List<Symbol> outputs;
+    private final Set<Symbol> usedColumns;
 
     public static Builder create(Builder source, List<Symbol> groupKeys, List<Function> aggregates) {
         return (tableStats) -> new GroupHashAggregate(source.build(tableStats), groupKeys, aggregates);
@@ -63,6 +66,7 @@ public class GroupHashAggregate extends ForwardingLogicalPlan {
     GroupHashAggregate(LogicalPlan source, List<Symbol> groupKeys, List<Function> aggregates) {
         super(source);
         this.outputs = Lists2.concat(groupKeys, aggregates);
+        this.usedColumns = extractColumns(outputs);
         this.groupKeys = groupKeys;
         this.aggregates = aggregates;
         GroupByConsumer.validateGroupBySymbols(groupKeys);
@@ -137,6 +141,11 @@ public class GroupHashAggregate extends ForwardingLogicalPlan {
     @Override
     public List<Symbol> outputs() {
         return outputs;
+    }
+
+    @Override
+    public Collection<Symbol> usedColumns() {
+        return usedColumns;
     }
 
     @Override

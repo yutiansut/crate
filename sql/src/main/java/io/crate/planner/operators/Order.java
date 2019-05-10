@@ -36,6 +36,7 @@ import io.crate.planner.PlannerContext;
 import io.crate.planner.PositionalOrderBy;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -45,6 +46,7 @@ public class Order extends ForwardingLogicalPlan {
 
     final OrderBy orderBy;
     private final List<Symbol> outputs;
+    private final Set<Symbol> usedColumns;
 
     static LogicalPlan.Builder create(LogicalPlan.Builder source, @Nullable OrderBy orderBy) {
         if (orderBy == null) {
@@ -57,6 +59,7 @@ public class Order extends ForwardingLogicalPlan {
         super(source);
         this.outputs = Lists2.concatUnique(source.outputs(), orderBy.orderBySymbols());
         this.orderBy = orderBy;
+        this.usedColumns = extractColumns(orderBy.orderBySymbols());
     }
 
     public OrderBy orderBy() {
@@ -106,6 +109,11 @@ public class Order extends ForwardingLogicalPlan {
     @Override
     public List<Symbol> outputs() {
         return outputs;
+    }
+
+    @Override
+    public Collection<Symbol> usedColumns() {
+        return usedColumns;
     }
 
     @Override

@@ -39,6 +39,7 @@ import io.crate.execution.dsl.phases.TableFunctionCollectPhase;
 import io.crate.execution.dsl.projection.builder.ProjectionBuilder;
 import io.crate.execution.engine.pipeline.TopN;
 import io.crate.expression.predicate.MatchPredicate;
+import io.crate.expression.symbol.FetchIdStub;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.SelectSymbol;
@@ -59,9 +60,11 @@ import io.crate.planner.distribution.DistributionInfo;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static io.crate.planner.operators.Limit.limitAndOffset;
 
@@ -147,6 +150,32 @@ public class Collect implements LogicalPlan {
     @Override
     public List<Symbol> outputs() {
         return outputs;
+    }
+
+    @Override
+    public Collection<Symbol> usedColumns() {
+        return List.of();
+    }
+
+    @Override
+    public LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates) {
+        if (outputs.stream().anyMatch(s -> s instanceof FetchIdStub)) {
+            return this;
+        }
+        final List<Symbol> outputs;
+        if (relation instanceof DocTableRelation) {
+            outputs = new ArrayList<>(columnsUsedByParent);
+            outputs.add(new FetchIdStub((DocTableRelation) relation, fetchCandidates));
+        } else {
+            outputs = Lists2.concatUnique(columnsUsedByParent, fetchCandidates);
+        }
+        return new Collect(
+            relation,
+            outputs,
+            where,
+            numExpectedRows,
+            estimatedRowSize
+        );
     }
 
     public WhereClause where() {
