@@ -45,12 +45,9 @@ import io.crate.planner.node.dql.GroupByConsumer;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 import static io.crate.planner.operators.LogicalPlanner.NO_LIMIT;
-import static io.crate.planner.operators.LogicalPlanner.extractColumns;
 
 public class GroupHashAggregate extends ForwardingLogicalPlan {
 
@@ -60,12 +57,7 @@ public class GroupHashAggregate extends ForwardingLogicalPlan {
     private final List<Symbol> outputs;
 
     public static Builder create(Builder source, List<Symbol> groupKeys, List<Function> aggregates) {
-        return (tableStats, parentUsedCols) -> {
-            HashSet<Symbol> usedCols = new LinkedHashSet<>();
-            usedCols.addAll(groupKeys);
-            usedCols.addAll(extractColumns(aggregates));
-            return new GroupHashAggregate(source.build(tableStats, usedCols), groupKeys, aggregates);
-        };
+        return (tableStats) -> new GroupHashAggregate(source.build(tableStats), groupKeys, aggregates);
     }
 
     GroupHashAggregate(LogicalPlan source, List<Symbol> groupKeys, List<Function> aggregates) {

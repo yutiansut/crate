@@ -764,7 +764,7 @@ public class SelectPlannerTest extends CrateDummyClusterServiceUnitTest {
         LogicalPlan plan = e.logicalPlan("select unnest([1, 2]) + 1");
         assertThat(plan, isPlan(e.functions(),
             "RootBoundary[(unnest([1, 2]) + 1)]\n" +
-            "FetchOrEval[(unnest([1, 2]) + 1)]\n" +
+            "Eval[(unnest([1, 2]) + 1)]\n" +
             "ProjectSet[unnest([1, 2])]\n" +
             "Collect[.empty_row | [] | All]\n"
         ));
@@ -781,7 +781,7 @@ public class SelectPlannerTest extends CrateDummyClusterServiceUnitTest {
         LogicalPlan plan = e.logicalPlan("select count(*), generate_series(1, 2) from users");
         assertThat(plan, isPlan(e.functions(),
             "RootBoundary[count(*), generate_series(1, 2)]\n" +
-            "FetchOrEval[count(*), generate_series(1, 2)]\n" +
+            "Eval[count(*), generate_series(1, 2)]\n" +
             "ProjectSet[generate_series(1, 2) | count(*)]\n" +
             "Count[doc.users | All]\n"
         ));
@@ -792,7 +792,7 @@ public class SelectPlannerTest extends CrateDummyClusterServiceUnitTest {
         LogicalPlan plan = e.logicalPlan("select count(name), generate_series(1, count(name)) from users");
         assertThat(plan, isPlan(e.functions(),
             "RootBoundary[count(name), generate_series(1, count(name))]\n" +
-            "FetchOrEval[count(name), generate_series(1, count(name))]\n" +
+            "Eval[count(name), generate_series(1, count(name))]\n" +
             "ProjectSet[generate_series(1, count(name)) | count(name)]\n" +
             "Aggregate[count(name)]\n" +
             "Collect[doc.users | [name] | All]\n"
@@ -858,7 +858,7 @@ public class SelectPlannerTest extends CrateDummyClusterServiceUnitTest {
         LogicalPlan logicalPlan = e.logicalPlan(statement);
         assertThat(logicalPlan, isPlan(e.functions(),
             "RootBoundary[id, name, date, obj]\n" +
-            "FetchOrEval[id, name, date, obj]\n" +
+            "Eval[id, name, date, obj]\n" +
             "Boundary[_fetchid, date]\n" +
             "Collect[doc.parted | [_fetchid, date] | date IS NULL]\n"
         ));

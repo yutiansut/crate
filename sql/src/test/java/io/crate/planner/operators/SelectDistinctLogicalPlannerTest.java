@@ -47,7 +47,7 @@ public class SelectDistinctLogicalPlannerTest extends CrateDummyClusterServiceUn
             "select distinct id from users order by id + 10");
         assertThat(logicalPlan, isPlan(e.functions(),
             "RootBoundary[id]\n" +
-            "FetchOrEval[id]\n" +
+            "Eval[id]\n" +
             "OrderBy[(id + 10) ASC]\n" +
             "GroupBy[id | ]\n" +
             "Collect[doc.users | [id, (id + 10)] | All]\n"));
@@ -91,7 +91,7 @@ public class SelectDistinctLogicalPlannerTest extends CrateDummyClusterServiceUn
             "GroupBy[name | count(id)]\n" +
             "HashJoin[\n" +
             "    Boundary[_fetchid, id, department_id]\n" +
-            "    FetchOrEval[_fetchid, id, department_id]\n" +
+            "    Eval[_fetchid, id, department_id]\n" +
             "    Collect[doc.users | [_fetchid, department_id, id] | All]\n" +
             "    --- INNER ---\n" +
             "    Boundary[id, name]\n" +

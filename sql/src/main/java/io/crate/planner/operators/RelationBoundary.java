@@ -38,11 +38,8 @@ import io.crate.planner.SubqueryPlanner;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * An Operator that marks the boundary of a relation.
@@ -56,7 +53,7 @@ public class RelationBoundary extends ForwardingLogicalPlan {
     public static LogicalPlan.Builder create(LogicalPlan.Builder sourceBuilder,
                                              AnalyzedRelation relation,
                                              SubqueryPlanner subqueryPlanner) {
-        return (tableStats, usedBeforeNextFetch) -> {
+        return (tableStats) -> {
             HashMap<Symbol, Symbol> expressionMapping = new HashMap<>();
             HashMap<Symbol, Symbol> reverseMapping = new HashMap<>();
             for (Field field : relation.fields()) {
@@ -64,12 +61,7 @@ public class RelationBoundary extends ForwardingLogicalPlan {
                 expressionMapping.put(field, value);
                 reverseMapping.put(value, field);
             }
-            Function<Symbol, Symbol> mapper = OperatorUtils.getMapper(expressionMapping);
-            HashSet<Symbol> mappedUsedColumns = new LinkedHashSet<>();
-            for (Symbol beforeNextFetch : usedBeforeNextFetch) {
-                mappedUsedColumns.add(mapper.apply(beforeNextFetch));
-            }
-            LogicalPlan source = sourceBuilder.build(tableStats, mappedUsedColumns);
+            LogicalPlan source = sourceBuilder.build(tableStats);
             for (Symbol symbol : source.outputs()) {
                 RefVisitor.visitRefs(symbol, r -> {
                     Field field = new Field(relation, r.column(), r);

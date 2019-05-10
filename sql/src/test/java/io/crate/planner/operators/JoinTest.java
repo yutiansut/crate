@@ -53,7 +53,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Collections;
 
 import static io.crate.analyze.TableDefinitions.TEST_DOC_LOCATIONS_TABLE_DEFINITION;
 import static io.crate.analyze.TableDefinitions.USER_TABLE_DEFINITION;
@@ -102,7 +101,7 @@ public class JoinTest extends CrateDummyClusterServiceUnitTest {
         LogicalPlanner logicalPlanner = new LogicalPlanner(functions, tableStats);
         SubqueryPlanner subqueryPlanner = new SubqueryPlanner((s) -> logicalPlanner.planSubSelect(s, plannerCtx));
         return JoinPlanBuilder.createNodes(mss, mss.where(), subqueryPlanner, functions, txnCtx)
-            .build(tableStats, Collections.emptySet());
+            .build(tableStats);
     }
 
     private Join buildJoin(LogicalPlan operator) {
@@ -152,7 +151,7 @@ public class JoinTest extends CrateDummyClusterServiceUnitTest {
         LogicalPlanner logicalPlanner = new LogicalPlanner(functions, tableStats);
         SubqueryPlanner subqueryPlanner = new SubqueryPlanner((s) -> logicalPlanner.planSubSelect(s, context));
         LogicalPlan operator = JoinPlanBuilder.createNodes(mss, mss.where(), subqueryPlanner, e.functions(), txnCtx)
-            .build(tableStats, Collections.emptySet());
+            .build(tableStats);
         Join nl = (Join) operator.build(
             context, projectionBuilder, -1, 0, null, null, Row.EMPTY, SubQueryResults.EMPTY);
 
@@ -387,7 +386,7 @@ public class JoinTest extends CrateDummyClusterServiceUnitTest {
         LogicalPlanner logicalPlanner = new LogicalPlanner(functions, new TableStats());
         LogicalPlan join = logicalPlanner.plan(mss, plannerCtx);
 
-        WindowAgg windowAggOperator = (WindowAgg) ((FetchOrEval) ((RootRelationBoundary) join).source).source;
+        WindowAgg windowAggOperator = (WindowAgg) ((Eval) ((RootRelationBoundary) join).source).source;
         assertThat(join.outputs(), hasItem(windowAggOperator.windowFunctions().get(0)));
     }
 
@@ -401,7 +400,7 @@ public class JoinTest extends CrateDummyClusterServiceUnitTest {
         var logicalPlan = e.logicalPlan(statement);
         var expectedPlan =
             "RootBoundary[x, x]\n" +
-            "FetchOrEval[x, x]\n" +
+            "Eval[x, x]\n" +
             "Boundary[_fetchid, _fetchid]\n" +
             "NestedLoopJoin[\n" +
             "    Boundary[_fetchid]\n" +

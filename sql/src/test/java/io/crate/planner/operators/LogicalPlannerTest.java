@@ -34,7 +34,6 @@ import io.crate.metadata.RelationName;
 import io.crate.planner.PlannerContext;
 import io.crate.planner.SubqueryPlanner;
 import io.crate.planner.TableStats;
-import io.crate.planner.consumer.FetchMode;
 import io.crate.test.integration.CrateDummyClusterServiceUnitTest;
 import io.crate.testing.SQLExecutor;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -74,7 +73,7 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
     @Test
     public void testAvgWindowFunction() {
         LogicalPlan plan = plan("select avg(x) OVER() from t1");
-        assertThat(plan, isPlan("FetchOrEval[avg(x)]\n" +
+        assertThat(plan, isPlan("Eval[avg(x)]\n" +
                                 "WindowAgg[avg(x)]\n" +
                                 "Collect[doc.t1 | [x] | All]\n"));
     }
@@ -89,7 +88,7 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
     @Test
     public void testQTFWithOrderBy() throws Exception {
         LogicalPlan plan = plan("select a, x from t1 order by a");
-        assertThat(plan, isPlan("FetchOrEval[a, x]\n" +
+        assertThat(plan, isPlan("Eval[a, x]\n" +
                                 "OrderBy[a ASC]\n" +
                                 "Collect[doc.t1 | [_fetchid, a] | All]\n"));
     }
@@ -97,7 +96,7 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
     @Test
     public void testQTFWithoutOrderBy() throws Exception {
         LogicalPlan plan = plan("select a, x from t1");
-        assertThat(plan, isPlan("FetchOrEval[a, x]\n" +
+        assertThat(plan, isPlan("Eval[a, x]\n" +
                                 "Collect[doc.t1 | [_fetchid] | All]\n"));
     }
 
@@ -127,7 +126,7 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
         LogicalPlan plan = plan("select sum(x) from (select x from t1 limit 10) tt");
         assertThat(plan, isPlan("Aggregate[sum(x)]\n" +
                                 "Boundary[x]\n" +
-                                "FetchOrEval[x]\n" +
+                                "Eval[x]\n" +
                                 "Limit[10;0]\n" +
                                 "Collect[doc.t1 | [_fetchid] | All]\n"));
     }
@@ -135,7 +134,7 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
     @Test
     public void testHavingGlobalAggregation() throws Exception {
         LogicalPlan plan = plan("select min(a), min(x) from t1 having min(x) < 33 and max(x) > 100");
-        assertThat(plan, isPlan("FetchOrEval[min(a), min(x)]\n" +
+        assertThat(plan, isPlan("Eval[min(a), min(x)]\n" +
                                 "Filter[((min(x) < 33) AND (max(x) > 100))]\n" +
                                 "Aggregate[min(a), min(x), max(x)]\n" +
                                 "Collect[doc.t1 | [a, x] | All]\n"));
@@ -164,7 +163,7 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
                                 "            Collect[doc.t1 | [1] | (x > cast(SelectSymbol{bigint_array} AS integer))]\n" +
                                 "        ]\n" +
                                 "    ]\n" +
-                                "    FetchOrEval[a, x, i]\n" +
+                                "    Eval[a, x, i]\n" +
                                 "    Collect[doc.t1 | [_fetchid] | (x > cast(SelectSymbol{bigint_array} AS integer))]\n" +
                                 "]\n"));
     }
@@ -176,7 +175,7 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
                                "join" +
                                " (select i from t2 limit 1) t2 " +
                                "on t1.cnt = t2.i::long ");
-        assertThat(plan, isPlan("FetchOrEval[i, cnt]\n" +
+        assertThat(plan, isPlan("Eval[i, cnt]\n" +
                                 "HashJoin[\n" +
                                 "    Boundary[cnt]\n" +
                                 "    Count[doc.t1 | All]\n" +
@@ -196,7 +195,7 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
                                 "   inner join t2 on t1.x = t2.y " +
                                 "order by t1.x " +
                                 "limit 10");
-        assertThat(plan, isPlan("FetchOrEval[x, a, y]\n" +
+        assertThat(plan, isPlan("Eval[x, a, y]\n" +
                                 "Limit[10;0]\n" +
                                 "OrderBy[x ASC]\n" +
                                 "HashJoin[\n" +
@@ -211,7 +210,7 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
     @Test
     public void testScoreColumnIsCollectedNotFetched() throws Exception {
         LogicalPlan plan = plan("select x, _score from t1");
-        assertThat(plan, isPlan("FetchOrEval[x, _score]\n" +
+        assertThat(plan, isPlan("Eval[x, _score]\n" +
                                 "Collect[doc.t1 | [_fetchid, _score] | All]\n"));
     }
 
@@ -242,7 +241,7 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
         assertThat(plan.dependencies().entrySet().size(), is(1));
         LogicalPlan subPlan = plan.dependencies().keySet().iterator().next();
         assertThat(subPlan, isPlan("RootBoundary[x]\n" +
-                                   "FetchOrEval[x]\n" +
+                                   "Eval[x]\n" +
                                    "OrderBy[x ASC]\n" +
                                    "Limit[10;0]\n" +
                                    "OrderBy[a DESC]\n" +
@@ -276,7 +275,7 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
                               "FROM v2 " +
                               "  INNER JOIN v3 " +
                               "  ON v2.x= v3.x");
-        assertThat(plan, isPlan("FetchOrEval[x, a, x, a]\n" +
+        assertThat(plan, isPlan("Eval[x, a, x, a]\n" +
                                 "HashJoin[\n" +
                                 "    Boundary[_fetchid, x]\n" +
                                 "    Boundary[_fetchid, x]\n" +
@@ -297,11 +296,11 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
         LogicalPlanner logicalPlanner = new LogicalPlanner(getFunctions(), tableStats);
         SubqueryPlanner subqueryPlanner = new SubqueryPlanner((s) -> logicalPlanner.planSubSelect(s, context));
 
-        return logicalPlanner.normalizeAndPlan(relation, context, subqueryPlanner, FetchMode.MAYBE_CLEAR);
+        return logicalPlanner.normalizeAndPlan(relation, context, subqueryPlanner);
     }
 
     public static Matcher<LogicalPlan> isPlan(Functions functions, String expectedPlan) {
-        return new FeatureMatcher<LogicalPlan, String>(equalTo(expectedPlan), "same output", "output ") {
+        return new FeatureMatcher<>(equalTo(expectedPlan), "same output", "output ") {
 
             @Override
             protected String featureValueOf(LogicalPlan actual) {
@@ -379,12 +378,12 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
                 startLine("]\n");
                 return sb.toString();
             }
-            if (plan instanceof FetchOrEval) {
-                FetchOrEval fetchOrEval = (FetchOrEval) plan;
-                startLine("FetchOrEval[");
-                addSymbolsList(fetchOrEval.outputs());
+            if (plan instanceof Eval) {
+                Eval eval = (Eval) plan;
+                startLine("Eval[");
+                addSymbolsList(eval.outputs());
                 sb.append("]\n");
-                plan = fetchOrEval.source;
+                plan = eval.source;
             }
             if (plan instanceof Limit) {
                 Limit limit = (Limit) plan;

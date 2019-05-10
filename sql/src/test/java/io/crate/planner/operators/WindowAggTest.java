@@ -64,7 +64,7 @@ public class WindowAggTest extends CrateDummyClusterServiceUnitTest {
     public void testTwoWindowFunctionsWithDifferentWindowDefinitionResultsInTwoOperators() {
         LogicalPlan plan = plan("select avg(x) over (partition by x), avg(x) over (partition by y) from t1");
         var expectedPlan =
-            "FetchOrEval[avg(x), avg(x)]\n" +
+            "Eval[avg(x), avg(x)]\n" +
             "WindowAgg[avg(x) | PARTITION BY y]\n" +
             "WindowAgg[avg(x) | PARTITION BY x]\n" +
             "Collect[doc.t1 | [x, y] | All]\n";

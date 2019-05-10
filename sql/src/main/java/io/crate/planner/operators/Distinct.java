@@ -27,17 +27,12 @@ import io.crate.expression.symbol.Symbol;
 import java.util.Collections;
 import java.util.List;
 
-import static io.crate.planner.operators.LogicalPlanner.extractColumns;
-
 public final class Distinct {
 
     public static LogicalPlan.Builder create(LogicalPlan.Builder source, boolean distinct, List<Symbol> outputs) {
         if (!distinct) {
             return source;
         }
-        return (tableStats, usedBeforeNextFetch) -> {
-            LogicalPlan sourcePlan = source.build(tableStats, extractColumns(outputs));
-            return new GroupHashAggregate(sourcePlan, outputs, Collections.emptyList());
-        };
+        return (tableStats) -> new GroupHashAggregate(source.build(tableStats), outputs, Collections.emptyList());
     }
 }
