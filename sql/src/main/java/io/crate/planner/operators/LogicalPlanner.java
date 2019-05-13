@@ -70,13 +70,11 @@ import io.crate.planner.optimizer.rule.DeduplicateOrder;
 import io.crate.planner.optimizer.rule.MergeAggregateAndCollectToCount;
 import io.crate.planner.optimizer.rule.MergeFilterAndCollect;
 import io.crate.planner.optimizer.rule.MergeFilters;
-import io.crate.planner.optimizer.rule.MoveFilterBeneathBoundary;
 import io.crate.planner.optimizer.rule.MoveFilterBeneathFetchOrEval;
 import io.crate.planner.optimizer.rule.MoveFilterBeneathHashJoin;
 import io.crate.planner.optimizer.rule.MoveFilterBeneathNestedLoop;
 import io.crate.planner.optimizer.rule.MoveFilterBeneathOrder;
 import io.crate.planner.optimizer.rule.MoveFilterBeneathUnion;
-import io.crate.planner.optimizer.rule.MoveOrderBeneathBoundary;
 import io.crate.planner.optimizer.rule.MoveOrderBeneathFetchOrEval;
 import io.crate.planner.optimizer.rule.MoveOrderBeneathNestedLoop;
 import io.crate.planner.optimizer.rule.MoveOrderBeneathUnion;
@@ -113,7 +111,6 @@ public class LogicalPlanner {
             new RemoveRedundantFetchOrEval(),
             new MergeAggregateAndCollectToCount(),
             new MergeFilters(),
-            new MoveFilterBeneathBoundary(),
             new MoveFilterBeneathFetchOrEval(),
             new MoveFilterBeneathOrder(),
             new MoveFilterBeneathHashJoin(),
@@ -123,7 +120,6 @@ public class LogicalPlanner {
             new RewriteFilterOnOuterJoinToInnerJoin(functions),
             new MoveOrderBeneathUnion(),
             new MoveOrderBeneathNestedLoop(),
-            new MoveOrderBeneathBoundary(),
             new MoveOrderBeneathFetchOrEval(),
             new DeduplicateOrder()
         ));
@@ -157,7 +153,7 @@ public class LogicalPlanner {
         }
         PlannerContext subSelectPlannerContext = PlannerContext.forSubPlan(plannerContext, fetchSize);
         SubqueryPlanner subqueryPlanner = new SubqueryPlanner(s -> planSubSelect(s, subSelectPlannerContext));
-        LogicalPlan.Builder planBuilder = prePlan(
+        LogicalPlan.Builder planBuilder = plan(
             relation,
             FetchMode.NEVER_CLEAR,
             subqueryPlanner,
@@ -215,19 +211,6 @@ public class LogicalPlanner {
                                     boolean isLastFetch,
                                     Functions functions,
                                     CoordinatorTxnCtx txnCtx) {
-        LogicalPlan.Builder builder = prePlan(relation, fetchMode, subqueryPlanner, isLastFetch, functions, txnCtx);
-        if (isLastFetch) {
-            return builder;
-        }
-        return RelationBoundary.create(builder, relation, subqueryPlanner);
-    }
-
-    private static LogicalPlan.Builder prePlan(AnalyzedRelation relation,
-                                               FetchMode fetchMode,
-                                               SubqueryPlanner subqueryPlanner,
-                                               boolean isLastFetch,
-                                               Functions functions,
-                                               CoordinatorTxnCtx txnCtx) {
         SplitPoints splitPoints = SplitPointsBuilder.create(relation);
         return FetchOrEval.create(
             Limit.create(
@@ -324,7 +307,13 @@ public class LogicalPlanner {
             return Collect.create(queriedTable.tableRelation(), toCollect, where);
         }
         if (analyzedRelation instanceof MultiSourceSelect) {
-            return JoinPlanBuilder.createNodes((MultiSourceSelect) analyzedRelation, where, subqueryPlanner, functions, txnCtx);
+            return JoinPlanBuilder.createNodes(
+                (MultiSourceSelect) analyzedRelation,
+                where,
+                subqueryPlanner,
+                functions,
+                txnCtx
+            );
         }
         if (analyzedRelation instanceof UnionSelect) {
             return Union.create((UnionSelect) analyzedRelation, subqueryPlanner, functions, txnCtx);

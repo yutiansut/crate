@@ -122,6 +122,11 @@ public class Limit extends ForwardingLogicalPlan {
     }
 
     @Override
+    public FetchContext createFetchContext(List<Symbol> wantedOutput) {
+        return source.createFetchContext(wantedOutput);
+    }
+
+    @Override
     public Map<LogicalPlan, SelectSymbol> dependencies() {
         return source.dependencies();
     }

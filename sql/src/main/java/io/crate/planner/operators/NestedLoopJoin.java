@@ -55,6 +55,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static io.crate.planner.operators.HashJoin.extractColumnsFrom;
 import static io.crate.planner.operators.Limit.limitAndOffset;
 import static io.crate.planner.operators.LogicalPlanner.NO_LIMIT;
 
@@ -69,7 +70,6 @@ public class NestedLoopJoin implements LogicalPlan {
     final LogicalPlan rhs;
     private final List<Symbol> outputs;
     private final List<AbstractTableRelation> baseTables;
-    private final Map<Symbol, Symbol> expressionMapping;
     private final Map<LogicalPlan, SelectSymbol> dependencies;
     private boolean orderByWasPushedDown = false;
 
@@ -91,7 +91,6 @@ public class NestedLoopJoin implements LogicalPlan {
         this.baseTables = Lists2.concat(lhs.baseTables(), rhs.baseTables());
         this.topMostLeftRelation = topMostLeftRelation;
         this.joinCondition = joinCondition;
-        this.expressionMapping = Maps.concat(lhs.expressionMapping(), rhs.expressionMapping());
         this.dependencies = Maps.concat(lhs.dependencies(), rhs.dependencies());
     }
 
@@ -223,11 +222,6 @@ public class NestedLoopJoin implements LogicalPlan {
     }
 
     @Override
-    public Map<Symbol, Symbol> expressionMapping() {
-        return expressionMapping;
-    }
-
-    @Override
     public List<AbstractTableRelation> baseTables() {
         return baseTables;
     }
@@ -248,6 +242,12 @@ public class NestedLoopJoin implements LogicalPlan {
             topMostLeftRelation,
             orderByWasPushedDown
         );
+    }
+
+    @Override
+    public FetchContext createFetchContext(List<Symbol> wantedOutput) {
+        return lhs.createFetchContext(extractColumnsFrom(lhs, wantedOutput))
+            .merge(rhs.createFetchContext(extractColumnsFrom(rhs, wantedOutput)));
     }
 
     private Tuple<Collection<String>, List<MergePhase>> configureExecution(ExecutionPlan left,

@@ -122,12 +122,6 @@ public final class StatementClassifier {
         }
 
         @Override
-        public Void visitRelationBoundary(RelationBoundary logicalPlan, Set<String> context) {
-            process(logicalPlan.source(), context);
-            return null;
-        }
-
-        @Override
         public Void visitFetchOrEval(FetchOrEval logicalPlan, Set<String> context) {
             process(logicalPlan.source(), context);
             return visitPlan(logicalPlan, context);

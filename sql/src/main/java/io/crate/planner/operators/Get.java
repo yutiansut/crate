@@ -152,11 +152,6 @@ public class Get implements LogicalPlan {
     }
 
     @Override
-    public Map<Symbol, Symbol> expressionMapping() {
-        return Map.of();
-    }
-
-    @Override
     public List<AbstractTableRelation> baseTables() {
         return List.of(tableRelation);
     }
@@ -170,6 +165,11 @@ public class Get implements LogicalPlan {
     public LogicalPlan replaceSources(List<LogicalPlan> sources) {
         assert sources.isEmpty() : "Get has no sources, cannot replace them";
         return this;
+    }
+
+    @Override
+    public FetchContext createFetchContext(List<Symbol> wantedOutput) {
+        return FetchContext.empty();
     }
 
     @Override

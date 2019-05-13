@@ -115,7 +115,6 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
                                 "   select a, x from t1 order by a limit 3) tt " +
                                 "order by x desc limit 1");
         assertThat(plan, isPlan("Limit[1;0]\n" +
-                                "Boundary[a, x]\n" +
                                 "OrderBy[x DESC]\n" +
                                 "Limit[3;0]\n" +
                                 "OrderBy[a ASC]\n" +
@@ -178,10 +177,8 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
                                "on t1.cnt = t2.i::long ");
         assertThat(plan, isPlan("FetchOrEval[i, cnt]\n" +
                                 "HashJoin[\n" +
-                                "    Boundary[cnt]\n" +
                                 "    Count[doc.t1 | All]\n" +
                                 "    --- INNER ---\n" +
-                                "    Boundary[i]\n" +
                                 "    Limit[1;0]\n" +
                                 "    Collect[doc.t2 | [i] | All]\n" +
                                 "]\n"));
@@ -200,10 +197,8 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
                                 "Limit[10;0]\n" +
                                 "OrderBy[x ASC]\n" +
                                 "HashJoin[\n" +
-                                "    Boundary[_fetchid, x]\n" +
                                 "    Collect[doc.t1 | [_fetchid, x] | All]\n" +
                                 "    --- INNER ---\n" +
-                                "    Boundary[_fetchid, y]\n" +
                                 "    Collect[doc.t2 | [_fetchid, y] | All]\n" +
                                 "]\n"));
     }
@@ -259,13 +254,11 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
                                 "limit 10");
         assertThat(plan, isPlan("Limit[10;0]\n" +
                                 "HashJoin[\n" +
-                                "    Boundary[a, i]\n" +
                                 "    Filter[(a > '50')]\n" +
                                 "    Limit[5;0]\n" +
                                 "    OrderBy[a ASC]\n" +
                                 "    Collect[doc.t1 | [a, i] | All]\n" +
                                 "    --- INNER ---\n" +
-                                "    Boundary[b, i]\n" +
                                 "    Collect[doc.t2 | [b, i] | ((b > '10') AND (b > '100'))]\n" +
                                 "]\n"));
     }
@@ -278,12 +271,8 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
                               "  ON v2.x= v3.x");
         assertThat(plan, isPlan("FetchOrEval[x, a, x, a]\n" +
                                 "HashJoin[\n" +
-                                "    Boundary[_fetchid, x]\n" +
-                                "    Boundary[_fetchid, x]\n" +
                                 "    Collect[doc.t1 | [_fetchid, x] | All]\n" +
                                 "    --- INNER ---\n" +
-                                "    Boundary[_fetchid, x]\n" +
-                                "    Boundary[_fetchid, x]\n" +
                                 "    Collect[doc.t1 | [_fetchid, x] | All]\n" +
                                 "]\n"));
     }
@@ -343,13 +332,6 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
             if (plan instanceof RootRelationBoundary) {
                 RootRelationBoundary boundary = (RootRelationBoundary) plan;
                 startLine("RootBoundary[");
-                addSymbolsList(boundary.outputs());
-                sb.append("]\n");
-                plan = boundary.source;
-            }
-            if (plan instanceof RelationBoundary) {
-                RelationBoundary boundary = (RelationBoundary) plan;
-                startLine("Boundary[");
                 addSymbolsList(boundary.outputs());
                 sb.append("]\n");
                 plan = boundary.source;

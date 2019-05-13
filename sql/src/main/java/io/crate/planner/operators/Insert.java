@@ -91,11 +91,6 @@ public class Insert implements LogicalPlan {
     }
 
     @Override
-    public Map<Symbol, Symbol> expressionMapping() {
-        return Collections.emptyMap();
-    }
-
-    @Override
     public List<AbstractTableRelation> baseTables() {
         return Collections.emptyList();
     }
@@ -108,6 +103,11 @@ public class Insert implements LogicalPlan {
     @Override
     public LogicalPlan replaceSources(List<LogicalPlan> sources) {
         return new Insert(Lists2.getOnlyElement(sources), writeToTable, applyCasts);
+    }
+
+    @Override
+    public FetchContext createFetchContext(List<Symbol> wantedOutput) {
+        return source.createFetchContext(wantedOutput);
     }
 
     @Override

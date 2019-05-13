@@ -69,7 +69,6 @@ public class Union implements LogicalPlan {
     private final List<Symbol> outputs;
     final LogicalPlan lhs;
     final LogicalPlan rhs;
-    private final Map<Symbol, Symbol> expressionMapping;
     private final Map<LogicalPlan, SelectSymbol> dependencies;
 
     static Builder create(UnionSelect ttr, SubqueryPlanner subqueryPlanner, Functions functions, CoordinatorTxnCtx txnCtx) {
@@ -123,7 +122,6 @@ public class Union implements LogicalPlan {
         this.lhs = lhs;
         this.rhs = rhs;
         this.outputs = outputs;
-        this.expressionMapping = Maps.concat(lhs.expressionMapping(), rhs.expressionMapping());
         this.dependencies = Maps.concat(lhs.dependencies(), rhs.dependencies());
     }
 
@@ -186,11 +184,6 @@ public class Union implements LogicalPlan {
     }
 
     @Override
-    public Map<Symbol, Symbol> expressionMapping() {
-        return expressionMapping;
-    }
-
-    @Override
     public List<AbstractTableRelation> baseTables() {
         return Lists2.concat(lhs.baseTables(), rhs.baseTables());
     }
@@ -203,6 +196,11 @@ public class Union implements LogicalPlan {
     @Override
     public LogicalPlan replaceSources(List<LogicalPlan> sources) {
         return new Union(sources.get(0), sources.get(1), outputs);
+    }
+
+    @Override
+    public FetchContext createFetchContext(List<Symbol> wantedOutput) {
+        throw new UnsupportedOperationException("NYI");
     }
 
     @Override

@@ -41,6 +41,7 @@ import io.crate.execution.engine.pipeline.TopN;
 import io.crate.expression.predicate.MatchPredicate;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Literal;
+import io.crate.expression.symbol.RefVisitor;
 import io.crate.expression.symbol.SelectSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.SymbolVisitor;
@@ -60,6 +61,7 @@ import io.crate.planner.PositionalOrderBy;
 import io.crate.planner.TableStats;
 import io.crate.planner.consumer.OrderByPositionVisitor;
 import io.crate.planner.distribution.DistributionInfo;
+import io.crate.planner.node.fetch.FetchSource;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -342,11 +344,6 @@ public class Collect implements LogicalPlan {
     }
 
     @Override
-    public Map<Symbol, Symbol> expressionMapping() {
-        return Map.of();
-    }
-
-    @Override
     public List<AbstractTableRelation> baseTables() {
         return baseTables;
     }
@@ -360,6 +357,21 @@ public class Collect implements LogicalPlan {
     public LogicalPlan replaceSources(List<LogicalPlan> sources) {
         assert sources.isEmpty() : "Collect has no sources, cannot replace them";
         return this;
+    }
+
+    @Override
+    public FetchContext createFetchContext(List<Symbol> wantedOutput) {
+        if (relation instanceof DocTableRelation) {
+            DocTableRelation relation = (DocTableRelation) this.relation;
+            DocTableInfo table = relation.tableInfo();
+            FetchSource fetchSource = new FetchSource(table.partitionedByColumns());
+            for (Symbol symbol : wantedOutput) {
+                RefVisitor.visitRefs(symbol, fetchSource::addRefToFetch);
+            }
+            return new FetchContext(Map.of(table.ident(), fetchSource), outputs);
+        } else {
+            return FetchContext.empty();
+        }
     }
 
     @Override

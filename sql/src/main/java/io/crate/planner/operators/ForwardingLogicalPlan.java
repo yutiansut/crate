@@ -49,8 +49,8 @@ public abstract class ForwardingLogicalPlan implements LogicalPlan {
     }
 
     @Override
-    public Map<Symbol, Symbol> expressionMapping() {
-        return source.expressionMapping();
+    public FetchContext createFetchContext(List<Symbol> wantedOutput) {
+        return source.createFetchContext(wantedOutput);
     }
 
     @Override

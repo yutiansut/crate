@@ -74,6 +74,10 @@ public class Field extends Symbol {
         return path;
     }
 
+    public Symbol pointer() {
+        return pointer;
+    }
+
     public AnalyzedRelation relation() {
         return relation;
     }

@@ -27,7 +27,6 @@ import io.crate.analyze.OrderBy;
 import io.crate.analyze.relations.AbstractTableRelation;
 import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.collections.Lists2;
-import io.crate.common.collections.Maps;
 import io.crate.data.Row;
 import io.crate.execution.dsl.phases.HashJoinPhase;
 import io.crate.execution.dsl.phases.MergePhase;
@@ -36,6 +35,7 @@ import io.crate.execution.dsl.projection.builder.InputColumns;
 import io.crate.execution.dsl.projection.builder.ProjectionBuilder;
 import io.crate.execution.engine.join.JoinOperations;
 import io.crate.execution.engine.pipeline.TopN;
+import io.crate.expression.symbol.FieldsVisitor;
 import io.crate.expression.symbol.SelectSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.Symbols;
@@ -69,7 +69,6 @@ public class HashJoin implements LogicalPlan {
     private final List<Symbol> outputs;
     final LogicalPlan rhs;
     final LogicalPlan lhs;
-    private final Map<Symbol, Symbol> expressionMapping;
 
     public HashJoin(LogicalPlan lhs,
                     LogicalPlan rhs,
@@ -82,7 +81,6 @@ public class HashJoin implements LogicalPlan {
         this.concreteRelation = concreteRelation;
         this.joinCondition = joinCondition;
         this.tableStats = tableStats;
-        this.expressionMapping = Maps.concat(lhs.expressionMapping(), rhs.expressionMapping());
     }
 
     public JoinType joinType() {
@@ -219,11 +217,6 @@ public class HashJoin implements LogicalPlan {
     }
 
     @Override
-    public Map<Symbol, Symbol> expressionMapping() {
-        return expressionMapping;
-    }
-
-    @Override
     public List<AbstractTableRelation> baseTables() {
         return Lists2.concat(lhs.baseTables(), rhs.baseTables());
     }
@@ -242,6 +235,26 @@ public class HashJoin implements LogicalPlan {
             concreteRelation,
             tableStats
         );
+    }
+
+    @Override
+    public FetchContext createFetchContext(List<Symbol> wantedOutput) {
+        return lhs.createFetchContext(extractColumnsFrom(lhs, wantedOutput))
+            .merge(rhs.createFetchContext(extractColumnsFrom(rhs, wantedOutput)));
+    }
+
+    static List<Symbol> extractColumnsFrom(LogicalPlan plan, List<Symbol> symbols) {
+        ArrayList<Symbol> result = new ArrayList<>();
+        for (Symbol symbol : symbols) {
+            FieldsVisitor.visitFields(symbol, f -> {
+                for (AbstractTableRelation baseTable : plan.baseTables()) {
+                    if (f.relation().getQualifiedName().equals(baseTable.getQualifiedName())) {
+                        result.add(f.pointer());
+                    }
+                }
+            });
+        }
+        return result;
     }
 
     private Tuple<List<Symbol>, List<Symbol>> extractHashJoinSymbolsFromJoinSymbolsAndSplitPerSide(boolean switchedTables) {
