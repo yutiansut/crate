@@ -83,5 +83,9 @@ public class SymbolVisitor<C, R> {
     public R visitSelectSymbol(SelectSymbol selectSymbol, C context) {
         return visitSymbol(selectSymbol, context);
     }
+
+    public R visitFetchIdStub(FetchIdStub fetchIdStub, C context) {
+        return visitReference(fetchIdStub.fetchId(), context);
+    }
 }
 

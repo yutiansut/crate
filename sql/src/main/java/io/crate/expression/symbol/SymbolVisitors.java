@@ -28,8 +28,17 @@ public class SymbolVisitors {
 
     private static final AnyPredicateVisitor ANY_VISITOR = new AnyPredicateVisitor();
 
-    public static boolean any(Predicate<? super Symbol> symbolPredicate, Symbol symbol) {
-        return ANY_VISITOR.process(symbol, symbolPredicate);
+    public static boolean any(Iterable<? extends Symbol> symbols, Predicate<? super Symbol> predicate) {
+        for (Symbol symbol : symbols) {
+            if (any(predicate, symbol)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean any(Predicate<? super Symbol> predicate, Symbol symbol) {
+        return ANY_VISITOR.process(symbol, predicate);
     }
 
     private static class AnyPredicateVisitor extends SymbolVisitor<Predicate<? super Symbol>, Boolean> {
@@ -70,6 +79,11 @@ public class SymbolVisitors {
                 }
             }
             return false;
+        }
+
+        @Override
+        public Boolean visitFetchIdStub(FetchIdStub fetchIdStub, Predicate<? super Symbol> predicate) {
+            return predicate.test(fetchIdStub) || predicate.test(fetchIdStub.fetchId());
         }
 
         @Override

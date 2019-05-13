@@ -39,6 +39,7 @@ import io.crate.execution.dsl.phases.TableFunctionCollectPhase;
 import io.crate.execution.dsl.projection.builder.ProjectionBuilder;
 import io.crate.execution.engine.pipeline.TopN;
 import io.crate.expression.predicate.MatchPredicate;
+import io.crate.expression.symbol.FetchIdStub;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.SelectSymbol;
@@ -47,7 +48,6 @@ import io.crate.expression.symbol.SymbolVisitor;
 import io.crate.expression.symbol.SymbolVisitors;
 import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.Reference;
-import io.crate.metadata.RelationName;
 import io.crate.metadata.RoutingProvider;
 import io.crate.metadata.RowGranularity;
 import io.crate.metadata.doc.DocSysColumns;
@@ -148,7 +148,7 @@ public class Collect implements LogicalPlan {
                                                 Set<Symbol> usedBeforeNextFetch,
                                                 WhereClause where) {
         if (tableRelation instanceof DocTableRelation) {
-            return generateToCollectWithFetch(((DocTableRelation) tableRelation).tableInfo().ident(), toCollect, usedBeforeNextFetch);
+            return generateToCollectWithFetch(((DocTableRelation) tableRelation), toCollect, usedBeforeNextFetch);
         } else {
             if (where.hasQuery()) {
                 NoPredicateVisitor.ensureNoMatchPredicate(where.query());
@@ -157,7 +157,7 @@ public class Collect implements LogicalPlan {
         }
     }
 
-    private static List<Symbol> generateToCollectWithFetch(RelationName relationName,
+    private static List<Symbol> generateToCollectWithFetch(DocTableRelation tableRelation,
                                                            List<Symbol> toCollect,
                                                            Set<Symbol> usedColumns) {
 
@@ -178,9 +178,8 @@ public class Collect implements LogicalPlan {
         if (fetchable.isEmpty()) {
             return toCollect;
         }
-        Reference fetchIdRef = DocSysColumns.forTable(relationName, DocSysColumns.FETCHID);
         ArrayList<Symbol> preFetchSymbols = new ArrayList<>(usedColumns.size() + 1);
-        preFetchSymbols.add(fetchIdRef);
+        preFetchSymbols.add(new FetchIdStub(tableRelation, fetchable));
         preFetchSymbols.addAll(usedColumns);
         if (scoreCol != null) {
             preFetchSymbols.add(scoreCol);
