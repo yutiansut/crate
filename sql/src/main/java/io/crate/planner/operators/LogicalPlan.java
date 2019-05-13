@@ -36,7 +36,9 @@ import io.crate.planner.PlannerContext;
 import io.crate.planner.TableStats;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -113,7 +115,28 @@ public interface LogicalPlan extends Plan {
      */
     Collection<Symbol> usedColumns();
 
-    LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates);
+    default LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates) {
+        HashSet<Symbol> allUsedColumns = new HashSet<>(usedColumns());
+        allUsedColumns.addAll(columnsUsedByParent);
+
+        HashSet<Symbol> updatedFetchCandidates = new HashSet<>(fetchCandidates);
+        updatedFetchCandidates.removeAll(usedColumns());
+
+        List<LogicalPlan> sources = sources();
+        List<LogicalPlan> updatesSources = new ArrayList<>(sources.size());
+        boolean anyChanged = false;
+        for (LogicalPlan source : sources) {
+            LogicalPlan prunedSource = source.pruneOutputs(allUsedColumns, updatedFetchCandidates);
+            updatesSources.add(prunedSource);
+            anyChanged = anyChanged || source != prunedSource;
+        }
+        if (anyChanged) {
+            return replaceSources(updatesSources);
+        } else {
+            return this;
+        }
+    }
+
 
     /**
      * Indicates if the operators which are added on top of this LogicalPlan should operate on a shard level.

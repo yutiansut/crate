@@ -386,6 +386,13 @@ public class LogicalPlannerTest extends CrateDummyClusterServiceUnitTest {
                 sb.append("]\n");
                 plan = eval.source;
             }
+            if (plan instanceof Fetch) {
+                Fetch fetch = (Fetch) plan;
+                startLine("Fetch[");
+                addSymbolsList(fetch.outputs());
+                sb.append("]\n");
+                plan = fetch.source;
+            }
             if (plan instanceof Limit) {
                 Limit limit = (Limit) plan;
                 startLine("Limit[");

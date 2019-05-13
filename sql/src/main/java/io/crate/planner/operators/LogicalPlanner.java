@@ -189,7 +189,7 @@ public class LogicalPlanner {
         LogicalPlan logicalPlan = plan(relation, subqueryPlanner, true, functions, coordinatorTxnCtx)
             .build(tableStats);
 
-        LogicalPlan optimizedPlan = tryOptimize(logicalPlan);
+        LogicalPlan optimizedPlan = FETCH_OPTIMIZER.optimize(tryOptimize(logicalPlan));
 
         return MultiPhase.createIfNeeded(optimizedPlan, relation, subqueryPlanner);
     }
@@ -422,7 +422,7 @@ public class LogicalPlanner {
             if (logicalPlan == null) {
                 throw new UnsupportedOperationException("Cannot create plan for: " + relation);
             }
-            return new RootRelationBoundary(FETCH_OPTIMIZER.optimize(logicalPlan));
+            return new RootRelationBoundary(logicalPlan);
         }
 
         @Override

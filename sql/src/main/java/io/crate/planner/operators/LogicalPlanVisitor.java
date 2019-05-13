@@ -50,7 +50,7 @@ public class LogicalPlanVisitor<C, R> {
         return visitPlan(logicalPlan, context);
     }
 
-    public R visitFetchOrEval(Eval logicalPlan, C context) {
+    public R visitEval(Eval logicalPlan, C context) {
         return visitPlan(logicalPlan, context);
     }
 
@@ -104,5 +104,9 @@ public class LogicalPlanVisitor<C, R> {
 
     public R visitWindowAgg(WindowAgg windowAgg, C context) {
         return visitPlan(windowAgg, context);
+    }
+
+    public R visitFetch(Fetch fetch, C context) {
+        return visitPlan(fetch, context);
     }
 }

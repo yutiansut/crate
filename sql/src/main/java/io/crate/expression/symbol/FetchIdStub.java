@@ -23,8 +23,9 @@
 package io.crate.expression.symbol;
 
 import io.crate.analyze.relations.DocTableRelation;
+import io.crate.metadata.Reference;
+import io.crate.metadata.doc.DocSysColumns;
 import io.crate.types.DataType;
-import io.crate.types.DataTypes;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
 import java.io.IOException;
@@ -34,34 +35,44 @@ public class FetchIdStub extends Symbol {
 
     private final DocTableRelation relation;
     private final Set<Symbol> fetchCandidates;
+    private final Reference fetchId;
 
     public FetchIdStub(DocTableRelation relation, Set<Symbol> fetchCandidates) {
         this.relation = relation;
         this.fetchCandidates = fetchCandidates;
+        this.fetchId = DocSysColumns.forTable(relation.tableInfo().ident(), DocSysColumns.FETCHID);
+    }
+
+    public Set<Symbol> fetchCandidates() {
+        return fetchCandidates;
+    }
+
+    public DocTableRelation relation() {
+        return relation;
     }
 
     @Override
     public SymbolType symbolType() {
-        return SymbolType.FETCH_ID_STUB;
+        return fetchId.symbolType();
     }
 
     @Override
     public <C, R> R accept(SymbolVisitor<C, R> visitor, C context) {
-        return visitor.visitFetchIdStub(this, context);
+        return fetchId.accept(visitor, context);
     }
 
     @Override
     public DataType valueType() {
-        return DataTypes.LONG;
+        return fetchId.valueType();
     }
 
     @Override
     public String representation() {
-        return "_fetchId";
+        return fetchId.representation();
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        throw new UnsupportedOperationException("Streaming a FetchIdStub is not supported");
+        fetchId.writeTo(out);
     }
 }

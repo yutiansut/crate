@@ -40,7 +40,6 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 
 /**
@@ -97,11 +96,6 @@ public final class Eval implements LogicalPlan {
     @Override
     public Collection<Symbol> usedColumns() {
         return source.usedColumns();
-    }
-
-    @Override
-    public LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates) {
-        return source.pruneOutputs(columnsUsedByParent, fetchCandidates);
     }
 
     @Override
@@ -174,6 +168,6 @@ public final class Eval implements LogicalPlan {
 
     @Override
     public <C, R> R accept(LogicalPlanVisitor<C, R> visitor, C context) {
-        return visitor.visitFetchOrEval(this, context);
+        return visitor.visitEval(this, context);
     }
 }

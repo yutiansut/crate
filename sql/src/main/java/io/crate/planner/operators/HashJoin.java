@@ -60,6 +60,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.crate.planner.operators.LogicalPlanner.NO_LIMIT;
+import static io.crate.planner.operators.LogicalPlanner.extractColumns;
 
 public class HashJoin implements LogicalPlan {
 
@@ -71,6 +72,7 @@ public class HashJoin implements LogicalPlan {
     final LogicalPlan rhs;
     final LogicalPlan lhs;
     private final Map<Symbol, Symbol> expressionMapping;
+    private final Set<Symbol> usedColumns;
 
     public HashJoin(LogicalPlan lhs,
                     LogicalPlan rhs,
@@ -84,6 +86,7 @@ public class HashJoin implements LogicalPlan {
         this.joinCondition = joinCondition;
         this.tableStats = tableStats;
         this.expressionMapping = Maps.concat(lhs.expressionMapping(), rhs.expressionMapping());
+        this.usedColumns = extractColumns(joinCondition);
     }
 
     public JoinType joinType() {
@@ -221,12 +224,14 @@ public class HashJoin implements LogicalPlan {
 
     @Override
     public Collection<Symbol> usedColumns() {
-        return null;
+        return usedColumns;
     }
 
     @Override
     public LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates) {
-        return null;
+
+
+        return this;
     }
 
     @Override

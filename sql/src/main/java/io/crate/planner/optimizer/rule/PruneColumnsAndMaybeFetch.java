@@ -73,7 +73,7 @@ public final class PruneColumnsAndMaybeFetch implements Rule<LogicalPlan> {
         if (anySourcePruned) {
             LogicalPlan prunedPlan = plan.replaceSources(prunedSources);
             if (prunedPlan.outputs().stream().anyMatch(p -> p instanceof FetchIdStub)) {
-                return new Fetch(prunedPlan);
+                return new Fetch(prunedPlan, plan.outputs());
             }
             return prunedPlan;
         } else {

@@ -27,10 +27,8 @@ import io.crate.expression.symbol.SelectSymbol;
 import io.crate.expression.symbol.Symbol;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public abstract class ForwardingLogicalPlan implements LogicalPlan {
 
@@ -84,24 +82,5 @@ public abstract class ForwardingLogicalPlan implements LogicalPlan {
     @Override
     public long estimatedRowSize() {
         return source.estimatedRowSize();
-    }
-
-    @Override
-    public LogicalPlan pruneOutputs(Collection<Symbol> columnsUsedByParent, Set<Symbol> fetchCandidates) {
-        final LogicalPlan newSource;
-        if (usedColumns().isEmpty()) {
-            newSource = source.pruneOutputs(columnsUsedByParent, fetchCandidates);
-        } else {
-            HashSet<Symbol> allUsedColumns = new HashSet<>(usedColumns());
-            allUsedColumns.addAll(columnsUsedByParent);
-            HashSet<Symbol> updatedFetchCandidates = new HashSet<>(fetchCandidates);
-            updatedFetchCandidates.removeAll(usedColumns());
-            newSource = source.pruneOutputs(allUsedColumns, updatedFetchCandidates);
-        }
-        if (source == newSource) {
-            return this;
-        } else {
-            return replaceSources(List.of(newSource));
-        }
     }
 }
