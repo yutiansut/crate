@@ -44,53 +44,38 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * An Operator that marks the boundary of a relation.
- * In relational algebra terms this is a "no-op" operator - it doesn't apply any modifications on the source relation.
- *
- * It is used to take care of the field mapping (providing {@link LogicalPlan#expressionMapping()})
- * In addition it takes care of MultiPhase planning.
- */
 public class RelationBoundary extends ForwardingLogicalPlan {
 
     public static LogicalPlan.Builder create(LogicalPlan.Builder sourceBuilder,
                                              AnalyzedRelation relation,
                                              SubqueryPlanner subqueryPlanner) {
         return (tableStats) -> {
-            HashMap<Symbol, Symbol> expressionMapping = new HashMap<>();
             HashMap<Symbol, Symbol> reverseMapping = new HashMap<>();
             List<Field> fields = relation.fields();
             for (int i = 0; i < fields.size(); i++) {
                 Field field = fields.get(i);
                 Symbol outputAtSamePosition = relation.outputs().get(i);
-                expressionMapping.put(field, outputAtSamePosition);
                 reverseMapping.put(outputAtSamePosition, field);
             }
             LogicalPlan source = sourceBuilder.build(tableStats);
             for (Symbol symbol : source.outputs()) {
                 RefVisitor.visitRefs(symbol, r -> {
                     Field field = new Field(relation, r.column(), r);
-                    if (reverseMapping.putIfAbsent(r, field) == null) {
-                        expressionMapping.put(field, r);
-                    }
+                    reverseMapping.putIfAbsent(r, field);
                 });
                 FieldsVisitor.visitFields(symbol, f -> {
                     Field field = new Field(relation, f.path(), f);
-                    if (reverseMapping.putIfAbsent(f, field) == null) {
-                        expressionMapping.put(field, f);
-                    }
+                    reverseMapping.putIfAbsent(f, field);
                 });
             }
             List<Symbol> outputs = OperatorUtils.mappedSymbols(source.outputs(), reverseMapping);
-            expressionMapping.putAll(source.expressionMapping());
             Map<LogicalPlan, SelectSymbol> subQueries = subqueryPlanner.planSubQueries(relation);
-            return new RelationBoundary(source, relation, outputs, expressionMapping, reverseMapping, subQueries);
+            return new RelationBoundary(source, relation, outputs, reverseMapping, subQueries);
         };
     }
 
     private final Map<LogicalPlan, SelectSymbol> dependencies;
     private final List<Symbol> outputs;
-    private final Map<Symbol, Symbol> expressionMapping;
 
     private final AnalyzedRelation relation;
     private final Map<Symbol, Symbol> reverseMapping;
@@ -98,12 +83,10 @@ public class RelationBoundary extends ForwardingLogicalPlan {
     public RelationBoundary(LogicalPlan source,
                             AnalyzedRelation relation,
                             List<Symbol> outputs,
-                            Map<Symbol, Symbol> expressionMapping,
                             Map<Symbol, Symbol> reverseMapping,
                             Map<LogicalPlan, SelectSymbol> subQueries) {
         super(source);
         this.outputs = outputs;
-        this.expressionMapping = expressionMapping;
         Map<LogicalPlan, SelectSymbol> allSubQueries = new HashMap<>();
         allSubQueries.putAll(subQueries);
         allSubQueries.putAll(source.dependencies());
@@ -136,18 +119,12 @@ public class RelationBoundary extends ForwardingLogicalPlan {
     }
 
     @Override
-    public Map<Symbol, Symbol> expressionMapping() {
-        return expressionMapping;
-    }
-
-    @Override
     public LogicalPlan replaceSources(List<LogicalPlan> sources) {
         LogicalPlan newSource = Lists2.getOnlyElement(sources);
         return new RelationBoundary(
             newSource,
             relation,
             OperatorUtils.mappedSymbols(newSource.outputs(), reverseMapping),
-            expressionMapping,
             reverseMapping,
             dependencies
         );
