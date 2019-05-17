@@ -16,30 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.elasticsearch.common;
 
-package org.elasticsearch.transport;
-
-import org.elasticsearch.Version;
-
-import java.io.IOException;
+import org.elasticsearch.action.ActionListener;
 
 /**
- * A transport channel allows to send a response to a request on the channel.
+ * A {@link java.util.function.BiFunction}-like interface designed to be used with asynchronous executions.
  */
-public interface TransportChannel {
+public interface AsyncBiFunction<T,U,C> {
 
-    String getProfileName();
-
-    String getChannelType();
-
-    void sendResponse(TransportResponse response) throws IOException;
-
-    void sendResponse(Exception exception) throws IOException;
-
-    /**
-     * Returns the version of the other party that this channel will send a response to.
-     */
-    default Version getVersion() {
-        return Version.CURRENT;
-    }
+    void apply(T t, U u, ActionListener<C> listener);
 }

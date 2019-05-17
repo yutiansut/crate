@@ -16,30 +16,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.elasticsearch.common.util.concurrent;
 
-package org.elasticsearch.transport;
-
-import org.elasticsearch.Version;
-
-import java.io.IOException;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * A transport channel allows to send a response to a request on the channel.
+ * Runnable that can only be run one time.
  */
-public interface TransportChannel {
+public class RunOnce implements Runnable {
 
-    String getProfileName();
+    private final Runnable delegate;
+    private final AtomicBoolean hasRun;
 
-    String getChannelType();
+    public RunOnce(final Runnable delegate) {
+        this.delegate = Objects.requireNonNull(delegate);
+        this.hasRun = new AtomicBoolean(false);
+    }
 
-    void sendResponse(TransportResponse response) throws IOException;
-
-    void sendResponse(Exception exception) throws IOException;
+    @Override
+    public void run() {
+        if (hasRun.compareAndSet(false, true)) {
+            delegate.run();
+        }
+    }
 
     /**
-     * Returns the version of the other party that this channel will send a response to.
+     * {@code true} if the {@link RunOnce} has been executed once.
      */
-    default Version getVersion() {
-        return Version.CURRENT;
+    public boolean hasRun() {
+        return hasRun.get();
     }
 }

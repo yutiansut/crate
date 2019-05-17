@@ -31,8 +31,8 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.CancellableThreads;
+import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.internal.io.IOUtils;
@@ -91,20 +91,20 @@ public class MockTcpTransport extends TcpTransport {
     private final ExecutorService executor;
     private final Version mockVersion;
 
-    public MockTcpTransport(Settings settings, ThreadPool threadPool, BigArrays bigArrays,
+    public MockTcpTransport(Settings settings, ThreadPool threadPool, PageCacheRecycler pageCacheRecycler,
                             CircuitBreakerService circuitBreakerService, NamedWriteableRegistry namedWriteableRegistry,
                             NetworkService networkService) {
-        this(settings, threadPool, bigArrays, circuitBreakerService, namedWriteableRegistry, networkService,
+        this(settings, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService,
              Version.CURRENT);
     }
 
-    public MockTcpTransport(Settings settings, ThreadPool threadPool, BigArrays bigArrays,
+    public MockTcpTransport(Settings settings, ThreadPool threadPool, PageCacheRecycler pageCacheRecycler,
                             CircuitBreakerService circuitBreakerService, NamedWriteableRegistry namedWriteableRegistry,
                             NetworkService networkService, Version mockVersion) {
-        super("mock-tcp-transport",
-              settings,
+        super(settings,
+              Version.CURRENT,
               threadPool,
-              bigArrays,
+              pageCacheRecycler,
               circuitBreakerService,
               namedWriteableRegistry,
               networkService);
@@ -114,6 +114,8 @@ public class MockTcpTransport extends TcpTransport {
                                                                                  Transports.TEST_MOCK_TRANSPORT_THREAD_PREFIX));
         this.mockVersion = mockVersion;
     }
+
+
 
     @Override
     protected MockChannel bind(final String name, InetSocketAddress address) throws IOException {

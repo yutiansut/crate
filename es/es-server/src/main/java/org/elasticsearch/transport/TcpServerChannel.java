@@ -19,27 +19,23 @@
 
 package org.elasticsearch.transport;
 
-import org.elasticsearch.Version;
+import org.elasticsearch.common.network.CloseableChannel;
 
-import java.io.IOException;
+import java.net.InetSocketAddress;
+
 
 /**
- * A transport channel allows to send a response to a request on the channel.
+ * This is a tcp channel representing a server channel listening for new connections. It is the server
+ * channel abstraction used by the {@link TcpTransport} and {@link TransportService}. All tcp transport
+ * implementations must return server channels that adhere to the required method contracts.
  */
-public interface TransportChannel {
-
-    String getProfileName();
-
-    String getChannelType();
-
-    void sendResponse(TransportResponse response) throws IOException;
-
-    void sendResponse(Exception exception) throws IOException;
+public interface TcpServerChannel extends CloseableChannel {
 
     /**
-     * Returns the version of the other party that this channel will send a response to.
+     * Returns the local address for this channel.
+     *
+     * @return the local address of this channel.
      */
-    default Version getVersion() {
-        return Version.CURRENT;
-    }
+    InetSocketAddress getLocalAddress();
+
 }

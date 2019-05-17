@@ -17,29 +17,21 @@
  * under the License.
  */
 
-package org.elasticsearch.transport;
+package org.elasticsearch.transport.netty4;
 
-import org.elasticsearch.Version;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 
-import java.io.IOException;
+final class ESLoggingHandler extends LoggingHandler {
 
-/**
- * A transport channel allows to send a response to a request on the channel.
- */
-public interface TransportChannel {
+    ESLoggingHandler() {
+        super(LogLevel.TRACE);
+    }
 
-    String getProfileName();
-
-    String getChannelType();
-
-    void sendResponse(TransportResponse response) throws IOException;
-
-    void sendResponse(Exception exception) throws IOException;
-
-    /**
-     * Returns the version of the other party that this channel will send a response to.
-     */
-    default Version getVersion() {
-        return Version.CURRENT;
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        // We do not want to log read complete events because we log inbound messages in the TcpTransport.
+        ctx.fireChannelReadComplete();
     }
 }
