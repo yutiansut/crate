@@ -42,6 +42,7 @@ import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Symbols;
 import io.crate.protocols.http.Headers;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -55,7 +56,7 @@ import io.netty.handler.codec.http.QueryStringDecoder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.breaker.CircuitBreaker;
-import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
@@ -64,7 +65,9 @@ import org.elasticsearch.http.netty4.cors.Netty4CorsHandler;
 import org.elasticsearch.transport.netty4.Netty4Utils;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -150,6 +153,18 @@ public class SqlHttpHandler extends SimpleChannelInboundHandler<FullHttpRequest>
         super.channelUnregistered(ctx);
     }
 
+    private static ByteBuf toByteBuf(XContentBuilder xContentBuilder) {
+        xContentBuilder.close();
+        try (var stream = xContentBuilder.getOutputStream()) {
+            if (stream instanceof ByteArrayOutputStream) {
+                return Unpooled.wrappedBuffer(((ByteArrayOutputStream) stream).toByteArray());
+            }
+            return Netty4Utils.toByteBuf(((BytesStream) stream).bytes());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     private void sendResponse(ChannelHandlerContext ctx,
                               FullHttpRequest request,
                               Map<String, List<String>> parameters,
@@ -159,7 +174,7 @@ public class SqlHttpHandler extends SimpleChannelInboundHandler<FullHttpRequest>
         final DefaultFullHttpResponse resp;
         final ByteBuf content;
         if (t == null) {
-            content = Netty4Utils.toByteBuf(BytesReference.bytes(result));
+            content = toByteBuf(result);
             resp = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.OK, content);
             resp.headers().add(HttpHeaderNames.CONTENT_TYPE, result.contentType().mediaType());
         } else {
@@ -168,7 +183,7 @@ public class SqlHttpHandler extends SimpleChannelInboundHandler<FullHttpRequest>
             String mediaType;
             boolean includeErrorTrace = paramContainFlag(parameters, "error_trace");
             try (XContentBuilder contentBuilder = HTTPErrorFormatter.convert(sqlActionException, includeErrorTrace)) {
-                content = Netty4Utils.toByteBuf(BytesReference.bytes(contentBuilder));
+                content = toByteBuf(contentBuilder);
                 mediaType = contentBuilder.contentType().mediaType();
             } catch (IOException e) {
                 throw new RuntimeException(e);
