@@ -26,6 +26,7 @@ import io.crate.action.sql.SessionContext;
 import io.crate.analyze.relations.RelationAnalyzer;
 import io.crate.metadata.CoordinatorTxnCtx;
 import io.crate.sql.tree.AstVisitor;
+import io.crate.sql.tree.BeginStatement;
 import io.crate.sql.tree.Delete;
 import io.crate.sql.tree.Explain;
 import io.crate.sql.tree.InsertFromSubquery;
@@ -126,6 +127,11 @@ class UnboundAnalyzer {
             Query query = showStatementAnalyzer.rewriteShowTransaction();
             return relationAnalyzer.analyzeUnbound(
                 query, context.transactionContext(), ParamTypeHints.EMPTY);
+        }
+
+        @Override
+        public AnalyzedStatement visitBegin(BeginStatement node, Analysis context) {
+            return new AnalyzedBegin();
         }
 
         @Override

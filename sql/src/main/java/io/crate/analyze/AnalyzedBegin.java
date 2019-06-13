@@ -33,4 +33,9 @@ public class AnalyzedBegin implements AnalyzedStatement {
     public boolean isWriteOperation() {
         return false;
     }
+
+    @Override
+    public boolean isUnboundPlanningSupported() {
+        return true;
+    }
 }
