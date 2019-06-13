@@ -430,7 +430,8 @@ public class Session implements AutoCloseable {
                         Lists2::concat));
                 if (deferredExecutionsByStatement.size() == 1) {
                     LOGGER.debug("method=sync bulkExec");
-                    return bulkExec(deferredExecutionsByStatement);
+                    var entry = deferredExecutionsByStatement.entrySet().iterator().next();
+                    return bulkExec(entry.getKey(), entry.getValue());
                 } else {
                     LOGGER.debug("method=sync batchExec");
                     List<? extends CompletableFuture<?>> futures = Lists2.map(
@@ -448,7 +449,7 @@ public class Session implements AutoCloseable {
         }
     }
 
-    private CompletableFuture<?> bulkExec(Map<Statement, List<DeferredExecution>> deferredExecutionsByStatement) {
+    private CompletableFuture<?> bulkExec(Statement statement, List<DeferredExecution> toExec) {
         var jobId = UUID.randomUUID();
         var routingProvider = new RoutingProvider(Randomness.get().nextInt(), planner.getAwarenessAttributes());
         var clusterState = executor.clusterService().state();
@@ -461,15 +462,10 @@ public class Session implements AutoCloseable {
             txnCtx,
             0
         );
-
-        var entry = deferredExecutionsByStatement.entrySet().iterator().next();
-        var statement = entry.getKey();
-        var toExec = entry.getValue();
         var bulkArgs = Lists2.map(toExec, x -> (Row) new RowN(x.portal().params().toArray()));
 
         Analysis analysis = analyzer.boundAnalyze(
             statement, currentTxnCtx, new ParameterContext(Row.EMPTY, bulkArgs));
-
         Plan plan;
         try {
             plan = planner.plan(analysis.analyzedStatement(), plannerContext);
@@ -491,14 +487,14 @@ public class Session implements AutoCloseable {
 
         return allRowCounts
             .exceptionally(t -> null) // swallow exception - failures are set per item in emitResults
-            .thenAccept(ignored -> emitResults(jobId, jobsLogs, toExec, rowCounts))
+            .thenAccept(ignored -> emitRowCountsToResultReceivers(jobId, jobsLogs, toExec, rowCounts))
             .runAfterBoth(allResultReceivers, () -> {});
     }
 
-    private static void emitResults(UUID jobId,
-                                    JobsLogs jobsLogs,
-                                    List<DeferredExecution> executions,
-                                    List<CompletableFuture<Long>> completedRowCounts) {
+    private static void emitRowCountsToResultReceivers(UUID jobId,
+                                                       JobsLogs jobsLogs,
+                                                       List<DeferredExecution> executions,
+                                                       List<CompletableFuture<Long>> completedRowCounts) {
         Long[] cells = new Long[1];
         RowN row = new RowN(cells);
         for (int i = 0; i < completedRowCounts.size(); i++) {
@@ -553,19 +549,17 @@ public class Session implements AutoCloseable {
                 indexName -> executor.clusterService().state().metaData().hasIndex(indexName),
                 resultReceiver,
                 jobId,
-                (newJobId, resultRec) -> {
-                    retryQuery(
-                        newJobId,
-                        analyzedStmt,
-                        routingProvider,
-                        new RowConsumerToResultReceiver(
-                            resultRec,
-                            maxRows,
-                            new JobsLogsUpdateListener(newJobId, jobsLogs)),
-                        params,
-                        txnCtx
-                    );
-                }
+                (newJobId, resultRec) -> retryQuery(
+                    newJobId,
+                    analyzedStmt,
+                    routingProvider,
+                    new RowConsumerToResultReceiver(
+                        resultRec,
+                        maxRows,
+                        new JobsLogsUpdateListener(newJobId, jobsLogs)),
+                    params,
+                    txnCtx
+                )
             );
         }
         jobsLogs.logExecutionStart(
