@@ -30,7 +30,6 @@ import io.crate.types.CollectionType;
 import io.crate.types.DataType;
 import io.crate.types.DataTypes;
 import io.crate.types.ObjectType;
-import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
@@ -43,7 +42,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -97,9 +95,6 @@ public class Literal<ReturnType> extends Symbol implements Input<ReturnType>, Co
         if (value == null) {
             return true;
         }
-        if (type.equals(DataTypes.STRING) && (value instanceof BytesRef || value instanceof String)) {
-            return true;
-        }
         if (type instanceof ArrayType) {
             DataType innerType = ((ArrayType) type).innerType();
             while (innerType instanceof ArrayType && value.getClass().isArray()) {
@@ -107,16 +102,7 @@ public class Literal<ReturnType> extends Symbol implements Input<ReturnType>, Co
                 innerType = ((ArrayType) innerType).innerType();
                 value = ((Object[]) value)[0];
             }
-            if (innerType.equals(DataTypes.STRING)) {
-                for (Object o : ((Object[]) value)) {
-                    if (o != null && !(o instanceof String || o instanceof BytesRef)) {
-                        return false;
-                    }
-                }
-                return true;
-            } else {
-                return Arrays.equals((Object[]) value, ((ArrayType) type).value(value));
-            }
+            return Arrays.equals((Object[]) value, ((ArrayType) type).value(value));
         }
         // types like GeoPoint are represented as arrays
         if (value.getClass().isArray() && Objects.deepEquals(value, type.value(value))) {
@@ -221,9 +207,6 @@ public class Literal<ReturnType> extends Symbol implements Input<ReturnType>, Co
         if (value.getClass().isArray()) {
             return '[' + Stream.of((Object[]) value).map(Literal::stringRepresentation).collect(Collectors.joining(", ")) + ']';
         }
-        if (value instanceof BytesRef) {
-            return "'" + ((BytesRef) value).utf8ToString() + "'";
-        }
         return value.toString();
     }
 
@@ -238,10 +221,6 @@ public class Literal<ReturnType> extends Symbol implements Input<ReturnType>, Co
     }
 
     public static Literal<Object[]> of(Object[] value, DataType dataType) {
-        return new Literal<>(dataType, value);
-    }
-
-    public static Literal<Set> of(Set value, DataType dataType) {
         return new Literal<>(dataType, value);
     }
 
