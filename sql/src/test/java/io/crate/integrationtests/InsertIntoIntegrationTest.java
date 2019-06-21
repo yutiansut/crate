@@ -1429,6 +1429,54 @@ public class InsertIntoIntegrationTest extends SQLTransportIntegrationTest {
     }
 
     @Test
+    public void testInsertDefaultExpressionsInNestedObjects() {
+        execute("create table t (" +
+                " id int," +
+                " o object as (username text, " +
+                "               pwd text default '***', " +
+                "               nested object as (secret text default '***')" +
+                "               )" +
+                ") with (number_of_replicas=0)");
+
+        // do not provide value for nested default expression
+        execute("insert into t (id, o) values (1, {username='crate'})");
+        execute("insert into t (id, o) select 2, {username='crate'}");
+
+        // do provide value for 1st level only nested default expression
+        execute("insert into t (id, o) values (3, {username='crate', pwd='$$$'})");
+        execute("insert into t (id, o) select 4, {username='crate', pwd='$$$'}");
+
+        // do provide value for 2nd level only nested default expression
+        execute("insert into t (id, o) values (5, {username='crate', nested={secret='$$$'}})");
+        execute("insert into t (id, o) select 6, {username='crate', nested={secret='$$$'}}");
+
+        // do provide value for all-level nested default expressions
+        execute("insert into t (id, o) values (7, {username='crate', pwd='$$$', nested={secret='$$$'}})");
+        execute("insert into t (id, o) select 8, {username='crate', pwd='$$$', nested={secret='$$$'}}");
+
+        // do not provide value for top-level object
+        execute("insert into t (id) values (9)");
+        execute("insert into t (id) select 10");
+
+        execute("refresh table t");
+
+        assertThat(
+            printedTable(execute("select * from t order by id").rows()),
+            is("1| {nested={secret=***}, pwd=***, username=crate}\n" +
+               "2| {nested={secret=***}, pwd=***, username=crate}\n" +
+               "3| {nested={secret=***}, pwd=$$$, username=crate}\n" +
+               "4| {nested={secret=***}, pwd=$$$, username=crate}\n" +
+               "5| {nested={secret=$$$}, pwd=***, username=crate}\n" +
+               "6| {nested={secret=$$$}, pwd=***, username=crate}\n" +
+               "7| {nested={secret=$$$}, pwd=$$$, username=crate}\n" +
+               "8| {nested={secret=$$$}, pwd=$$$, username=crate}\n" +
+               "9| {nested={secret=***}, pwd=***}\n" +
+               "10| {nested={secret=***}, pwd=***}\n"
+            )
+        );
+    }
+
+    @Test
     public void testInsertGeneratedExpressionsInNestedObjects() {
         SQLActionException e;
         execute("create table t (" +

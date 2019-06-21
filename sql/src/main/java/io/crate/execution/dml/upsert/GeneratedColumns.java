@@ -77,13 +77,6 @@ public final class GeneratedColumns<T> {
         toValidate = validation == Validation.NONE ? Collections.emptyMap() : new HashMap<>();
         InputFactory.Context<CollectExpression<T, ?>> ctx = inputFactory.ctxForRefs(txnCtx, refResolver);
         toInject = new HashMap<>();
-
-        for (Reference colWithDefault : allDefaultExpressionColumns) {
-            if (!presentColumns.contains(colWithDefault)) {
-                toInject.put(colWithDefault, ctx.add(colWithDefault.defaultExpression()));
-            }
-        }
-
         maybeInjectNested = new HashMap<>();
         Set<String> topLevelPresentColumns = presentColumns
             .stream()
@@ -91,6 +84,15 @@ public final class GeneratedColumns<T> {
             .filter(ColumnIdent::isTopLevel)
             .map(ColumnIdent::name)
             .collect(Collectors.toSet());
+
+        allDefaultExpressionColumns.forEach(
+            r -> processGeneratedExpressionColumn(
+                r,
+                ctx.add(r.defaultExpression()),
+                presentColumns,
+                topLevelPresentColumns,
+                false)
+        );
 
         allGeneratedColumns.forEach(
             r -> processGeneratedExpressionColumn(
