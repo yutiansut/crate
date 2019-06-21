@@ -1427,4 +1427,74 @@ public class InsertIntoIntegrationTest extends SQLTransportIntegrationTest {
                "5| cr8\n")
         );
     }
+
+    @Test
+    public void testInsertGeneratedExpressionsInNestedObjects() {
+        SQLActionException e;
+        execute("create table t (" +
+                " id int," +
+                " o object as (username text, " +
+                "               pwd text as '***', " +
+                "               nested object as (secret text as '***')" +
+                "               )" +
+                ") with (number_of_replicas=0)");
+
+        // do not provide value for nested generated expression
+        execute("insert into t (id, o) values (1, {username='crate'})");
+        execute("insert into t (id, o) select 2, {username='crate'}");
+
+        // provide 'valid' value for 1st level only nested generated expression (given == generated)
+        execute("insert into t (id, o) values (3, {username='crate', pwd='***'})");
+        execute("insert into t (id, o) select 4, {username='crate', pwd='***'}");
+
+        // provide 'valid' value for 2nd level only nested generated expression (given == generated)
+        execute("insert into t (id, o) values (5, {username='crate', nested={secret='***'}})");
+        execute("insert into t (id, o) select 6, {username='crate', nested={secret='***'}}");
+
+        // provide 'valid' values for all-level nested generated expressions (given == generated)
+        execute("insert into t (id, o) values (7, {username='crate', pwd='***', nested={secret='***'}})");
+        execute("insert into t (id, o) select 8, {username='crate', pwd='***', nested={secret='***'}}");
+
+        // provide 'invalid' value for 1st level only nested generated expression (given != generated)
+        e = expectThrows(SQLActionException.class,
+                         () -> execute("insert into t (id, o) values (-3, {username='crate', pwd='$$$'})")
+        );
+        assertThat(e.getMessage(),
+                   containsString("Given value $$$ for generated column o['pwd'] does not match calculation '***' = ***")
+        );
+        // the following does not throw but inserts 0 rows - will assert later
+        execute("insert into t (id, o) select -4, {username='crate', pwd='$$$'}");
+
+        // provide 'invalid' value for 2nd level only nested generated expression (given != generated)
+        e = expectThrows(SQLActionException.class,
+                         () -> execute("insert into t (id, o) values (-5, {username='crate', nested={secret='$$$'}})")
+        );
+        assertThat(e.getMessage(),
+                   containsString("Given value $$$ for generated column o['nested']['secret'] does not match calculation '***' = ***")
+        );
+        // the following does not throw but inserts 0 rows - will assert later
+        execute("insert into t (id, o) select -6, {username='crate', nested={secret='$$$'}}");
+
+        // do not provide value for top-level object
+        execute("insert into t (id) values (9)");
+        execute("insert into t (id) select 10");
+
+        execute("refresh table t");
+
+        // no rows with ids < 0 should be present
+        assertThat(
+            printedTable(execute("select * from t order by id").rows()),
+            is("1| {nested={secret=***}, pwd=***, username=crate}\n" +
+               "2| {nested={secret=***}, pwd=***, username=crate}\n" +
+               "3| {nested={secret=***}, pwd=***, username=crate}\n" +
+               "4| {nested={secret=***}, pwd=***, username=crate}\n" +
+               "5| {nested={secret=***}, pwd=***, username=crate}\n" +
+               "6| {nested={secret=***}, pwd=***, username=crate}\n" +
+               "7| {nested={secret=***}, pwd=***, username=crate}\n" +
+               "8| {nested={secret=***}, pwd=***, username=crate}\n" +
+               "9| {nested={secret=***}, pwd=***}\n" +
+               "10| {nested={secret=***}, pwd=***}\n"
+            )
+        );
+    }
 }

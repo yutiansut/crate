@@ -420,6 +420,10 @@ Others
 Fixes
 =====
 
+- Fixed an issue on ``INSERT`` statements when a table has nested generated
+  columns, so that a given value for such column is validated against the
+  generated value.
+
 - Fixed an issue on ``UNION`` statements when the ``ORDER BY`` points to
   literals of the subrelations which resulted in an exception.
   Example query:
