@@ -214,6 +214,17 @@ public class LogicalPlanner {
             // Fields to point to the left child of the Union.
             return builder;
         }
+        if (relation instanceof OrderedLimitedRelation) {
+            return builder;
+        }
+        if (relation instanceof AliasedAnalyzedRelation) {
+            // Fields retrieved from the aliased relation need to be mapped
+            // dedicated Rename operator?
+            return RelationBoundary.create(builder, relation, subqueryPlanner);
+        }
+        if (relation instanceof MultiSourceSelect) {
+            return builder;
+        }
         return RelationBoundary.create(builder, relation, subqueryPlanner);
     }
 
