@@ -23,7 +23,6 @@
 package io.crate.analyze;
 
 import io.crate.exceptions.ColumnUnknownException;
-import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.WindowFunction;
 import io.crate.sql.tree.FrameBound;
 import io.crate.sql.tree.WindowFrame;
@@ -31,8 +30,6 @@ import io.crate.test.integration.CrateDummyClusterServiceUnitTest;
 import io.crate.testing.SQLExecutor;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.List;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.nullValue;
@@ -53,7 +50,7 @@ public class SelectWindowFunctionAnalyzerTest extends CrateDummyClusterServiceUn
     public void testEmptyOverClause() {
         QueriedSelectRelation<?> analysis = e.analyze("select avg(x) OVER () from t");
 
-        List<Symbol> outputSymbols = analysis.outputs();
+        var outputSymbols = analysis.fields();
         assertThat(outputSymbols.size(), is(1));
         assertThat(outputSymbols.get(0), instanceOf(WindowFunction.class));
         WindowFunction windowFunction = (WindowFunction) outputSymbols.get(0);
@@ -68,7 +65,7 @@ public class SelectWindowFunctionAnalyzerTest extends CrateDummyClusterServiceUn
     public void testOverWithPartitionByClause() {
         QueriedSelectRelation<?> analysis = e.analyze("select avg(x) OVER (PARTITION BY x) from t");
 
-        List<Symbol> outputSymbols = analysis.outputs();
+        var outputSymbols = analysis.fields();
         assertThat(outputSymbols.size(), is(1));
         assertThat(outputSymbols.get(0), instanceOf(WindowFunction.class));
         WindowFunction windowFunction = (WindowFunction) outputSymbols.get(0);
@@ -102,7 +99,7 @@ public class SelectWindowFunctionAnalyzerTest extends CrateDummyClusterServiceUn
     public void testOverWithOrderByClause() {
         QueriedSelectRelation<?> analysis = e.analyze("select avg(x) OVER (ORDER BY x) from t");
 
-        List<Symbol> outputSymbols = analysis.outputs();
+        var outputSymbols = analysis.fields();
         assertThat(outputSymbols.size(), is(1));
         assertThat(outputSymbols.get(0), instanceOf(WindowFunction.class));
         WindowFunction windowFunction = (WindowFunction) outputSymbols.get(0);
@@ -115,7 +112,7 @@ public class SelectWindowFunctionAnalyzerTest extends CrateDummyClusterServiceUn
     public void testOverWithPartitionAndOrderByClauses() {
         QueriedSelectRelation<?> analysis = e.analyze("select avg(x) OVER (PARTITION BY x ORDER BY x) from t");
 
-        List<Symbol> outputSymbols = analysis.outputs();
+        var outputSymbols = analysis.fields();
         assertThat(outputSymbols.size(), is(1));
         assertThat(outputSymbols.get(0), instanceOf(WindowFunction.class));
         WindowFunction windowFunction = (WindowFunction) outputSymbols.get(0);
@@ -130,7 +127,7 @@ public class SelectWindowFunctionAnalyzerTest extends CrateDummyClusterServiceUn
         QueriedSelectRelation<?> analysis = e.analyze("select avg(x) OVER (PARTITION BY x ORDER BY x " +
                                              "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) from t");
 
-        List<Symbol> outputSymbols = analysis.outputs();
+        var outputSymbols = analysis.fields();
         assertThat(outputSymbols.size(), is(1));
         assertThat(outputSymbols.get(0), instanceOf(WindowFunction.class));
         WindowFunction windowFunction = (WindowFunction) outputSymbols.get(0);

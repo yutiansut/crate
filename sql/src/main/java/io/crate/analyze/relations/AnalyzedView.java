@@ -27,8 +27,8 @@ import io.crate.analyze.HavingClause;
 import io.crate.analyze.OrderBy;
 import io.crate.analyze.WhereClause;
 import io.crate.exceptions.ColumnUnknownException;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Symbol;
+import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.RelationName;
 import io.crate.metadata.table.Operation;
@@ -44,7 +44,6 @@ public final class AnalyzedView implements AnalyzedRelation {
     private final String owner;
     private final AnalyzedRelation relation;
     private final Fields fields;
-    private final List<Symbol> outputSymbols;
 
     public AnalyzedView(RelationName name, String owner, AnalyzedRelation relation) {
         this.name = name;
@@ -52,10 +51,9 @@ public final class AnalyzedView implements AnalyzedRelation {
         this.owner = owner;
         this.fields = new Fields(relation.fields().size());
         this.relation = relation;
-        for (Field field : relation.fields()) {
-            fields.add(new Field(this, field.path(), field));
+        for (Symbol field : relation.fields()) {
+            fields.add(Symbols.pathFromSymbol(field), field);
         }
-        this.outputSymbols = List.copyOf(relation.fields());
     }
 
     public String owner() {
@@ -81,7 +79,7 @@ public final class AnalyzedView implements AnalyzedRelation {
     }
 
     @Override
-    public Field getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
+    public Symbol getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
         if (operation != Operation.READ) {
             throw new UnsupportedOperationException("getField on AnalyzedView is only supported for READ operations");
         }
@@ -89,18 +87,13 @@ public final class AnalyzedView implements AnalyzedRelation {
     }
 
     @Override
-    public List<Field> fields() {
+    public List<Symbol> fields() {
         return fields.asList();
     }
 
     @Override
     public QualifiedName getQualifiedName() {
         return qualifiedName;
-    }
-
-    @Override
-    public List<Symbol> outputs() {
-        return outputSymbols;
     }
 
     @Override

@@ -46,12 +46,12 @@ import io.crate.exceptions.RelationUnknown;
 import io.crate.exceptions.RelationValidationException;
 import io.crate.exceptions.UnsupportedFeatureException;
 import io.crate.expression.symbol.Aggregations;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.FieldReplacer;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.SymbolType;
+import io.crate.expression.symbol.Symbols;
 import io.crate.expression.symbol.format.SymbolPrinter;
 import io.crate.expression.tablefunctions.TableFunctionFactory;
 import io.crate.metadata.CoordinatorTxnCtx;
@@ -155,7 +155,7 @@ public class RelationAnalyzer extends DefaultTraversalVisitor<AnalyzedRelation, 
         relationAnalysisContext.addSourceRelation(childRelation.getQualifiedName().toString(), childRelation);
         statementContext.endRelation();
 
-        List<Field> childRelationFields = childRelation.fields();
+        List<Symbol> childRelationFields = childRelation.fields();
         ExpressionAnalyzer expressionAnalyzer = new ExpressionAnalyzer(
             functions,
             statementContext.transactionContext(),
@@ -171,8 +171,8 @@ public class RelationAnalyzer extends DefaultTraversalVisitor<AnalyzedRelation, 
             relationAnalysisContext.sources(),
             expressionAnalyzer,
             expressionAnalysisContext);
-        for (Field field : childRelationFields) {
-            selectAnalysis.add(field.path(), field);
+        for (Symbol field : childRelationFields) {
+            selectAnalysis.add(Symbols.pathFromSymbol(field), field);
         }
         return new QueriedSelectRelation<>(
             false,
@@ -213,14 +213,14 @@ public class RelationAnalyzer extends DefaultTraversalVisitor<AnalyzedRelation, 
     }
 
     private static void ensureUnionOutputsHaveTheSameSize(AnalyzedRelation left, AnalyzedRelation right) {
-        if (left.outputs().size() != right.outputs().size()) {
+        if (left.fields().size() != right.fields().size()) {
             throw new UnsupportedOperationException("Number of output columns must be the same for all parts of a UNION");
         }
     }
 
     private static void ensureUnionOutputsHaveCompatibleTypes(AnalyzedRelation left, AnalyzedRelation right) {
-        List<Symbol> leftOutputs = left.outputs();
-        List<Symbol> rightOutputs = right.outputs();
+        var leftOutputs = left.fields();
+        var rightOutputs = right.fields();
         for (int i = 0; i < leftOutputs.size(); i++) {
             if (!leftOutputs.get(i).valueType().equals(rightOutputs.get(i).valueType())) {
                 throw new UnsupportedOperationException("Corresponding output columns at position: " + (i + 1) +

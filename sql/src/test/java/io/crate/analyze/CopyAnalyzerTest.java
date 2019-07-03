@@ -21,6 +21,7 @@
 
 package io.crate.analyze;
 
+import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.exceptions.OperationOnInaccessibleRelationException;
 import io.crate.exceptions.PartitionUnknownException;
 import io.crate.exceptions.RelationUnknown;
@@ -163,7 +164,7 @@ public class CopyAnalyzerTest extends CrateDummyClusterServiceUnitTest {
     @Test
     public void testCopyToWithColumnList() throws Exception {
         CopyToAnalyzedStatement analysis = e.analyze("copy users (id, name) to DIRECTORY '/tmp'");
-        List<Symbol> outputs = analysis.relation().outputs();
+        List<Symbol> outputs = analysis.relation().fields();
         assertThat(outputs.size(), is(2));
         assertThat(outputs.get(0), isReference("_doc['id']"));
         assertThat(outputs.get(1), isReference("_doc['name']"));

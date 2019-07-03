@@ -115,7 +115,7 @@ class InsertFromSubQueryAnalyzer {
 
         List<Reference> targetColumns =
             new ArrayList<>(resolveTargetColumns(insert.columns(), targetTable, subQueryRelation.fields().size()));
-        validateColumnsAndAddCastsIfNecessary(targetColumns, subQueryRelation.outputs());
+        validateColumnsAndAddCastsIfNecessary(targetColumns, subQueryRelation.fields());
 
         Map<Reference, Symbol> onDuplicateKeyAssignments = processUpdateAssignments(
             tableRelation,
@@ -140,7 +140,7 @@ class InsertFromSubQueryAnalyzer {
             node.subQuery(), analysis.transactionContext(), analysis.parameterContext());
 
         List<Reference> targetColumns = new ArrayList<>(resolveTargetColumns(node.columns(), tableInfo, source.fields().size()));
-        validateColumnsAndAddCastsIfNecessary(targetColumns, source.outputs());
+        validateColumnsAndAddCastsIfNecessary(targetColumns, source.fields());
 
         verifyOnConflictTargets(node.getDuplicateKeyContext(), tableInfo);
 
@@ -210,7 +210,7 @@ class InsertFromSubQueryAnalyzer {
      * or complete table schema
      */
     private static void validateColumnsAndAddCastsIfNecessary(List<Reference> targetColumns,
-                                                              List<Symbol> sources) {
+                                                              List<? extends Symbol> sources) {
         if (targetColumns.size() != sources.size()) {
             Collector<CharSequence, ?, String> commaJoiner = Collectors.joining(", ");
             throw new IllegalArgumentException(String.format(Locale.ENGLISH,

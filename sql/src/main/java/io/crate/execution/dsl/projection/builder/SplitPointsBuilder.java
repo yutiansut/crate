@@ -72,7 +72,7 @@ public final class SplitPointsBuilder extends DefaultTraversalSymbolVisitor<Spli
         }
     }
 
-    private void process(Collection<Symbol> symbols, Context context) {
+    private void process(Collection<? extends Symbol> symbols, Context context) {
         for (Symbol symbol : symbols) {
             context.foundAggregateOrTableFunction = false;
             process(symbol, context);
@@ -84,7 +84,7 @@ public final class SplitPointsBuilder extends DefaultTraversalSymbolVisitor<Spli
 
     public static SplitPoints create(AnalyzedRelation relation) {
         Context context = new Context();
-        INSTANCE.process(relation.outputs(), context);
+        INSTANCE.process(relation.fields(), context);
         OrderBy orderBy = relation.orderBy();
         if (orderBy != null) {
             INSTANCE.process(orderBy.orderBySymbols(), context);

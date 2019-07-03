@@ -68,18 +68,13 @@ public class DummyRelation implements AnalyzedRelation {
     }
 
     @Override
-    public List<Field> fields() {
-        return null;
+    public List<Symbol> fields() {
+        return List.of();
     }
 
     @Override
     public QualifiedName getQualifiedName() {
         return name;
-    }
-
-    @Override
-    public List<Symbol> outputs() {
-        return null;
     }
 
     @Override

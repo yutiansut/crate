@@ -31,6 +31,7 @@ import io.crate.exceptions.ColumnUnknownException;
 import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.FieldReplacer;
 import io.crate.expression.symbol.Symbol;
+import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.table.Operation;
 import io.crate.sql.tree.QualifiedName;
@@ -43,8 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-
-import static com.google.common.collect.Lists.transform;
 
 public class MultiSourceSelect implements AnalyzedRelation {
 
@@ -76,7 +75,7 @@ public class MultiSourceSelect implements AnalyzedRelation {
         fields = new Fields(outputNames.size());
         Iterator<Symbol> outputsIterator = querySpec.outputs().iterator();
         for (ColumnIdent path : outputNames) {
-            fields.add(new Field(this, path, outputsIterator.next()));
+            fields.add(path, outputsIterator.next());
         }
     }
 
@@ -103,15 +102,15 @@ public class MultiSourceSelect implements AnalyzedRelation {
     }
 
     @Override
-    public Field getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException {
+    public Symbol getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException {
         if (operation != Operation.READ) {
             throw new UnsupportedOperationException(
                 "getField on MultiSourceSelect is only supported for READ operations");
         }
-        Field field = fields.get(path);
+        Symbol field = fields.get(path);
         if (field == null && !path.isTopLevel()) {
             for (AnalyzedRelation value : sources.values()) {
-                Field childField = null;
+                Symbol childField = null;
                 try {
                     childField = value.getField(path, operation);
                 } catch (ColumnUnknownException ignored) {
@@ -124,26 +123,19 @@ public class MultiSourceSelect implements AnalyzedRelation {
                     field = new Field(this, path, childField);
                 }
             }
-            if (field == null) {
-                return Relations.resolveSubscriptOnAliasedField(path, fields, operation);
-            }
+            return field;
         }
         return field;
     }
 
     @Override
-    public List<Field> fields() {
+    public List<Symbol> fields() {
         return fields.asList();
     }
 
     @Override
     public QualifiedName getQualifiedName() {
         return qualifiedName;
-    }
-
-    @Override
-    public List<Symbol> outputs() {
-        return querySpec.outputs();
     }
 
     @Override
@@ -212,7 +204,7 @@ public class MultiSourceSelect implements AnalyzedRelation {
         return new MultiSourceSelect(
             isDistinct,
             mappedSources,
-            transform(fields.asList(), Field::path),
+            Lists2.map(fields.asList(), Symbols::pathFromSymbol),
             querySpec.map(mapSymbol),
             Lists2.map(joinPairs, joinPair -> joinPair.mapCondition(mapSymbol))
         );

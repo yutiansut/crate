@@ -22,12 +22,12 @@
 package io.crate.analyze;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import io.crate.action.sql.SessionContext;
 import io.crate.analyze.relations.AliasedAnalyzedRelation;
 import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.analyze.relations.TableFunctionRelation;
 import io.crate.analyze.relations.TableRelation;
+import io.crate.common.collections.Lists2;
 import io.crate.exceptions.AmbiguousColumnException;
 import io.crate.exceptions.ColumnUnknownException;
 import io.crate.exceptions.ConversionException;
@@ -47,12 +47,12 @@ import io.crate.expression.scalar.SubscriptFunction;
 import io.crate.expression.scalar.arithmetic.ArithmeticFunctions;
 import io.crate.expression.scalar.geo.DistanceFunction;
 import io.crate.expression.scalar.regex.MatchesFunction;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.SelectSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.SymbolType;
+import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.CoordinatorTxnCtx;
 import io.crate.metadata.FunctionInfo;
 import io.crate.metadata.sys.SysNodesTableInfo;
@@ -71,7 +71,6 @@ import org.hamcrest.core.IsInstanceOf;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -160,7 +159,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
         assertThat(table.groupBy().isEmpty(), is(true));
         assertThat(table.orderBy(), notNullValue());
 
-        assertThat(table.outputs().size(), is(1));
+        assertThat(table.fields().size(), is(1));
         assertThat(table.orderBy().orderBySymbols().size(), is(1));
         assertThat(table.orderBy().reverseFlags().length, is(1));
 
@@ -181,28 +180,22 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
         assertThat(relation.limit(), is(Literal.of(2L)));
 
         assertThat(relation.groupBy().isEmpty(), is(true));
-        assertThat(relation.outputs().size(), is(1));
-        assertThat(relation.outputs().get(0), isReference("load['5']"));
+        assertThat(relation.fields().size(), is(1));
+        assertThat(relation.fields().get(0), isReference("load['5']"));
     }
 
     @Test
     public void testAggregationSelect() throws Exception {
         AnalyzedRelation relation = analyze("select avg(load['5']) from sys.nodes");
         assertThat(relation.groupBy().isEmpty(), is(true));
-        assertThat(relation.outputs().size(), is(1));
-        Function col1 = (Function) relation.outputs().get(0);
+        assertThat(relation.fields().size(), is(1));
+        Function col1 = (Function) relation.fields().get(0);
         assertThat(col1.info().type(), is(FunctionInfo.Type.AGGREGATE));
         assertThat(col1.info().ident().name(), is(AverageAggregation.NAME));
     }
 
     private List<String> outputNames(AnalyzedRelation relation) {
-        return Lists.transform(relation.fields(), new com.google.common.base.Function<Field, String>() {
-            @Nullable
-            @Override
-            public String apply(Field input) {
-                return input.path().sqlFqn();
-            }
-        });
+        return Lists2.map(relation.fields(), s -> Symbols.pathFromSymbol(s).sqlFqn());
     }
 
     @Test
@@ -210,7 +203,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
         AnalyzedRelation relation = analyze("select * from sys.cluster");
         assertThat(relation.fields().size(), is(5));
         assertThat(outputNames(relation), containsInAnyOrder("id", "license", "master_node", "name", "settings"));
-        assertThat(relation.outputs().size(), is(5));
+        assertThat(relation.fields().size(), is(5));
     }
 
     @Test
@@ -237,7 +230,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
             "thread_pools",
             "version"
         ));
-        assertThat(relation.outputs().size(), is(outputNames.size()));
+        assertThat(relation.fields().size(), is(outputNames.size()));
     }
 
     @Test
@@ -324,7 +317,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
 
         assertThat(relation.orderBy(), notNullValue());
         assertThat(relation.orderBy().orderBySymbols().size(), is(1));
-        assertThat(relation.orderBy().orderBySymbols().get(0), is(relation.outputs().get(0)));
+        assertThat(relation.orderBy().orderBySymbols().get(0), is(relation.fields().get(0)));
     }
 
     @Test
@@ -442,7 +435,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testRewriteCountStringLiteral() {
         AnalyzedRelation relation = analyze("select count('id') from sys.nodes");
-        List<Symbol> outputSymbols = relation.outputs();
+        var outputSymbols = relation.fields();
         assertThat(outputSymbols.size(), is(1));
         assertThat(outputSymbols.get(0), instanceOf(Function.class));
         assertThat(((Function) outputSymbols.get(0)).arguments().size(), is(0));
@@ -451,7 +444,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testRewriteCountNull() {
         AnalyzedRelation relation = analyze("select count(null) from sys.nodes");
-        List<Symbol> outputSymbols = relation.outputs();
+        var outputSymbols = relation.fields();
         assertThat(outputSymbols.size(), is(1));
         assertThat(outputSymbols.get(0), instanceOf(Literal.class));
         assertThat(((Literal) outputSymbols.get(0)).value(), is(0L));
@@ -501,7 +494,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
         AnalyzedRelation relation = analyze("select count(distinct load['1']) from sys.nodes");
 
         assertThat(relation.hasAggregates(), is(true));
-        Symbol output = relation.outputs().get(0);
+        Symbol output = relation.fields().get(0);
         assertThat(output, isFunction("collection_count"));
 
         Function collectionCount = (Function) output;
@@ -520,7 +513,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     public void testSelectDistinctWithFunction() {
         AnalyzedRelation relation = analyze("select distinct id + 1 from users");
         assertThat(relation.isDistinct(), is(true));
-        assertThat(relation.outputs(), isSQL("add(doc.users.id, 1)"));
+        assertThat(relation.fields(), isSQL("add(doc.users.id, 1)"));
     }
 
     @Test
@@ -528,7 +521,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
         AnalyzedRelation distinctRelation = analyze("select distinct id, name from users group by id, name");
         AnalyzedRelation groupByRelation = analyze("select id, name from users group by id, name");
         assertThat(distinctRelation.groupBy(), equalTo(groupByRelation.groupBy()));
-        assertThat(distinctRelation.outputs(), equalTo(groupByRelation.outputs()));
+        assertThat(distinctRelation.fields(), equalTo(groupByRelation.fields()));
     }
 
     @Test
@@ -542,14 +535,14 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     public void testDistinctOnLiteral() {
         AnalyzedRelation relation = analyze("select distinct [1,2,3] from users");
         assertThat(relation.isDistinct(), is(true));
-        assertThat(relation.outputs(), isSQL("[1, 2, 3]"));
+        assertThat(relation.fields(), isSQL("[1, 2, 3]"));
     }
 
     @Test
     public void testDistinctOnNullLiteral() {
         AnalyzedRelation relation = analyze("select distinct null from users");
         assertThat(relation.isDistinct(), is(true));
-        assertThat(relation.outputs(), isSQL("NULL"));
+        assertThat(relation.fields(), isSQL("NULL"));
     }
 
     @Test
@@ -793,7 +786,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
 
         MultiSourceSelect mss = (MultiSourceSelect) relation;
         AnalyzedRelation u1 = mss.sources().values().iterator().next();
-        assertThat(u1.outputs(), allOf(
+        assertThat(u1.fields(), allOf(
             hasItem(isField("name")),
             hasItem(isField("id")))
         );
@@ -803,7 +796,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     public void testJoinConditionIsNotPartOfOutputs() throws Exception {
         AnalyzedRelation rel = analyze(
             "select u1.name from users u1 inner join users u2 on u1.id = u2.id order by u2.date");
-        assertThat(rel.outputs(), contains(isField("name")));
+        assertThat(rel.fields(), contains(isField("name")));
     }
 
     @Test
@@ -931,8 +924,8 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     public void testAliasSubscript() throws Exception {
         AnalyzedRelation relation = analyze(
             "select u.friends['id'] from users as u");
-        assertThat(relation.outputs().size(), is(1));
-        Symbol s = relation.outputs().get(0);
+        assertThat(relation.fields().size(), is(1));
+        Symbol s = relation.fields().get(0);
         assertThat(s, notNullValue());
         assertThat(s, isField("friends['id']"));
     }
@@ -942,7 +935,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
         AnalyzedRelation relation = analyze(
             "select name from users u order by 1");
         AnalyzedRelation queriedTable = ((AliasedAnalyzedRelation) relation).relation();
-        assertEquals(queriedTable.outputs().get(0), queriedTable.orderBy().orderBySymbols().get(0));
+        assertEquals(queriedTable.fields().get(0), queriedTable.orderBy().orderBySymbols().get(0));
     }
 
     @Test
@@ -962,21 +955,21 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testArithmeticPlus() throws Exception {
         AnalyzedRelation relation = analyze("select load['1'] + load['5'] from sys.nodes");
-        assertThat(((Function) relation.outputs().get(0)).info().ident().name(), is(ArithmeticFunctions.Names.ADD));
+        assertThat(((Function) relation.fields().get(0)).info().ident().name(), is(ArithmeticFunctions.Names.ADD));
     }
 
     @Test
     public void testPrefixedNumericLiterals() throws Exception {
         AnalyzedRelation relation = analyze("select - - - 10");
-        List<Symbol> outputs = relation.outputs();
+        var outputs = relation.fields();
         assertThat(outputs.get(0), is(Literal.of(-10L)));
 
         relation = analyze("select - + - 10");
-        outputs = relation.outputs();
+        outputs = relation.fields();
         assertThat(outputs.get(0), is(Literal.of(10L)));
 
         relation = analyze("select - (- 10 - + 10) * - (+ 10 + - 10)");
-        outputs = relation.outputs();
+        outputs = relation.fields();
         assertThat(outputs.get(0), is(Literal.of(0L)));
     }
 
@@ -1376,8 +1369,8 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testSubscriptArray() throws Exception {
         AnalyzedRelation relation = analyze("select tags[1] from users");
-        assertThat(relation.outputs().get(0), isFunction(SubscriptFunction.NAME));
-        List<Symbol> arguments = ((Function) relation.outputs().get(0)).arguments();
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isFunction(SubscriptFunction.NAME));
+        List<Symbol> arguments = ((Function) List.<Symbol>copyOf(relation.fields()).get(0)).arguments();
         assertThat(arguments.size(), is(2));
         assertThat(arguments.get(0), isReference("tags"));
         assertThat(arguments.get(1), isLiteral(1));
@@ -1400,8 +1393,8 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testSubscriptArrayNested() throws Exception {
         AnalyzedRelation relation = analyze("select tags[1]['name'] from deeply_nested");
-        assertThat(relation.outputs().get(0), isFunction(SubscriptFunction.NAME));
-        List<Symbol> arguments = ((Function) relation.outputs().get(0)).arguments();
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isFunction(SubscriptFunction.NAME));
+        List<Symbol> arguments = ((Function) List.<Symbol>copyOf(relation.fields()).get(0)).arguments();
         assertThat(arguments.size(), is(2));
         assertThat(arguments.get(0), isReference("tags['name']"));
         assertThat(arguments.get(1), isLiteral(1));
@@ -1417,8 +1410,8 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testSubscriptArrayAsAlias() throws Exception {
         AnalyzedRelation relation = analyze("select tags[1] as t_alias from users");
-        assertThat(relation.outputs().get(0), isFunction(SubscriptFunction.NAME));
-        List<Symbol> arguments = ((Function) relation.outputs().get(0)).arguments();
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isFunction(SubscriptFunction.NAME));
+        List<Symbol> arguments = ((Function) List.<Symbol>copyOf(relation.fields()).get(0)).arguments();
         assertThat(arguments.size(), is(2));
         assertThat(arguments.get(0), isReference("tags"));
         assertThat(arguments.get(1), isLiteral(1));
@@ -1427,9 +1420,9 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testSubscriptArrayOnScalarResult() throws Exception {
         AnalyzedRelation relation = analyze("select regexp_matches(name, '.*')[1] as t_alias from users order by t_alias");
-        assertThat(relation.outputs().get(0), isFunction(SubscriptFunction.NAME));
-        assertThat(relation.orderBy().orderBySymbols().get(0), is(relation.outputs().get(0)));
-        List<Symbol> arguments = ((Function) relation.outputs().get(0)).arguments();
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isFunction(SubscriptFunction.NAME));
+        assertThat(relation.orderBy().orderBySymbols().get(0), is(List.<Symbol>copyOf(relation.fields()).get(0)));
+        List<Symbol> arguments = ((Function) List.<Symbol>copyOf(relation.fields()).get(0)).arguments();
         assertThat(arguments.size(), is(2));
 
         assertThat(arguments.get(0), isFunction(MatchesFunction.NAME));
@@ -1460,7 +1453,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testArraySubqueryExpression() throws Exception {
         AnalyzedRelation relation = analyze("select array(select id from sys.shards) as shards_id_array from sys.shards");
-        SelectSymbol arrayProjection = (SelectSymbol) relation.outputs().get(0);
+        SelectSymbol arrayProjection = (SelectSymbol) List.<Symbol>copyOf(relation.fields()).get(0);
         assertThat(arrayProjection.getResultType(), is(SelectSymbol.ResultType.SINGLE_COLUMN_MULTIPLE_VALUES));
         assertThat(arrayProjection.valueType().id(), is(ArrayType.ID));
     }
@@ -1475,31 +1468,31 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testCastExpression() {
         AnalyzedRelation relation = analyze("select cast(other_id as text) from users");
-        assertThat(relation.outputs().get(0),
-            isFunction("to_text", singletonList(DataTypes.LONG)));
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0),
+                   isFunction("to_text", singletonList(DataTypes.LONG)));
 
         relation = analyze("select cast(1+1 as string) from users");
-        assertThat(relation.outputs().get(0), isLiteral("2", DataTypes.STRING));
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isLiteral("2", DataTypes.STRING));
 
         relation = analyze("select cast(friends['id'] as array(text)) from users");
-        assertThat(relation.outputs().get(0), isFunction(
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isFunction(
             "to_text_array", singletonList(new ArrayType(DataTypes.LONG))));
     }
 
     @Test
     public void testTryCastExpression() {
         AnalyzedRelation relation = analyze("select try_cast(other_id as text) from users");
-        assertThat(relation.outputs().get(0), isFunction(
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isFunction(
             "try_to_text", singletonList(DataTypes.LONG)));
 
         relation = analyze("select try_cast(1+1 as string) from users");
-        assertThat(relation.outputs().get(0), isLiteral("2", DataTypes.STRING));
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isLiteral("2", DataTypes.STRING));
 
         relation = analyze("select try_cast(null as string) from users");
-        assertThat(relation.outputs().get(0), isLiteral(null, DataTypes.STRING));
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isLiteral(null, DataTypes.STRING));
 
         relation = analyze("select try_cast(counters as array(boolean)) from users");
-        assertThat(relation.outputs().get(0), isFunction(
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isFunction(
             "try_to_boolean_array",
             singletonList(new ArrayType(DataTypes.LONG))));
     }
@@ -1507,13 +1500,13 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testTryCastReturnNullWhenCastFailsOnLiterals() {
         AnalyzedRelation relation = analyze("select try_cast('124123asdf' as integer) from users");
-        assertThat(relation.outputs().get(0), isLiteral(null));
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isLiteral(null));
 
         relation = analyze("select try_cast(['fd', '3', '5'] as array(integer)) from users");
-        assertThat(relation.outputs().get(0), isLiteral(null));
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isLiteral(null));
 
         relation = analyze("select try_cast('1' as boolean) from users");
-        assertThat(relation.outputs().get(0), isLiteral(null));
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isLiteral(null));
     }
 
     @Test
@@ -1534,8 +1527,8 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     public void testSelectWithAliasRenaming() throws Exception {
         AnalyzedRelation relation = analyze("select text as name, name as n from users");
 
-        Symbol text = relation.outputs().get(0);
-        Symbol name = relation.outputs().get(1);
+        Symbol text = List.<Symbol>copyOf(relation.fields()).get(0);
+        Symbol name = List.<Symbol>copyOf(relation.fields()).get(1);
 
         assertThat(text, isReference("text"));
         assertThat(name, isReference("name"));
@@ -1558,8 +1551,8 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testCanSelectColumnWithAndWithoutSubscript() throws Exception {
         AnalyzedRelation relation = analyze("select counters, counters[1] from users");
-        Symbol counters = relation.outputs().get(0);
-        Symbol countersSubscript = relation.outputs().get(1);
+        Symbol counters = List.<Symbol>copyOf(relation.fields()).get(0);
+        Symbol countersSubscript = List.<Symbol>copyOf(relation.fields()).get(1);
 
         assertThat(counters, isReference("counters"));
         assertThat(countersSubscript, isFunction("subscript"));
@@ -1569,7 +1562,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     public void testOrderByOnAliasWithSameColumnNameInSchema() throws Exception {
         // name exists in the table but isn't selected so not ambiguous
         AnalyzedRelation relation = analyze("select other_id as name from users order by name");
-        assertThat(relation.outputs().get(0), isReference("other_id"));
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0), isReference("other_id"));
         List<Symbol> sortSymbols = relation.orderBy().orderBySymbols();
         assert sortSymbols != null;
         assertThat(sortSymbols.get(0), isReference("other_id"));
@@ -1589,7 +1582,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testExtractFunctionWithLiteral() {
         AnalyzedRelation relation = analyze("select extract('day' from '2012-03-24') from users");
-        Symbol symbol = relation.outputs().get(0);
+        Symbol symbol = List.<Symbol>copyOf(relation.fields()).get(0);
         assertThat(symbol, isLiteral(24));
     }
 
@@ -1597,7 +1590,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     public void testExtractFunctionWithWrongType() {
         AnalyzedRelation relation = analyze(
             "select extract(day from name::timestamp with time zone) from users");
-        Symbol symbol = relation.outputs().get(0);
+        Symbol symbol = List.<Symbol>copyOf(relation.fields()).get(0);
         assertThat(symbol, isFunction("extract_DAY_OF_MONTH"));
 
         Symbol argument = ((Function) symbol).arguments().get(0);
@@ -1608,7 +1601,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     public void testExtractFunctionWithCorrectType() {
         AnalyzedRelation relation = analyze("select extract(day from timestamp) from transactions");
 
-        Symbol symbol = relation.outputs().get(0);
+        Symbol symbol = List.<Symbol>copyOf(relation.fields()).get(0);
         assertThat(symbol, isFunction("extract_DAY_OF_MONTH"));
 
         Symbol argument = ((Function) symbol).arguments().get(0);
@@ -1618,7 +1611,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void selectCurrentTimeStamp() {
         AnalyzedRelation relation = analyze("select CURRENT_TIMESTAMP from sys.cluster");
-        Symbol currentTime = relation.outputs().get(0);
+        Symbol currentTime = List.<Symbol>copyOf(relation.fields()).get(0);
         assertThat(currentTime, instanceOf(Literal.class));
         assertThat(currentTime.valueType(), is(DataTypes.TIMESTAMPZ));
     }
@@ -1639,7 +1632,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
             "from transactions " +
             "where random() = 13.2 " +
             "order by 1, random(), random()");
-        List<Symbol> outputs = relation.outputs();
+        List<Symbol> outputs = List.copyOf(relation.fields());
         List<Symbol> orderBySymbols = relation.orderBy().orderBySymbols();
 
         // non deterministic, all equal
@@ -1694,10 +1687,10 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     public void testStarToFieldsInMultiSelect() throws Exception {
         AnalyzedRelation relation = analyze(
             "select jobs.stmt, operations.* from sys.jobs, sys.operations where jobs.id = operations.job_id");
-        List<Symbol> joinOutputs = relation.outputs();
+        List<Symbol> joinOutputs = List.copyOf(relation.fields());
 
         AnalyzedRelation operations = analyze("select * from sys.operations");
-        List<Symbol> operationOutputs = operations.outputs();
+        List<Symbol> operationOutputs = List.copyOf(operations.fields());
         assertThat(joinOutputs.size(), is(operationOutputs.size() + 1));
     }
 
@@ -1711,7 +1704,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testFullQualifiedStarPrefix() throws Exception {
         AnalyzedRelation relation = analyze("select sys.jobs.* from sys.jobs");
-        List<Symbol> outputs = relation.outputs();
+        List<Symbol> outputs = List.copyOf(relation.fields());
         assertThat(outputs.size(), is(5));
         //noinspection unchecked
         assertThat(outputs, Matchers.contains(isReference("id"),
@@ -1732,7 +1725,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testSelectStarWithTableAliasAsPrefix() throws Exception {
         AnalyzedRelation relation = analyze("select t1.* from sys.jobs t1");
-        List<Symbol> outputs = relation.outputs();
+        List<Symbol> outputs = List.copyOf(relation.fields());
         assertThat(outputs.size(), is(5));
         assertThat(outputs, Matchers.contains(
             isField("id"),
@@ -1775,7 +1768,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     public void testSelectStarFromUnnest() throws Exception {
         AnalyzedRelation relation = analyze("select * from unnest([1, 2], ['Marvin', 'Trillian'])");
         //noinspection generics
-        assertThat(relation.outputs(), contains(isReference("col1"), isReference("col2")));
+        assertThat(List.<Symbol>copyOf(relation.fields()), contains(isReference("col1"), isReference("col2")));
     }
 
     @Test
@@ -1788,7 +1781,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testSelectCol1FromUnnest() throws Exception {
         AnalyzedRelation relation = analyze("select col1 from unnest([1, 2], ['Marvin', 'Trillian'])");
-        assertThat(relation.outputs(), contains(isReference("col1")));
+        assertThat(List.<Symbol>copyOf(relation.fields()), contains(isReference("col1")));
     }
 
     @Test
@@ -1825,7 +1818,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
         String sqlFields = "col1, col2, col3, col4, " +
                            "col5, col6, col7, col8, " +
                            "col9, col10, col11";
-        assertThat(relation.outputs(), isSQL(sqlFields));
+        assertThat(List.<Symbol>copyOf(relation.fields()), isSQL(sqlFields));
         assertThat(relation.fields(), isSQL(sqlFields));
     }
 
@@ -1839,7 +1832,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testScalarCanBeUsedInFromClause() {
         QueriedSelectRelation<?> relation = analyze("select * from abs(1)");
-        assertThat(relation.outputs(), isSQL("abs"));
+        assertThat(relation.fields(), isSQL("abs"));
         assertThat(relation.fields(), isSQL("abs"));
         assertThat(relation.subRelation(), instanceOf(TableFunctionRelation.class));
     }
@@ -1957,25 +1950,25 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     @Test
     public void testCastToNestedArrayCanBeUsed() {
         AnalyzedRelation relation = analyze("select [[1, 2, 3]]::array(array(int))");
-        assertThat(relation.outputs().get(0).valueType(), is(new ArrayType(new ArrayType(DataTypes.INTEGER))));
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0).valueType(), is(new ArrayType(new ArrayType(DataTypes.INTEGER))));
     }
 
     @Test
     public void testCastTimestampFromStringLiteral()  {
         AnalyzedRelation relation = analyze("select timestamp '2018-12-12T00:00:00'");
-        assertThat(relation.outputs().get(0).valueType(), is(DataTypes.TIMESTAMPZ));
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0).valueType(), is(DataTypes.TIMESTAMPZ));
     }
 
     @Test
     public void testCastTimestampWithoutTimeZoneFromStringLiteralUsingSQLStandardFormat()  {
         AnalyzedRelation relation = analyze("select timestamp without time zone '2018-12-12 00:00:00'");
-        assertThat(relation.outputs().get(0).valueType(), is(DataTypes.TIMESTAMP));
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0).valueType(), is(DataTypes.TIMESTAMP));
     }
 
     @Test
     public void test_element_within_object_array_of_derived_table_can_be_accessed_using_subscript() {
         AnalyzedRelation relation = analyze("select s.friends['id'] from (select friends from doc.users) s");
-        assertThat(relation.outputs().get(0),
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0),
                    fieldPointsToReferenceOf("friends['id']", "doc.users"));
     }
 
@@ -1983,9 +1976,9 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
     public void test_can_access_element_within_object_array_of_derived_table_containing_a_join() {
         AnalyzedRelation relation = analyze("select joined.f1['id'], joined.f2['id'] from " +
                 "(select u1.friends as f1, u2.friends as f2 from doc.users u1, doc.users u2) joined");
-        assertThat(relation.outputs().get(0),
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0),
                    fieldPointsToReferenceOf("friends['id']", "doc.users"));
-        assertThat(relation.outputs().get(1),
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(1),
                    fieldPointsToReferenceOf("friends['id']", "doc.users"));
     }
 
@@ -2003,7 +1996,7 @@ public class SelectStatementAnalyzerTest extends CrateDummyClusterServiceUnitTes
                 "  (select friends as f1 from doc.users u1 " +
                 "   union all" +
                 "   select friends from doc.users u2) as joined");
-        assertThat(relation.outputs().get(0),
+        assertThat(List.<Symbol>copyOf(relation.fields()).get(0),
                    fieldPointsToReferenceOf("friends['id']", "doc.users"));
     }
 }

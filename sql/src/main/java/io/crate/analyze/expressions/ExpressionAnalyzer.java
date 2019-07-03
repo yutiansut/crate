@@ -954,7 +954,7 @@ public class ExpressionAnalyzer {
              * this would require {@link StatementAnalysisContext#startRelation} to somehow inherit the parent context
              */
             AnalyzedRelation relation = subQueryAnalyzer.analyze(node.getQuery());
-            List<Field> fields = relation.fields();
+            List<Symbol> fields = relation.fields();
             if (fields.size() > 1) {
                 throw new UnsupportedOperationException("Subqueries with more than 1 column are not supported.");
             }

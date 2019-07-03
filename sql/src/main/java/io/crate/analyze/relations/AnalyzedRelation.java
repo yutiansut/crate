@@ -27,7 +27,6 @@ import io.crate.analyze.HavingClause;
 import io.crate.analyze.OrderBy;
 import io.crate.analyze.WhereClause;
 import io.crate.exceptions.ColumnUnknownException;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Symbol;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.table.Operation;
@@ -37,18 +36,47 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * A relation:
+ *
+ * <pre>
+ * {@code
+ * Table: t
+ *  outputs: [Ref{x}, Ref{y}]
+ *
+ *
+ * Select: SELECT x FROM t
+ *                ^
+ *                |
+ *                +- t.getField(x) -> Ref{x}
+ *
+ * Outputs: [Ref{x}]
+ *
+ *
+ * Nested: SELECT xx FROM (SELECT x + x AS xx FROM t) tt
+ *                ^               ^         ^          ^
+ *                |               +- Ref{x} |          + AliasRelation introducing a new scope
+ *                |                         |
+ *                |                         +- Alias(xx, Function(add, [Ref{x}, Ref{x}))
+ *                |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ *                |        outputs: [Alias(xx, ...)]
+ *                |
+ *                |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ *                |        outputs: [ScopedSymbol(tt, Alias(xx, ...))]
+ *                |
+ *                +-- ScopedSymbol(tt, Alias(xx, Function(add, [Ref{x}, Ref{x})))
+ * }
+ * </pre>
+ */
 public interface AnalyzedRelation extends AnalyzedStatement {
 
     <C, R> R accept(AnalyzedRelationVisitor<C, R> visitor, C context);
 
-    Field getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException;
+    Symbol getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException;
 
-    List<Field> fields();
+    List<Symbol> fields();
 
     QualifiedName getQualifiedName();
-
-    /** * @return The outputs of the relation */
-    List<Symbol> outputs();
 
     /**
      * @return WHERE clause of the relation.
@@ -87,7 +115,7 @@ public interface AnalyzedRelation extends AnalyzedStatement {
      */
     @Override
     default void visitSymbols(Consumer<? super Symbol> consumer) {
-        for (Symbol output : outputs()) {
+        for (Symbol output : fields()) {
             consumer.accept(output);
         }
         where().accept(consumer);

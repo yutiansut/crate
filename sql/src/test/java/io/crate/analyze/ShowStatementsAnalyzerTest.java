@@ -180,10 +180,10 @@ public class ShowStatementsAnalyzerTest extends CrateDummyClusterServiceUnitTest
     public void testRewriteOfTransactionIsolation() {
         QueriedSelectRelation<AbstractTableRelation<?>> stmt = analyze("show transaction isolation level");
         assertThat(stmt.subRelation().tableInfo().ident(), is(SysClusterTableInfo.IDENT));
-        assertThat(stmt.outputs(), contains(isLiteral("read uncommitted")));
+        assertThat(stmt.fields(), contains(isLiteral("read uncommitted")));
 
         stmt = analyze("show transaction_isolation");
         assertThat(stmt.subRelation().tableInfo().ident(), is(SysClusterTableInfo.IDENT));
-        assertThat(stmt.outputs(), contains(isLiteral("read uncommitted")));
+        assertThat(stmt.fields(), contains(isLiteral("read uncommitted")));
     }
 }

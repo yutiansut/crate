@@ -26,9 +26,9 @@ import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.analyze.relations.AnalyzedRelationVisitor;
 import io.crate.common.collections.Lists2;
 import io.crate.exceptions.ColumnUnknownException;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.FieldReplacer;
 import io.crate.expression.symbol.Symbol;
+import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.table.Operation;
 import io.crate.sql.tree.QualifiedName;
@@ -38,8 +38,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
-
-import static com.google.common.collect.Lists.transform;
 
 public class QueriedSelectRelation<T extends AnalyzedRelation> implements AnalyzedRelation {
 
@@ -58,7 +56,7 @@ public class QueriedSelectRelation<T extends AnalyzedRelation> implements Analyz
         this.fields = new Fields(outputNames.size());
         Iterator<Symbol> outputsIterator = querySpec.outputs().iterator();
         for (ColumnIdent path : outputNames) {
-            fields.add(new Field(this, path, outputsIterator.next()));
+            fields.add(path, outputsIterator.next());
         }
     }
 
@@ -78,7 +76,7 @@ public class QueriedSelectRelation<T extends AnalyzedRelation> implements Analyz
 
     @Nullable
     @Override
-    public Field getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
+    public Symbol getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
         if (operation != Operation.READ) {
             throw new UnsupportedOperationException("getField on QueriedSelectRelation is only supported for READ operations");
         }
@@ -86,18 +84,13 @@ public class QueriedSelectRelation<T extends AnalyzedRelation> implements Analyz
     }
 
     @Override
-    public List<Field> fields() {
+    public List<Symbol> fields() {
         return fields.asList();
     }
 
     @Override
     public QualifiedName getQualifiedName() {
         return subRelation.getQualifiedName();
-    }
-
-    @Override
-    public List<Symbol> outputs() {
-        return querySpec.outputs();
     }
 
     @Override
@@ -159,7 +152,7 @@ public class QueriedSelectRelation<T extends AnalyzedRelation> implements Analyz
         return new QueriedSelectRelation<>(
             isDistinct,
             newSubRelation,
-            transform(fields.asList(), Field::path),
+            Lists2.map(fields.asList(), Symbols::pathFromSymbol),
             querySpec.map(mapFieldsToNewRelation)
         );
     }
@@ -168,7 +161,7 @@ public class QueriedSelectRelation<T extends AnalyzedRelation> implements Analyz
         return new QueriedSelectRelation<>(
             isDistinct,
             subRelation,
-            Lists2.map(fields.asList(), Field::path),
+            Lists2.map(fields.asList(), Symbols::pathFromSymbol),
             querySpec.map(mapper)
         );
     }

@@ -39,7 +39,7 @@ import io.crate.breaker.CrateCircuitBreakerService;
 import io.crate.breaker.RamAccountingContext;
 import io.crate.breaker.RowAccountingWithEstimators;
 import io.crate.exceptions.SQLExceptions;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.Symbols;
 import io.crate.protocols.http.Headers;
 import io.netty.buffer.ByteBuf;
@@ -244,7 +244,7 @@ public class SqlHttpHandler extends SimpleChannelInboundHandler<FullHttpRequest>
         session.parse(UNNAMED, stmt, emptyList());
         session.bind(UNNAMED, UNNAMED, args == null ? emptyList() : asList(args), null);
         DescribeResult description = session.describe('P', UNNAMED);
-        List<Field> resultFields = description.getFields();
+        List<? extends Symbol> resultFields = description.getFields();
         ResultReceiver<XContentBuilder> resultReceiver;
         if (resultFields == null) {
             resultReceiver = new RestRowCountReceiver(JsonXContent.contentBuilder(), startTimeInNs, includeTypes);

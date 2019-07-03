@@ -32,6 +32,7 @@ import io.crate.expression.symbol.format.SymbolPrinter;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 public class SQLPrinter {
 
@@ -85,7 +86,7 @@ public class SQLPrinter {
         StringBuilder sb = new StringBuilder();
 
         sb.append("SELECT ");
-        TESTING_SYMBOL_PRINTER.process(relation.outputs(), sb);
+        TESTING_SYMBOL_PRINTER.process(List.<Symbol>copyOf(relation.fields()), sb);
 
         if (relation.where().hasQuery()) {
             sb.append(" WHERE ");

@@ -27,6 +27,7 @@ import io.crate.analyze.QueriedSelectRelation;
 import io.crate.analyze.TableDefinitions;
 import io.crate.analyze.relations.AbstractTableRelation;
 import io.crate.analyze.relations.AnalyzedRelation;
+import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.data.Row;
 import io.crate.execution.dsl.projection.builder.ProjectionBuilder;
 import io.crate.execution.engine.pipeline.TopN;
@@ -43,6 +44,8 @@ import java.util.Set;
 
 import java.util.Collections;
 
+import java.util.List;
+
 import static io.crate.planner.operators.LogicalPlannerTest.isPlan;
 import static org.hamcrest.Matchers.contains;
 
@@ -57,7 +60,7 @@ public class LimitTest extends CrateDummyClusterServiceUnitTest {
 
         LogicalPlan plan = Limit.create(
             Limit.create(
-                Collect.create(((AbstractTableRelation<?>) queriedDocTable.subRelation()), queriedDocTable.outputs(), queriedDocTable.where()),
+                Collect.create(((AbstractTableRelation<?>) queriedDocTable.subRelation()), queriedDocTable.fields(), queriedDocTable.where()),
                 Literal.of(10L),
                 Literal.of(5L)
             ),

@@ -74,7 +74,7 @@ public class Union implements LogicalPlan {
             LogicalPlan lhsPlan = LogicalPlanner.plan(left, subqueryPlanner, true, functions, txnCtx).build(tableStats, hints);
             LogicalPlan rhsPlan = LogicalPlanner.plan(right, subqueryPlanner, true, functions, txnCtx).build(tableStats, hints);
 
-            return new Union(lhsPlan, rhsPlan, union.outputs());
+            return new Union(lhsPlan, rhsPlan, List.copyOf(union.fields()));
         };
     }
 

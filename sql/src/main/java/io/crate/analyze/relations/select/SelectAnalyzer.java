@@ -26,8 +26,8 @@ import io.crate.analyze.expressions.ExpressionAnalysisContext;
 import io.crate.analyze.expressions.ExpressionAnalyzer;
 import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.analyze.validator.SelectSymbolValidator;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Symbol;
+import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.ColumnIdent;
 import io.crate.sql.tree.AllColumns;
 import io.crate.sql.tree.DefaultTraversalVisitor;
@@ -111,8 +111,8 @@ public class SelectAnalyzer {
         }
 
         private static void addAllFieldsFromRelation(SelectAnalysis context, AnalyzedRelation relation) {
-            for (Field field : relation.fields()) {
-                context.add(field.path(), field);
+            for (var field : relation.fields()) {
+                context.add(Symbols.pathFromSymbol(field), field);
             }
         }
     }

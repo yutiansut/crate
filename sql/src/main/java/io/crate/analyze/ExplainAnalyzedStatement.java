@@ -41,16 +41,14 @@ import java.util.List;
 public class ExplainAnalyzedStatement implements AnalyzedStatement, AnalyzedRelation {
 
     final AnalyzedStatement statement;
-    private final List<Field> fields;
+    private final List<Symbol> fields;
     private final ProfilingContext context;
-    private final List<Symbol> outputs;
 
     ExplainAnalyzedStatement(String columnName, AnalyzedStatement statement, ProfilingContext context) {
         Field field = new Field(this, new ColumnIdent(columnName), new InputColumn(0, ObjectType.untyped()));
         this.statement = statement;
         this.fields = Collections.singletonList(field);
         this.context = context;
-        this.outputs = List.of(field);
     }
 
     @Override
@@ -78,7 +76,7 @@ public class ExplainAnalyzedStatement implements AnalyzedStatement, AnalyzedRela
     }
 
     @Override
-    public List<Field> fields() {
+    public List<Symbol> fields() {
         return fields;
     }
 
@@ -90,11 +88,6 @@ public class ExplainAnalyzedStatement implements AnalyzedStatement, AnalyzedRela
     @Override
     public QualifiedName getQualifiedName() {
         throw new UnsupportedOperationException("method not supported");
-    }
-
-    @Override
-    public List<Symbol> outputs() {
-        return outputs;
     }
 
     @Override

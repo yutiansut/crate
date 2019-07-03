@@ -32,11 +32,9 @@ import io.crate.metadata.table.TableInfo;
 import io.crate.sql.tree.QualifiedName;
 import io.crate.types.ArrayType;
 import io.crate.types.DataType;
-import io.crate.types.DataTypes;
 import io.crate.types.ObjectType;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -52,8 +50,6 @@ public abstract class AbstractTableRelation<T extends TableInfo> implements Anal
 
     protected final T tableInfo;
     private final Map<ColumnIdent, Reference> allocatedFields = new HashMap<>();
-    private final List<Symbol> outputs;
-    private List<Field> fields;
     private final QualifiedName qualifiedName;
 
     public AbstractTableRelation(T tableInfo) {
@@ -63,16 +59,6 @@ public abstract class AbstractTableRelation<T extends TableInfo> implements Anal
     public AbstractTableRelation(T tableInfo, QualifiedName qualifiedName) {
         this.tableInfo = tableInfo;
         this.qualifiedName = qualifiedName;
-        outputs = new ArrayList<>(tableInfo.columns());
-        fields = new ArrayList<>(tableInfo.columns().size());
-        for (Reference reference : tableInfo.columns()) {
-            if (reference.valueType().equals(DataTypes.NOT_SUPPORTED)) {
-                continue;
-            }
-            fields.add(new Field(this, reference.column(), reference));
-            // Allocate it so it can be resolved by resolveField()
-            allocatedFields.put(reference.column(), reference);
-        }
     }
 
     @Override
@@ -82,11 +68,6 @@ public abstract class AbstractTableRelation<T extends TableInfo> implements Anal
 
     public T tableInfo() {
         return tableInfo;
-    }
-
-    @Override
-    public List<Symbol> outputs() {
-        return outputs;
     }
 
     @Override
@@ -129,12 +110,12 @@ public abstract class AbstractTableRelation<T extends TableInfo> implements Anal
     }
 
     @Nullable
-    public Field getField(ColumnIdent path) {
+    public Symbol getField(ColumnIdent path) {
         Reference reference = tableInfo.getReference(path);
         if (reference == null) {
             return null;
         }
-        return allocate(path, makeArrayIfContainedInObjectArray(reference));
+        return makeArrayIfContainedInObjectArray(reference);
     }
 
     /**
@@ -181,25 +162,9 @@ public abstract class AbstractTableRelation<T extends TableInfo> implements Anal
         return arrayType;
     }
 
-    protected Field allocate(ColumnIdent path, Reference reference) {
-        allocatedFields.put(path, reference);
-        // Add column to the outputs, so outer relations (join, subselect) can resolve it.
-        // Required for resolving subscript cols without any expression mapping (No QueriedTable on top of this relation).
-        if (outputs.contains(reference) == false) {
-            outputs.add(reference);
-        }
-        Field f = new Field(this, path, reference);
-
-        // Subscript fields aren't initially loaded as there could be many, add them now as requested.
-        if (path.isTopLevel() == false && fields.contains(f) == false) {
-            fields.add(f);
-        }
-        return f;
-    }
-
     @Override
-    public List<Field> fields() {
-        return fields;
+    public List<Symbol> fields() {
+        return List.copyOf(tableInfo.columns());
     }
 
     @Override

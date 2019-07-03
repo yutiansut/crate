@@ -75,14 +75,14 @@ public class SourceFromCellsTest extends CrateDummyClusterServiceUnitTest {
             .build();
         QueriedSelectRelation<DocTableRelation> relation = e.normalize("select x, y, z from t1");
         t1 = relation.subRelation().tableInfo();
-        x = (Reference) relation.outputs().get(0);
-        y = (Reference) relation.outputs().get(1);
-        z = (Reference) relation.outputs().get(2);
+        x = (Reference) relation.fields().get(0);
+        y = (Reference) relation.fields().get(1);
+        z = (Reference) relation.fields().get(2);
 
         relation = e.normalize("select obj, b from t2");
         t2 = relation.subRelation().tableInfo();
-        obj = (Reference) relation.outputs().get(0);
-        b = (Reference) relation.outputs().get(1);
+        obj = (Reference) relation.fields().get(0);
+        b = (Reference) relation.fields().get(1);
     }
 
     @Test
@@ -146,7 +146,7 @@ public class SourceFromCellsTest extends CrateDummyClusterServiceUnitTest {
     public void testDefaultExpressionIsInjected() throws IOException {
         QueriedSelectRelation<DocTableRelation> relation = e.normalize("select x from t4");
         DocTableInfo t4 = relation.subRelation().tableInfo();
-        Reference x = (Reference) relation.outputs().get(0);
+        Reference x = (Reference) relation.fields().get(0);
 
         InsertSourceFromCells sourceFromCells = new InsertSourceFromCells(
             txnCtx, e.functions(), t4, "t4", GeneratedColumns.Validation.VALUE_MATCH, Arrays.asList(x));
@@ -161,8 +161,8 @@ public class SourceFromCellsTest extends CrateDummyClusterServiceUnitTest {
     public void testDefaultExpressionGivenValueOverridesDefaultValue() throws IOException {
         QueriedSelectRelation<DocTableRelation> relation = e.normalize("select x, y from t4");
         DocTableInfo t4 = relation.subRelation().tableInfo();
-        Reference x = (Reference) relation.outputs().get(0);
-        Reference y = (Reference) relation.outputs().get(1);
+        Reference x = (Reference) relation.fields().get(0);
+        Reference y = (Reference) relation.fields().get(1);
 
         InsertSourceFromCells sourceFromCells = new InsertSourceFromCells(
             txnCtx, e.functions(), t4, "t4", GeneratedColumns.Validation.VALUE_MATCH, Arrays.asList(x, y));

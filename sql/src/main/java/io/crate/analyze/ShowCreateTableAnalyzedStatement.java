@@ -40,7 +40,7 @@ import java.util.List;
 public class ShowCreateTableAnalyzedStatement implements AnalyzedStatement, AnalyzedRelation {
 
     private final DocTableInfo tableInfo;
-    private final List<Field> fields;
+    private final List<Symbol> fields;
 
     public ShowCreateTableAnalyzedStatement(DocTableInfo tableInfo) {
         String columnName = "SHOW CREATE TABLE " + tableInfo.ident().fqn();
@@ -68,7 +68,7 @@ public class ShowCreateTableAnalyzedStatement implements AnalyzedStatement, Anal
     }
 
     @Override
-    public List<Field> fields() {
+    public List<Symbol> fields() {
         return fields;
     }
 
@@ -80,11 +80,6 @@ public class ShowCreateTableAnalyzedStatement implements AnalyzedStatement, Anal
     @Override
     public QualifiedName getQualifiedName() {
         throw new UnsupportedOperationException("method not supported");
-    }
-
-    @Override
-    public List<Symbol> outputs() {
-        return List.copyOf(fields);
     }
 
     @Override

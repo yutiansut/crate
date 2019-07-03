@@ -25,7 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.crate.exceptions.ColumnUnknownException;
 import io.crate.exceptions.ColumnValidationException;
 import io.crate.expression.symbol.DynamicReference;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.Symbol;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.GeneratedReference;
 import io.crate.metadata.Reference;
@@ -48,12 +48,12 @@ public class DocTableRelation extends AbstractTableRelation<DocTableInfo> {
 
     @Nullable
     @Override
-    public Field getField(ColumnIdent path) {
+    public Symbol getField(ColumnIdent path) {
         return getField(path, Operation.READ);
     }
 
     @Override
-    public Field getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
+    public Symbol getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
         if (operation == Operation.UPDATE) {
             ensureColumnCanBeUpdated(path);
         }
@@ -66,11 +66,11 @@ public class DocTableRelation extends AbstractTableRelation<DocTableInfo> {
                 if (dynamic == null) {
                     return null;
                 } else {
-                    return allocate(path, dynamic);
+                    return dynamic;
                 }
             }
         }
-        return allocate(path, makeArrayIfContainedInObjectArray(reference));
+        return makeArrayIfContainedInObjectArray(reference);
     }
 
     /**

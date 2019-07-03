@@ -84,11 +84,11 @@ public class InsertFromSubQueryAnalyzerTest extends CrateDummyClusterServiceUnit
     }
 
     private void assertCompatibleColumns(InsertFromSubQueryAnalyzedStatement statement) {
-        List<Symbol> outputSymbols = statement.subQueryRelation().outputs();
+        var outputSymbols = statement.subQueryRelation().fields();
         assertThat(statement.columns().size(), is(outputSymbols.size()));
 
         for (int i = 0; i < statement.columns().size(); i++) {
-            Symbol subQueryColumn = outputSymbols.get(i);
+            var subQueryColumn = outputSymbols.get(i);
             assertThat(subQueryColumn, instanceOf(Symbol.class));
             Reference insertColumn = statement.columns().get(i);
             assertThat(

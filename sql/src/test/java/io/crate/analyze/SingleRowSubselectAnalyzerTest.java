@@ -25,6 +25,7 @@ package io.crate.analyze;
 import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.expression.symbol.SelectSymbol;
 import io.crate.expression.operator.EqOperator;
+import io.crate.expression.symbol.Symbol;
 import io.crate.test.integration.CrateDummyClusterServiceUnitTest;
 import io.crate.testing.SQLExecutor;
 import org.hamcrest.Matchers;
@@ -32,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 import static io.crate.testing.SymbolMatchers.isFunction;
 import static io.crate.testing.SymbolMatchers.isReference;
@@ -65,7 +67,7 @@ public class SingleRowSubselectAnalyzerTest extends CrateDummyClusterServiceUnit
     @Test
     public void testSingleRowSubselectInSelectList() {
         AnalyzedRelation relation = e.analyze("select (select b from t2 limit 1) from t1");
-        assertThat(relation.outputs(), isSQL("SelectSymbol{text_array}"));
+        assertThat(List.<Symbol>copyOf(relation.fields()), isSQL("SelectSymbol{text_array}"));
     }
 
     @Test

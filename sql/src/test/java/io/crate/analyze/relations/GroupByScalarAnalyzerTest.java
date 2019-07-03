@@ -7,7 +7,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.hamcrest.core.Is.is;
+import static io.crate.testing.SymbolMatchers.isFunction;
+import static io.crate.testing.SymbolMatchers.isLiteral;
+import static io.crate.testing.SymbolMatchers.isReference;
 
 
 public class GroupByScalarAnalyzerTest extends CrateDummyClusterServiceUnitTest {
@@ -29,18 +31,18 @@ public class GroupByScalarAnalyzerTest extends CrateDummyClusterServiceUnitTest 
     @Test
     public void testValidGroupByWithScalarAndMultipleColumns() throws Exception {
         AnalyzedRelation relation = executor.analyze("select id * other_id from users group by id, other_id");
-        assertThat(relation.fields().get(0).path().sqlFqn(), is("(id * other_id)"));
+        assertThat(relation.fields().get(0), isFunction("multiply", isReference("id"), isReference("other_id")));
     }
 
     @Test
     public void testValidGroupByWithScalar() throws Exception {
         AnalyzedRelation relation = executor.analyze("select id * 2 from users group by id");
-        assertThat(relation.fields().get(0).path().sqlFqn(), is("(id * 2)"));
+        assertThat(relation.fields().get(0), isFunction("multiply", isReference("id"), isLiteral(2L)));
     }
 
     @Test
     public void testValidGroupByWithMultipleScalarFunctions() throws Exception {
         AnalyzedRelation relation = executor.analyze("select abs(id * 2) from users group by id");
-        assertThat(relation.fields().get(0).path().sqlFqn(), is("abs((id * 2))"));
+        assertThat(relation.fields().get(0), isFunction("abs", isFunction("multiply", isReference("id"), isLiteral(2L))));
     }
 }

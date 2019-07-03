@@ -46,7 +46,7 @@ import java.util.function.Predicate;
 
 public class CopyFromReturnSummaryAnalyzedStatement extends CopyFromAnalyzedStatement implements AnalyzedRelation {
 
-    private final List<Field> fields = ImmutableList.of(
+    private final List<Symbol> fields = ImmutableList.of(
         new Field(this, new ColumnIdent("node"), new InputColumn(0, ObjectType.builder()
             .setInnerType("id", DataTypes.STRING)
             .setInnerType("name", DataTypes.STRING)
@@ -81,18 +81,13 @@ public class CopyFromReturnSummaryAnalyzedStatement extends CopyFromAnalyzedStat
     }
 
     @Override
-    public List<Field> fields() {
+    public List<Symbol> fields() {
         return fields;
     }
 
     @Override
     public QualifiedName getQualifiedName() {
         return qualifiedName;
-    }
-
-    @Override
-    public List<Symbol> outputs() {
-        return List.copyOf(fields);
     }
 
     @Override

@@ -22,9 +22,9 @@
 
 package io.crate.analyze.relations;
 
-import io.crate.expression.symbol.Field;
-import io.crate.expression.symbol.Function;
 import io.crate.exceptions.ColumnUnknownException;
+import io.crate.expression.symbol.Function;
+import io.crate.expression.symbol.Symbol;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.table.Operation;
 import io.crate.metadata.table.TableInfo;
@@ -59,7 +59,7 @@ public class TableFunctionRelation extends TableRelation {
     }
 
     @Override
-    public Field getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
+    public Symbol getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
         if (operation == Operation.READ) {
             return getField(path);
         }

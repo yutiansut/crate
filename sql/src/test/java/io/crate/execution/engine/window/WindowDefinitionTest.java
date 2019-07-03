@@ -126,7 +126,7 @@ public class WindowDefinitionTest extends CrateDummyClusterServiceUnitTest {
             "select sum(col1) over(RANGE UNBOUNDED PRECEDING) FROM " +
             "unnest([1, 2, 1, 1, 1, 4])");
         assertThat(analyze, is(instanceOf(QueriedSelectRelation.class)));
-        List<Symbol> outputs = analyze.outputs();
+        List<Symbol> outputs = analyze.fields();
         assertThat(outputs.size(), is(1));
         WindowFunction windowFunction = (WindowFunction) outputs.get(0);
         assertThat(windowFunction.windowDefinition().windowFrameDefinition().end().type(), is(CURRENT_ROW));

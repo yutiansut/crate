@@ -25,11 +25,11 @@ package io.crate.analyze.relations;
 import io.crate.analyze.Fields;
 import io.crate.analyze.HavingClause;
 import io.crate.analyze.OrderBy;
-import io.crate.analyze.Relations;
 import io.crate.analyze.WhereClause;
 import io.crate.exceptions.ColumnUnknownException;
 import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Symbol;
+import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.table.Operation;
 import io.crate.sql.tree.QualifiedName;
@@ -42,7 +42,6 @@ public class UnionSelect implements AnalyzedRelation {
     private final Fields fields;
     private final AnalyzedRelation left;
     private final AnalyzedRelation right;
-    private final List<Symbol> outputs;
     private final QualifiedName name;
 
     public UnionSelect(AnalyzedRelation left, AnalyzedRelation right) {
@@ -50,17 +49,17 @@ public class UnionSelect implements AnalyzedRelation {
         this.right = right;
         this.name = left.getQualifiedName();
 
-        List<Field> fieldsFromLeft = left.fields();
+        var fieldsFromLeft = left.fields();
         fields = new Fields(fieldsFromLeft.size());
-        for (Field field : fieldsFromLeft) {
+        for (Symbol field : fieldsFromLeft) {
             // Creating a field that points to the field of the left relation isn't 100% accurate.
             // We're pointing to *two* symbols (both left AND right).
             // We could either use a `InputColumn` to do that (by pointing to a position) - (but might be confusing to have InputColumns in the analysis already)
             // Or introduce a `UnionSymbol` or `UnionField` which would take two symbols it is pointing to
             // Since this currently has no effect we go with the left symbol until there is a good reason to change it.
-            fields.add(new Field(this, field.path(), field));
+            ColumnIdent path = Symbols.pathFromSymbol(field);
+            fields.add(path, new Field(this, path, field));
         }
-        this.outputs = List.copyOf(fields.asList());
     }
 
     public AnalyzedRelation left() {
@@ -77,30 +76,21 @@ public class UnionSelect implements AnalyzedRelation {
     }
 
     @Override
-    public Field getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
+    public Symbol getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
         if (operation != Operation.READ) {
             throw new UnsupportedOperationException("getField on MultiSourceSelect is only supported for READ operations");
         }
-        Field field = fields.getWithSubscriptFallback(path, this, left);
-        if (field == null && path.isTopLevel() == false) {
-            return Relations.resolveSubscriptOnAliasedField(path, fields, operation);
-        }
-        return field;
+        return fields.getWithSubscriptFallback(path, this, left);
     }
 
     @Override
-    public List<Field> fields() {
+    public List<Symbol> fields() {
         return fields.asList();
     }
 
     @Override
     public QualifiedName getQualifiedName() {
         return name;
-    }
-
-    @Override
-    public List<Symbol> outputs() {
-        return outputs;
     }
 
     @Override

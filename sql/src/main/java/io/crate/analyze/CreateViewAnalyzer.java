@@ -24,6 +24,7 @@ package io.crate.analyze;
 
 import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.analyze.relations.RelationAnalyzer;
+import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.CoordinatorTxnCtx;
 import io.crate.metadata.RelationName;
 import io.crate.metadata.blob.BlobSchemaInfo;
@@ -59,7 +60,7 @@ public final class CreateViewAnalyzer {
         // on an outdated cluster check, leading to a potential race condition.
         // The "masterOperation" which will update the clusterState will do a real-time verification
 
-        if (query.fields().stream().map(f -> f.path().sqlFqn()).distinct().count() != query.fields().size()) {
+        if (query.fields().stream().map(f -> Symbols.pathFromSymbol(f).sqlFqn()).distinct().count() != query.fields().size()) {
             throw new IllegalArgumentException("Query in CREATE VIEW must not have duplicate column names");
         }
         return new CreateViewStmt(

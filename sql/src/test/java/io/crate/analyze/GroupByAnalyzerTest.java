@@ -27,6 +27,7 @@ import io.crate.analyze.relations.AliasedAnalyzedRelation;
 import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Symbol;
+import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.CoordinatorTxnCtx;
 import io.crate.metadata.Reference;
 import io.crate.metadata.ReferenceIdent;
@@ -84,17 +85,17 @@ public class GroupByAnalyzerTest extends CrateDummyClusterServiceUnitTest {
     public void testGroupKeyNotInResultColumnList() throws Exception {
         AnalyzedRelation relation = analyze("select count(*) from sys.nodes group by name");
         assertThat(relation.groupBy().size(), is(1));
-        assertThat(relation.fields().get(0).path().sqlFqn(), is("count(*)"));
+        assertThat(Symbols.pathFromSymbol(relation.fields().get(0)).sqlFqn(), is("count(*)"));
     }
 
     @Test
     public void testGroupByOnAlias() throws Exception {
         AnalyzedRelation relation = analyze("select count(*), name as n from sys.nodes group by n");
         assertThat(relation.groupBy().size(), is(1));
-        assertThat(relation.fields().get(0).path().sqlFqn(), is("count(*)"));
-        assertThat(relation.fields().get(1).path().sqlFqn(), is("n"));
+        assertThat(relation.fields().get(0), isFunction("count(*)"));
+        assertThat(relation.fields().get(1), isReference("n"));
 
-        assertEquals(relation.groupBy().get(0), relation.outputs().get(1));
+        assertEquals(relation.groupBy().get(0), relation.fields().get(1));
     }
 
     @Test
@@ -102,7 +103,7 @@ public class GroupByAnalyzerTest extends CrateDummyClusterServiceUnitTest {
         // just like in postgres access by ordinal starts with 1
         AnalyzedRelation relation = analyze("select count(*), name as n from sys.nodes group by 2");
         assertThat(relation.groupBy().size(), is(1));
-        assertEquals(relation.groupBy().get(0), relation.outputs().get(1));
+        assertEquals(relation.groupBy().get(0), relation.fields().get(1));
     }
 
     @Test
@@ -200,7 +201,7 @@ public class GroupByAnalyzerTest extends CrateDummyClusterServiceUnitTest {
         assertThat(relation.limit(), nullValue());
 
         assertThat(relation.groupBy(), notNullValue());
-        assertThat(relation.outputs().size(), is(2));
+        assertThat(relation.fields().size(), is(2));
         assertThat(relation.groupBy().size(), is(1));
         assertThat(relation.groupBy().get(0), isReference("load['1']"));
     }
@@ -286,7 +287,7 @@ public class GroupByAnalyzerTest extends CrateDummyClusterServiceUnitTest {
                     ") t order by 1 desc");
         assertThat(relation, instanceOf(QueriedSelectRelation.class));
         QueriedSelectRelation<?> outerRelation = (QueriedSelectRelation) relation;
-        assertThat(outerRelation.outputs(), contains(isField("id")));
+        assertThat(outerRelation.fields(), contains(isField("id")));
 
         assertThat(outerRelation.groupBy(), Matchers.empty());
         assertThat(outerRelation.orderBy().orderBySymbols(), contains(isField("id")));
@@ -301,7 +302,7 @@ public class GroupByAnalyzerTest extends CrateDummyClusterServiceUnitTest {
     public void testGroupByOnLiteral() throws Exception {
         AnalyzedRelation relation = analyze(
             "select [1,2,3], count(*) from users group by 1");
-        assertThat(relation.outputs(), isSQL("[1, 2, 3], count()"));
+        assertThat(relation.fields(), isSQL("[1, 2, 3], count()"));
         assertThat(relation.groupBy(), isSQL("[1, 2, 3]"));
     }
 
@@ -309,7 +310,7 @@ public class GroupByAnalyzerTest extends CrateDummyClusterServiceUnitTest {
     public void testGroupByOnNullLiteral() throws Exception {
         AnalyzedRelation relation = analyze(
             "select null, count(*) from users group by 1");
-        assertThat(relation.outputs(), isSQL("NULL, count()"));
+        assertThat(relation.fields(), isSQL("NULL, count()"));
         assertThat(relation.groupBy(), isSQL("NULL"));
     }
 

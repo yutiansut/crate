@@ -29,6 +29,7 @@ import io.crate.analyze.WhereClause;
 import io.crate.exceptions.ColumnUnknownException;
 import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Symbol;
+import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.table.Operation;
 import io.crate.sql.tree.QualifiedName;
@@ -44,7 +45,6 @@ public class AliasedAnalyzedRelation implements AnalyzedRelation {
     private final QualifiedName qualifiedName;
     private final List<String> columnAliases;
     private final Fields fields;
-    private final List<Symbol> outputSymbols;
     private final Map<ColumnIdent, ColumnIdent> aliasToColumnMapping;
 
     public AliasedAnalyzedRelation(AnalyzedRelation relation, QualifiedName relationAlias) {
@@ -55,17 +55,16 @@ public class AliasedAnalyzedRelation implements AnalyzedRelation {
         this.relation = relation;
         qualifiedName = relationAlias;
         this.columnAliases = columnAliases;
-        List<Field> originalFields = relation.fields();
+        List<Symbol> originalFields = relation.fields();
         fields = new Fields(originalFields.size());
-        outputSymbols = List.copyOf(relation.fields());
         aliasToColumnMapping = new HashMap<>(columnAliases.size());
         createAliasToColumnMappingAndNewFields(columnAliases, originalFields);
     }
 
-    private void createAliasToColumnMappingAndNewFields(List<String> columnAliases, List<Field> originalFields) {
+    private void createAliasToColumnMappingAndNewFields(List<String> columnAliases, List<Symbol> originalFields) {
         for (int i = 0; i < originalFields.size(); i++) {
-            Field field = originalFields.get(i);
-            ColumnIdent ci = field.path();
+            Symbol field = originalFields.get(i);
+            ColumnIdent ci = Symbols.pathFromSymbol(field);
             if (i < columnAliases.size()) {
                 String columnAlias = columnAliases.get(i);
                 if (columnAlias != null) {
@@ -73,7 +72,7 @@ public class AliasedAnalyzedRelation implements AnalyzedRelation {
                     ci = new ColumnIdent(columnAlias);
                 }
             }
-            fields.add(new Field(this, ci, field));
+            fields.add(ci, new Field(this, ci, field));
         }
     }
 
@@ -86,12 +85,11 @@ public class AliasedAnalyzedRelation implements AnalyzedRelation {
     }
 
     @Override
-    public Field getField(ColumnIdent path,
-                          Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
-        Field field = fields.get(path);
+    public Symbol getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
+        Symbol field = fields.get(path);
         if (field == null) {
             ColumnIdent childPath = aliasToColumnMapping.getOrDefault(path, path);
-            Field originalField = relation.getField(childPath, operation);
+            Symbol originalField = relation.getField(childPath, operation);
             if (originalField != null) {
                 field = new Field(this, path, originalField);
             }
@@ -100,18 +98,13 @@ public class AliasedAnalyzedRelation implements AnalyzedRelation {
     }
 
     @Override
-    public List<Field> fields() {
+    public List<Symbol> fields() {
         return fields.asList();
     }
 
     @Override
     public QualifiedName getQualifiedName() {
         return qualifiedName;
-    }
-
-    @Override
-    public List<Symbol> outputs() {
-        return outputSymbols;
     }
 
     @Override

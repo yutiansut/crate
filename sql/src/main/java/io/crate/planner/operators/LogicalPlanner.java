@@ -177,8 +177,8 @@ public class LogicalPlanner {
         if (selectSymbol.getResultType() == SelectSymbol.ResultType.SINGLE_COLUMN_MULTIPLE_VALUES) {
             OrderBy relationOrderBy = relation.orderBy();
             if (relationOrderBy == null ||
-                relationOrderBy.orderBySymbols().get(0).equals(relation.outputs().get(0)) == false) {
-                return Order.create(planBuilder, new OrderBy(relation.outputs()));
+                relationOrderBy.orderBySymbols().get(0).equals(relation.fields().get(0)) == false) {
+                return Order.create(planBuilder, new OrderBy(List.copyOf(relation.fields())));
             }
         }
         return planBuilder;
@@ -248,14 +248,14 @@ public class LogicalPlanner {
                             splitPoints.tableFunctions()
                         ),
                         relation.isDistinct(),
-                        relation.outputs()
+                        List.copyOf(relation.fields())
                     ),
                     relation.orderBy()
                 ),
                 relation.limit(),
                 relation.offset()
             ),
-            relation.outputs()
+            List.copyOf(relation.fields())
         );
     }
 

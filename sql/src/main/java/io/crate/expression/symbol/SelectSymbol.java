@@ -65,7 +65,7 @@ public class SelectSymbol extends Symbol {
 
     @Override
     public boolean canBeCasted() {
-        for (Symbol symbol : relation.outputs()) {
+        for (Symbol symbol : relation.fields()) {
             if (!symbol.canBeCasted()) {
                 return false;
             }
@@ -75,7 +75,7 @@ public class SelectSymbol extends Symbol {
 
     @Override
     public boolean isValueSymbol() {
-        for (Symbol symbol : relation.outputs()) {
+        for (Symbol symbol : relation.fields()) {
             if (!symbol.isValueSymbol()) {
                 return false;
             }

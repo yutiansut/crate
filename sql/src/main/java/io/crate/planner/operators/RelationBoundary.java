@@ -51,12 +51,6 @@ public class RelationBoundary extends ForwardingLogicalPlan {
                                              SubqueryPlanner subqueryPlanner) {
         return (tableStats, hints) -> {
             HashMap<Symbol, Symbol> reverseMapping = new HashMap<>();
-            List<Field> fields = relation.fields();
-            for (int i = 0; i < fields.size(); i++) {
-                Field field = fields.get(i);
-                Symbol outputAtSamePosition = relation.outputs().get(i);
-                reverseMapping.put(outputAtSamePosition, field);
-            }
             LogicalPlan source = sourceBuilder.build(tableStats, hints);
             for (Symbol symbol : source.outputs()) {
                 RefVisitor.visitRefs(symbol, r -> {
