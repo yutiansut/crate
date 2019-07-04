@@ -28,12 +28,13 @@ import io.crate.breaker.RowAccountingWithEstimators;
 import io.crate.data.Row;
 import io.crate.data.Row1;
 import io.crate.data.RowN;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ColumnAlias;
 import io.crate.expression.symbol.InputColumn;
+import io.crate.expression.symbol.ScopedSymbol;
+import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.ColumnIdent;
 import io.crate.test.integration.CrateUnitTest;
-import io.crate.testing.DummyRelation;
 import io.crate.types.DataTypes;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.breaker.NoopCircuitBreaker;
@@ -52,10 +53,10 @@ public class RestActionReceiversTest extends CrateUnitTest {
         new RowN(new Object[]{"bar", 2, false}),
         new RowN(new Object[]{"foobar", 3, null})
     );
-    private final List<Field> fields = ImmutableList.of(
-        new Field(new DummyRelation(), ColumnIdent.fromPath("doc.col_a"), new InputColumn(0, DataTypes.STRING)),
-        new Field(new DummyRelation(), ColumnIdent.fromPath("doc.col_b"), new InputColumn(1, DataTypes.INTEGER)),
-        new Field(new DummyRelation(), ColumnIdent.fromPath("doc.col_c"), new InputColumn(2, DataTypes.BOOLEAN))
+    private final List<Symbol> fields = ImmutableList.of(
+        new ColumnAlias(ColumnIdent.fromPath("doc.col_a"), new InputColumn(0, DataTypes.STRING)),
+        new ColumnAlias(ColumnIdent.fromPath("doc.col_b"), new InputColumn(1, DataTypes.INTEGER)),
+        new ColumnAlias(ColumnIdent.fromPath("doc.col_c"), new InputColumn(2, DataTypes.BOOLEAN))
     );
     private final Row row = new Row1(1L);
 
@@ -77,8 +78,8 @@ public class RestActionReceiversTest extends CrateUnitTest {
         XContentBuilder actualBuilder = receiver.finishBuilder();
 
         ResultToXContentBuilder builder = ResultToXContentBuilder.builder(JsonXContent.contentBuilder());
-        builder.cols(Collections.<Field>emptyList());
-        builder.colTypes(Collections.<Field>emptyList());
+        builder.cols(Collections.<ScopedSymbol>emptyList());
+        builder.colTypes(Collections.<ScopedSymbol>emptyList());
         builder.startRows();
         builder.addRow(row, 0);
         builder.finishRows();

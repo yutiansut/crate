@@ -27,7 +27,7 @@ import io.crate.analyze.HavingClause;
 import io.crate.analyze.OrderBy;
 import io.crate.analyze.WhereClause;
 import io.crate.exceptions.ColumnUnknownException;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.ColumnIdent;
@@ -72,7 +72,7 @@ public class AliasedAnalyzedRelation implements AnalyzedRelation {
                     ci = new ColumnIdent(columnAlias);
                 }
             }
-            fields.add(ci, new Field(this, ci, field));
+            fields.add(ci, new ScopedSymbol(this, field));
         }
     }
 
@@ -91,7 +91,7 @@ public class AliasedAnalyzedRelation implements AnalyzedRelation {
             ColumnIdent childPath = aliasToColumnMapping.getOrDefault(path, path);
             Symbol originalField = relation.getField(childPath, operation);
             if (originalField != null) {
-                field = new Field(this, path, originalField);
+                field = new ScopedSymbol(this, originalField);
             }
         }
         return field;

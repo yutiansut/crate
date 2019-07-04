@@ -24,8 +24,9 @@ package io.crate.analyze;
 import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.analyze.relations.AnalyzedRelationVisitor;
 import io.crate.exceptions.ColumnUnknownException;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ColumnAlias;
 import io.crate.expression.symbol.InputColumn;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.doc.DocTableInfo;
@@ -44,7 +45,7 @@ public class ShowCreateTableAnalyzedStatement implements AnalyzedStatement, Anal
 
     public ShowCreateTableAnalyzedStatement(DocTableInfo tableInfo) {
         String columnName = "SHOW CREATE TABLE " + tableInfo.ident().fqn();
-        this.fields = Collections.singletonList(new Field(this, new ColumnIdent(columnName), new InputColumn(0, DataTypes.STRING)));
+        this.fields = Collections.singletonList(new ColumnAlias(new ColumnIdent(columnName), new InputColumn(0, DataTypes.STRING)));
         this.tableInfo = tableInfo;
     }
 
@@ -63,7 +64,7 @@ public class ShowCreateTableAnalyzedStatement implements AnalyzedStatement, Anal
     }
 
     @Override
-    public Field getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
+    public ScopedSymbol getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
         throw new UnsupportedOperationException("getWritableField() is not supported on ShowCreateTableAnalyzedStatement");
     }
 

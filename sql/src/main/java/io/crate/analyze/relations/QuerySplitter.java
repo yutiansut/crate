@@ -23,7 +23,7 @@
 package io.crate.analyze.relations;
 
 
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.MatchPredicate;
 import io.crate.expression.symbol.Symbol;
@@ -45,7 +45,7 @@ public class QuerySplitter {
 
     /**
      * <p>
-     * Splits a (function) symbol on <code>AND</code> based on relation occurrences of {@link io.crate.expression.symbol.Field}
+     * Splits a (function) symbol on <code>AND</code> based on relation occurrences of {@link ScopedSymbol}
      * into multiple symbols.
      * </p>
      * <p>
@@ -110,7 +110,7 @@ public class QuerySplitter {
         }
 
         @Override
-        public Void visitField(Field field, Map<Set<QualifiedName>, Symbol> context) {
+        public Void visitScopedSymbol(ScopedSymbol field, Map<Set<QualifiedName>, Symbol> context) {
             context.put(Collections.singleton(field.relation().getQualifiedName()), field);
             return null;
         }
@@ -118,7 +118,7 @@ public class QuerySplitter {
         @Override
         public Void visitMatchPredicate(MatchPredicate matchPredicate, Map<Set<QualifiedName>, Symbol> context) {
             LinkedHashSet<QualifiedName> relationNames = new LinkedHashSet<>();
-            for (Field field : matchPredicate.identBoostMap().keySet()) {
+            for (ScopedSymbol field : matchPredicate.identBoostMap().keySet()) {
                 relationNames.add(field.relation().getQualifiedName());
             }
             context.put(relationNames, matchPredicate);

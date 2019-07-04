@@ -44,7 +44,7 @@ public class Symbols {
     private static final HasColumnVisitor HAS_COLUMN_VISITOR = new HasColumnVisitor();
     private static final AllLiteralsMatcher ALL_LITERALS_MATCHER = new AllLiteralsMatcher();
 
-    public static final Predicate<Symbol> IS_COLUMN = s -> s instanceof Field || s instanceof Reference;
+    public static final Predicate<Symbol> IS_COLUMN = s -> s instanceof ScopedSymbol || s instanceof Reference;
     public static final Predicate<Symbol> IS_GENERATED_COLUMN = input -> input instanceof GeneratedReference;
 
     public static List<DataType> typeView(List<? extends Symbol> symbols) {
@@ -63,16 +63,30 @@ public class Symbols {
     @Nullable
     public static <V> V lookupValueByColumn(Map<? extends Symbol, V> valuesBySymbol, ColumnIdent column) {
         for (Map.Entry<? extends Symbol, V> entry : valuesBySymbol.entrySet()) {
-            Symbol key = entry.getKey();
+            Symbol key = unwrap(entry.getKey());
             if (key instanceof Reference && ((Reference) key).column().equals(column)) {
-                return entry.getValue();
-            }
-            if (key instanceof Field && ((Field) key).path().equals(column)) {
                 return entry.getValue();
             }
         }
         return null;
     }
+
+    private static Symbol unwrap(Symbol key) {
+        boolean done = false;
+        while (!done) {
+            done = true;
+            if (key instanceof ColumnAlias) {
+                key = ((ColumnAlias) key).symbol();
+                done = false;
+            }
+            if (key instanceof ScopedSymbol) {
+                key = ((ScopedSymbol) key).pointer();
+                done = false;
+            }
+        }
+        return key;
+    }
+
 
     /**
      * returns true if the symbol contains the given columnIdent.
@@ -142,10 +156,12 @@ public class Symbols {
     }
 
     public static ColumnIdent pathFromSymbol(Symbol symbol) {
-        if (symbol instanceof Field) {
-            return ((Field) symbol).path();
+        if (symbol instanceof ColumnAlias) {
+            return ((ColumnAlias) symbol).alias();
         } else if (symbol instanceof Reference) {
             return ((Reference) symbol).column();
+        } else if (symbol instanceof ScopedSymbol) {
+            return pathFromSymbol(((ScopedSymbol) symbol).pointer());
         }
         return new ColumnIdent(SymbolPrinter.INSTANCE.printUnqualified(symbol));
     }
@@ -176,8 +192,8 @@ public class Symbols {
         }
 
         @Override
-        public Boolean visitField(Field field, ColumnIdent column) {
-            return field.path().equals(column) || field.path().sqlFqn().equals(column.sqlFqn());
+        public Boolean visitScopedSymbol(ScopedSymbol field, ColumnIdent column) {
+            return process(field.pointer(), column);
         }
 
         @Override

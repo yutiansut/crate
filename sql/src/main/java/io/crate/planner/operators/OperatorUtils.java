@@ -22,59 +22,18 @@
 
 package io.crate.planner.operators;
 
-import io.crate.expression.symbol.FieldReplacer;
-import io.crate.expression.symbol.FieldsVisitor;
-import io.crate.expression.symbol.RefReplacer;
-import io.crate.expression.symbol.RefVisitor;
-import io.crate.expression.symbol.Symbol;
-import io.crate.expression.symbol.Symbols;
 import io.crate.common.collections.Lists2;
+import io.crate.expression.symbol.FieldReplacer;
+import io.crate.expression.symbol.RefReplacer;
+import io.crate.expression.symbol.Symbol;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 public final class OperatorUtils {
 
     private OperatorUtils() {
-    }
-
-    /**
-     * Return columns which are not used.
-     *
-     * Examples:
-     *
-     * <pre>
-     * toCollect: [f(x)]        used: x
-     * unused:    []
-     *
-     * toCollect: [x, f(x)]     used: [f(x)]
-     * unused:    []
-     *
-     * toCollect: [x, y]        used: [x]
-     * unused:    [y]
-     * </pre>
-     */
-    static List<Symbol> getUnusedColumns(List<Symbol> toCollect, Set<Symbol> usedColumns) {
-        List<Symbol> unusedCols = new ArrayList<>();
-        for (Symbol symbol : toCollect) {
-            if (usedColumns.contains(symbol)) {
-                continue;
-            }
-            RefVisitor.visitRefs(symbol, r -> {
-                if (!usedColumns.contains(r) && !Symbols.containsColumn(usedColumns, r.column())) {
-                    unusedCols.add(r);
-                }
-            });
-            FieldsVisitor.visitFields(symbol, f -> {
-                if (!usedColumns.contains(f) && !Symbols.containsColumn(usedColumns, f.path())) {
-                    unusedCols.add(f);
-                }
-            });
-        }
-        return unusedCols;
     }
 
     /**

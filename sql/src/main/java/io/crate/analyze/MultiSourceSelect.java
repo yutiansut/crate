@@ -26,9 +26,6 @@ import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.analyze.relations.AnalyzedRelationVisitor;
 import io.crate.analyze.relations.JoinPair;
 import io.crate.common.collections.Lists2;
-import io.crate.exceptions.AmbiguousColumnException;
-import io.crate.exceptions.ColumnUnknownException;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.FieldReplacer;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.Symbols;
@@ -107,25 +104,7 @@ public class MultiSourceSelect implements AnalyzedRelation {
             throw new UnsupportedOperationException(
                 "getField on MultiSourceSelect is only supported for READ operations");
         }
-        Symbol field = fields.get(path);
-        if (field == null && !path.isTopLevel()) {
-            for (AnalyzedRelation value : sources.values()) {
-                Symbol childField = null;
-                try {
-                    childField = value.getField(path, operation);
-                } catch (ColumnUnknownException ignored) {
-                    // ignore
-                }
-                if (childField != null) {
-                    if (field != null) {
-                        throw new AmbiguousColumnException(path, field);
-                    }
-                    field = new Field(this, path, childField);
-                }
-            }
-            return field;
-        }
-        return field;
+        return fields.get(path);
     }
 
     @Override
@@ -196,7 +175,7 @@ public class MultiSourceSelect implements AnalyzedRelation {
         Function<? super Symbol, ? extends Symbol> updateField = FieldReplacer.bind(f -> {
             QualifiedName name = f.relation().getQualifiedName();
             if (mappedSources.containsKey(name)) {
-                return mappedSources.get(name).getField(f.path(), Operation.READ);
+                return mappedSources.get(name).getField(Symbols.pathFromSymbol(f), Operation.READ);
             }
             return f;
         });

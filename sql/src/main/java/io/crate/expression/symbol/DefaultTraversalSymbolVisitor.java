@@ -65,7 +65,7 @@ public abstract class DefaultTraversalSymbolVisitor<C, R> extends SymbolVisitor<
 
     @Override
     public R visitMatchPredicate(MatchPredicate matchPredicate, C context) {
-        for (Field field : matchPredicate.identBoostMap().keySet()) {
+        for (ScopedSymbol field : matchPredicate.identBoostMap().keySet()) {
             process(field, context);
         }
         return null;

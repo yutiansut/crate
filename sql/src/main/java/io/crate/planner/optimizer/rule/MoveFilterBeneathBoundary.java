@@ -22,7 +22,7 @@
 
 package io.crate.planner.optimizer.rule;
 
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.FieldReplacer;
 import io.crate.planner.operators.Filter;
 import io.crate.planner.operators.LogicalPlan;
@@ -58,7 +58,7 @@ public class MoveFilterBeneathBoundary implements Rule<Filter> {
         RelationBoundary boundary = captures.get(this.boundary);
         Filter newFilter = new Filter(
             boundary.source(),
-            FieldReplacer.replaceFields(plan.query(), Field::pointer)
+            FieldReplacer.replaceFields(plan.query(), ScopedSymbol::pointer)
         );
         return boundary.replaceSources(List.of(newFilter));
     }

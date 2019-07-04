@@ -25,11 +25,11 @@ import com.google.common.base.MoreObjects;
 import io.crate.expression.symbol.Aggregation;
 import io.crate.expression.symbol.DefaultTraversalSymbolVisitor;
 import io.crate.expression.symbol.FetchReference;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.InputColumn;
 import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.MatchPredicate;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.SymbolType;
 import io.crate.expression.symbol.Symbols;
@@ -195,10 +195,10 @@ public final class InputColumns extends DefaultTraversalSymbolVisitor<InputColum
     }
 
     @Override
-    public Symbol visitField(Field field, SourceSymbols sourceSymbols) {
+    public Symbol visitScopedSymbol(ScopedSymbol field, SourceSymbols sourceSymbols) {
         InputColumn inputColumn = sourceSymbols.inputs.get(field);
         if (inputColumn == null) {
-            Symbol subscriptOnRoot = tryCreateSubscriptOnRoot(field, field.path(), sourceSymbols.inputs);
+            Symbol subscriptOnRoot = tryCreateSubscriptOnRoot(field, Symbols.pathFromSymbol(field), sourceSymbols.inputs);
             if (subscriptOnRoot == null) {
                 throw new IllegalArgumentException("Couldn't find " + field + " in " + sourceSymbols);
             }

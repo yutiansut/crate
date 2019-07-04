@@ -62,7 +62,7 @@ import io.crate.expression.scalar.arithmetic.MapFunction;
 import io.crate.expression.scalar.cast.CastFunctionResolver;
 import io.crate.expression.scalar.conditional.IfFunction;
 import io.crate.expression.scalar.timestamp.CurrentTimestampFunction;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.SelectSymbol;
@@ -911,7 +911,7 @@ public class ExpressionAnalyzer {
 
         @Override
         public Symbol visitMatchPredicate(MatchPredicate node, ExpressionAnalysisContext context) {
-            Map<Field, Symbol> identBoostMap = new HashMap<>(node.idents().size());
+            Map<ScopedSymbol, Symbol> identBoostMap = new HashMap<>(node.idents().size());
             DataType columnType = null;
             HashSet<QualifiedName> relationsInColumns = new HashSet<>();
             for (MatchPredicateColumnIdent ident : node.idents()) {
@@ -920,10 +920,10 @@ public class ExpressionAnalyzer {
                     columnType = column.valueType();
                 }
                 Preconditions.checkArgument(
-                    column instanceof Field,
+                    column instanceof ScopedSymbol,
                     SymbolFormatter.format("can only MATCH on columns, not on %s", column));
                 Symbol boost = process(ident.boost(), context);
-                Field field = (Field) column;
+                ScopedSymbol field = (ScopedSymbol) column;
                 identBoostMap.put(field, boost);
                 relationsInColumns.add(field.relation().getQualifiedName());
             }
@@ -1110,8 +1110,8 @@ public class ExpressionAnalyzer {
          * eq(2, name)  becomes  eq(name, 2)
          */
         private void swapIfNecessary() {
-            if ((!(right instanceof Reference || right instanceof Field)
-                || left instanceof Reference || left instanceof Field)
+            if ((!(right instanceof Reference || right instanceof ScopedSymbol)
+                || left instanceof Reference || left instanceof ScopedSymbol)
                 && left.valueType().id() != DataTypes.UNDEFINED.id()) {
                 return;
             }

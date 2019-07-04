@@ -21,7 +21,7 @@
 
 package io.crate.analyze.validator;
 
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.MatchPredicate;
 import io.crate.expression.symbol.Symbol;
@@ -97,7 +97,7 @@ public class SemanticSortValidator {
         }
 
         @Override
-        public Void visitField(Field field, SortContext context) {
+        public Void visitScopedSymbol(ScopedSymbol field, SortContext context) {
             // if we are in a function, we do not need to check the data type.
             // the function will do that for us.
             if (!context.inFunction && !DataTypes.PRIMITIVE_TYPES.contains(field.valueType())) {

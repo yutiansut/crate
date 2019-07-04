@@ -26,7 +26,7 @@ import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.expression.operator.AndOperator;
 import io.crate.expression.operator.EqOperator;
 import io.crate.expression.operator.OrOperator;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.SymbolVisitor;
@@ -108,7 +108,7 @@ public class EquiJoinDetector {
         }
 
         @Override
-        public Void visitField(Field field, Context context) {
+        public Void visitScopedSymbol(ScopedSymbol field, Context context) {
             if (context.insideEqOperator) {
                 context.usedRelationsInsideEqOperatorArgument.add(field.relation());
             }

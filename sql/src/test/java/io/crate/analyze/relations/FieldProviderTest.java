@@ -25,8 +25,9 @@ import com.google.common.collect.ImmutableMap;
 import io.crate.exceptions.AmbiguousColumnException;
 import io.crate.exceptions.ColumnUnknownException;
 import io.crate.exceptions.RelationUnknown;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Symbol;
+import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.Schemas;
 import io.crate.metadata.table.Operation;
 import io.crate.sql.tree.QualifiedName;
@@ -150,9 +151,9 @@ public class FieldProviderTest extends CrateUnitTest {
         // select name from t
         AnalyzedRelation relation = new DummyRelation("name");
         var resolver = newFQFieldProvider(ImmutableMap.of(newQN("doc.t"), relation));
-        Field field = (Field) resolver.resolveField(newQN("name"), null, Operation.READ);
+        ScopedSymbol field = (ScopedSymbol) resolver.resolveField(newQN("name"), null, Operation.READ);
         assertThat(field.relation(), equalTo(relation));
-        assertThat(field.path().sqlFqn(), is("name"));
+        assertThat(Symbols.pathFromSymbol(field).sqlFqn(), is("name"));
     }
 
     @Test
@@ -161,9 +162,9 @@ public class FieldProviderTest extends CrateUnitTest {
 
         AnalyzedRelation relation = new DummyRelation("name");
         var resolver = newFQFieldProvider(ImmutableMap.of(newQN("doc.t"), relation));
-        Field field = (Field) resolver.resolveField(newQN("doc.t.name"), null, Operation.INSERT);
+        ScopedSymbol field = (ScopedSymbol) resolver.resolveField(newQN("doc.t.name"), null, Operation.INSERT);
         assertThat(field.relation(), equalTo(relation));
-        assertThat(field.path().sqlFqn(), is("name"));
+        assertThat(Symbols.pathFromSymbol(field).sqlFqn(), is("name"));
     }
 
     @Test
@@ -211,7 +212,7 @@ public class FieldProviderTest extends CrateUnitTest {
         // select name from doc.t
         AnalyzedRelation relation = new DummyRelation("name");
         var resolver = new NameFieldProvider(relation);
-        Field field = (Field) resolver.resolveField(new QualifiedName(Arrays.asList("name")), null, Operation.READ);
+        ScopedSymbol field = (ScopedSymbol) resolver.resolveField(new QualifiedName(Arrays.asList("name")), null, Operation.READ);
         assertThat(field.relation(), equalTo(relation));
     }
 
@@ -229,7 +230,7 @@ public class FieldProviderTest extends CrateUnitTest {
         AnalyzedRelation barT = new DummyRelation("\"Name\"");
 
         var resolver = newFQFieldProvider(ImmutableMap.of(newQN("\"Foo\".\"Bar\""), barT));
-        Field field = (Field) resolver.resolveField(newQN("\"Foo\".\"Bar\".\"Name\""), null, Operation.READ);
+        ScopedSymbol field = (ScopedSymbol) resolver.resolveField(newQN("\"Foo\".\"Bar\".\"Name\""), null, Operation.READ);
         assertThat(field.relation(), equalTo(barT));
     }
 
@@ -247,7 +248,7 @@ public class FieldProviderTest extends CrateUnitTest {
         AnalyzedRelation barT = new DummyRelation("name");
 
         var resolver = newFQFieldProvider(ImmutableMap.of(newQN("\"Bar\""), barT));
-        Field field = (Field) resolver.resolveField(newQN("\"Bar\".name"), null, Operation.READ);
+        ScopedSymbol field = (ScopedSymbol) resolver.resolveField(newQN("\"Bar\".name"), null, Operation.READ);
         assertThat(field.relation(), equalTo(barT));
     }
 

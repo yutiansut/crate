@@ -27,8 +27,9 @@ import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.analyze.relations.AnalyzedRelationVisitor;
 import io.crate.exceptions.ColumnUnknownException;
 import io.crate.execution.dsl.phases.FileUriCollectPhase;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ColumnAlias;
 import io.crate.expression.symbol.InputColumn;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.doc.DocTableInfo;
@@ -47,14 +48,14 @@ import java.util.function.Predicate;
 public class CopyFromReturnSummaryAnalyzedStatement extends CopyFromAnalyzedStatement implements AnalyzedRelation {
 
     private final List<Symbol> fields = ImmutableList.of(
-        new Field(this, new ColumnIdent("node"), new InputColumn(0, ObjectType.builder()
+        new ColumnAlias(new ColumnIdent("node"), new InputColumn(0, ObjectType.builder()
             .setInnerType("id", DataTypes.STRING)
             .setInnerType("name", DataTypes.STRING)
             .build())),
-        new Field(this, new ColumnIdent("uri"), new InputColumn(1, DataTypes.STRING)),
-        new Field(this, new ColumnIdent("success_count"), new InputColumn(2, DataTypes.LONG)),
-        new Field(this, new ColumnIdent("error_count"), new InputColumn(3, DataTypes.LONG)),
-        new Field(this, new ColumnIdent("errors"), new InputColumn(4, ObjectType.untyped()))
+        new ColumnAlias(new ColumnIdent("uri"), new InputColumn(1, DataTypes.STRING)),
+        new ColumnAlias(new ColumnIdent("success_count"), new InputColumn(2, DataTypes.LONG)),
+        new ColumnAlias(new ColumnIdent("error_count"), new InputColumn(3, DataTypes.LONG)),
+        new ColumnAlias(new ColumnIdent("errors"), new InputColumn(4, ObjectType.untyped()))
     );
 
     private final QualifiedName qualifiedName;
@@ -76,7 +77,7 @@ public class CopyFromReturnSummaryAnalyzedStatement extends CopyFromAnalyzedStat
     }
 
     @Override
-    public Field getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
+    public ScopedSymbol getField(ColumnIdent path, Operation operation) throws UnsupportedOperationException, ColumnUnknownException {
         throw new UnsupportedOperationException("getField is unsupported on internal relation for copy from return");
     }
 

@@ -25,11 +25,12 @@ package io.crate.testing;
 import io.crate.data.Input;
 import io.crate.expression.symbol.Aggregation;
 import io.crate.expression.symbol.FetchReference;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.InputColumn;
 import io.crate.expression.symbol.Literal;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Symbol;
+import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.Reference;
 import io.crate.metadata.RelationName;
@@ -79,19 +80,19 @@ public class SymbolMatchers {
     }
 
     public static Matcher<Symbol> isField(final String expectedName, @Nullable final DataType dataType) {
-        var hasExpectedName = withFeature(s -> ((Field) s).path().sqlFqn(), "name", equalTo(expectedName));
+        var hasExpectedName = withFeature(s -> Symbols.pathFromSymbol(s).sqlFqn(), "name", equalTo(expectedName));
         if (dataType == null) {
-            return both(Matchers.<Symbol>instanceOf(Field.class)).and(hasExpectedName);
+            return both(Matchers.<Symbol>instanceOf(ScopedSymbol.class)).and(hasExpectedName);
         }
-        return allOf(instanceOf(Field.class), hasExpectedName, hasDataType(dataType));
+        return allOf(instanceOf(ScopedSymbol.class), hasExpectedName, hasDataType(dataType));
     }
 
     public static Matcher<Symbol> fieldPointsToReferenceOf(final String expectedName,
                                                            final String expectedRelationName) {
         java.util.function.Function<Symbol, Symbol> followFieldPointer = s -> {
             Symbol symbol = s;
-            while (symbol instanceof Field) {
-                symbol = ((Field) symbol).pointer();
+            while (symbol instanceof ScopedSymbol) {
+                symbol = ((ScopedSymbol) symbol).pointer();
             }
             return symbol;
         };

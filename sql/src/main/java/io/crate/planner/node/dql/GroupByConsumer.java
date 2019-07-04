@@ -23,7 +23,7 @@ package io.crate.planner.node.dql;
 
 import io.crate.analyze.WhereClause;
 import io.crate.expression.symbol.DefaultTraversalSymbolVisitor;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.format.SymbolFormatter;
 import io.crate.metadata.ColumnIdent;
@@ -96,7 +96,7 @@ public class GroupByConsumer {
         }
 
         @Override
-        public Void visitField(Field field, Void context) {
+        public Void visitScopedSymbol(ScopedSymbol field, Void context) {
             return process(field.pointer(), context);
         }
     }

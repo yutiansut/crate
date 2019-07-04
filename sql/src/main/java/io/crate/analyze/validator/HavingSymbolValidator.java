@@ -21,7 +21,7 @@
 
 package io.crate.analyze.validator;
 
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.SymbolVisitor;
@@ -60,7 +60,7 @@ public class HavingSymbolValidator {
     private static class InnerValidator extends SymbolVisitor<HavingContext, Void> {
 
         @Override
-        public Void visitField(Field field, HavingContext context) {
+        public Void visitScopedSymbol(ScopedSymbol field, HavingContext context) {
             if (!context.insideAggregation && !context.groupByContains(field)) {
                 throw new IllegalArgumentException(
                     SymbolFormatter.format("Cannot use column %s outside of an Aggregation in HAVING clause. " +

@@ -26,7 +26,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.exceptions.AmbiguousColumnAliasException;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.table.Operation;
@@ -71,7 +71,7 @@ public class Fields {
             if (childField == null) {
                 return null;
             }
-            return new Field(scope, column, childField);
+            return new ScopedSymbol(scope, childField);
         }
         return field;
     }

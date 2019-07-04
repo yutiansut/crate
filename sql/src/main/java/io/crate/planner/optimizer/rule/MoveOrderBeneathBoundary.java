@@ -22,7 +22,7 @@
 
 package io.crate.planner.optimizer.rule;
 
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.FieldReplacer;
 import io.crate.planner.operators.LogicalPlan;
 import io.crate.planner.operators.Order;
@@ -56,7 +56,7 @@ public final class MoveOrderBeneathBoundary implements Rule<Order> {
     @Override
     public LogicalPlan apply(Order plan, Captures captures) {
         RelationBoundary relationBoundary = captures.get(boundary);
-        Order newOrder = new Order(relationBoundary.source(), plan.orderBy().map(FieldReplacer.bind(Field::pointer)));
+        Order newOrder = new Order(relationBoundary.source(), plan.orderBy().map(FieldReplacer.bind(ScopedSymbol::pointer)));
         return relationBoundary.replaceSources(List.of(newOrder));
     }
 }

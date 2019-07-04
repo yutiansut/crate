@@ -30,7 +30,7 @@ import io.crate.analyze.relations.TableRelation;
 import io.crate.expression.symbol.Aggregation;
 import io.crate.expression.symbol.DynamicReference;
 import io.crate.expression.symbol.FetchReference;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.InputColumn;
 import io.crate.expression.symbol.Literal;
@@ -114,14 +114,14 @@ public class TableIdentsExtractor {
         }
 
         @Override
-        public Collection<RelationName> visitField(Field field, Void context) {
+        public Collection<RelationName> visitScopedSymbol(ScopedSymbol field, Void context) {
             return RELATION_TABLE_IDENT_EXTRACTOR.process(field.relation(), context);
         }
 
         @Override
         public Collection<RelationName> visitMatchPredicate(MatchPredicate matchPredicate, Void context) {
             Set<RelationName> relationNames = new HashSet<>();
-            for (Map.Entry<Field, Symbol> entry : matchPredicate.identBoostMap().entrySet()) {
+            for (Map.Entry<ScopedSymbol, Symbol> entry : matchPredicate.identBoostMap().entrySet()) {
                 relationNames.addAll(process(entry.getKey(), context));
                 relationNames.addAll(process(entry.getValue(), context));
             }

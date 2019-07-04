@@ -23,10 +23,9 @@
 package io.crate.analyze.relations;
 
 import io.crate.analyze.ValuesResolver;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.InputColumn;
 import io.crate.expression.symbol.Literal;
-import io.crate.metadata.ColumnIdent;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.metadata.table.Operation;
 import io.crate.sql.tree.QualifiedName;
 import io.crate.types.DataTypes;
@@ -47,9 +46,8 @@ public class ExcludedFieldProviderTest {
         QualifiedName excludedName = QualifiedName.of("excluded", "field3");
 
         FieldProvider fieldProvider = (qualifiedName, path, operation) ->
-            new Field(
+            new ScopedSymbol(
                 Mockito.mock(AnalyzedRelation.class),
-                new ColumnIdent(qualifiedName.toString()),
                 new InputColumn(0, DataTypes.INTEGER));
         ValuesResolver valuesResolver = argumentColumn -> {
             assertThat(argumentColumn.path().sqlFqn(), is("field3"));

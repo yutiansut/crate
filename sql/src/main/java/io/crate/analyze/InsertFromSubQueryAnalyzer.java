@@ -33,7 +33,7 @@ import io.crate.analyze.relations.RelationAnalyzer;
 import io.crate.exceptions.ColumnUnknownException;
 import io.crate.expression.eval.EvaluatingNormalizer;
 import io.crate.expression.symbol.DynamicReference;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.InputColumn;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.format.SymbolFormatter;
@@ -86,7 +86,7 @@ class InsertFromSubQueryAnalyzer {
         }
 
         @Override
-        public Symbol allocateAndResolve(Field argumentColumn) {
+        public Symbol allocateAndResolve(ScopedSymbol argumentColumn) {
             Reference reference = targetTableRelation.resolveField(argumentColumn);
             int i = targetColumns.indexOf(reference);
             if (i < 0) {
@@ -260,7 +260,7 @@ class InsertFromSubQueryAnalyzer {
         Map<Reference, Symbol> updateAssignments = new HashMap<>(duplicateKeyContext.getAssignments().size());
         for (Assignment assignment : duplicateKeyContext.getAssignments()) {
             Reference targetCol = requireNonNull(
-                targetTable.resolveField((Field) exprAnalyzer.convert(assignment.columnName(), exprCtx)),
+                targetTable.resolveField((ScopedSymbol) exprAnalyzer.convert(assignment.columnName(), exprCtx)),
                 "resolveField must work on a field that was just resolved"
             );
 

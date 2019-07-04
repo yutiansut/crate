@@ -30,13 +30,14 @@ import io.crate.expression.operator.any.AnyOperator;
 import io.crate.expression.predicate.MatchPredicate;
 import io.crate.expression.scalar.SubscriptFunction;
 import io.crate.expression.symbol.Aggregation;
+import io.crate.expression.symbol.ColumnAlias;
 import io.crate.expression.symbol.DynamicReference;
 import io.crate.expression.symbol.FetchReference;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.InputColumn;
 import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.LiteralValueFormatter;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.SelectSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.SymbolVisitor;
@@ -245,12 +246,20 @@ public final class SymbolPrinter {
         }
 
         @Override
-        public Void visitField(Field field, SymbolPrinterContext context) {
+        public Void visitScopedSymbol(ScopedSymbol field, SymbolPrinterContext context) {
             if (context.isFullQualified() && !isTableFunctionField(field)) {
                 context.builder.append(RelationPrinter.INSTANCE.process(field.relation(), null))
                     .append(DOT);
             }
-            context.builder.append(field.path().quotedOutputName());
+            context.builder.append(field.pointer().representation());
+            return null;
+        }
+
+        @Override
+        public Void visitColumnAlias(ColumnAlias columnAlias, SymbolPrinterContext context) {
+            process(columnAlias.symbol(), context);
+            context.builder.append(" AS ");
+            context.builder.append(columnAlias.alias());
             return null;
         }
 
@@ -323,7 +332,7 @@ public final class SymbolPrinter {
             return "".equals(relationName.schema());
         }
 
-        private static boolean isTableFunctionField(Field field) {
+        private static boolean isTableFunctionField(ScopedSymbol field) {
             AnalyzedRelation relation = field.relation();
             return relation instanceof QueriedSelectRelation
                    && ((QueriedSelectRelation) relation).subRelation() instanceof TableFunctionRelation;

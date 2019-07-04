@@ -27,9 +27,9 @@ import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.common.collections.Lists2;
 import io.crate.data.Row;
 import io.crate.execution.dsl.projection.builder.ProjectionBuilder;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.FieldsVisitor;
 import io.crate.expression.symbol.RefVisitor;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.SelectSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.planner.ExecutionPlan;
@@ -54,11 +54,11 @@ public class RelationBoundary extends ForwardingLogicalPlan {
             LogicalPlan source = sourceBuilder.build(tableStats, hints);
             for (Symbol symbol : source.outputs()) {
                 RefVisitor.visitRefs(symbol, r -> {
-                    Field field = new Field(relation, r.column(), r);
+                    ScopedSymbol field = new ScopedSymbol(relation, r);
                     reverseMapping.putIfAbsent(r, field);
                 });
                 FieldsVisitor.visitFields(symbol, f -> {
-                    Field field = new Field(relation, f.path(), f);
+                    ScopedSymbol field = new ScopedSymbol(relation, f);
                     reverseMapping.putIfAbsent(f, field);
                 });
             }

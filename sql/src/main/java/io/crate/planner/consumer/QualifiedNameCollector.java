@@ -23,7 +23,7 @@
 package io.crate.planner.consumer;
 
 import io.crate.expression.symbol.DefaultTraversalSymbolVisitor;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.MatchPredicate;
 import io.crate.sql.tree.QualifiedName;
 
@@ -34,14 +34,14 @@ public class QualifiedNameCollector extends DefaultTraversalSymbolVisitor<Set<Qu
     public static final QualifiedNameCollector INSTANCE = new QualifiedNameCollector();
 
     @Override
-    public Void visitField(Field field, Set<QualifiedName> context) {
+    public Void visitScopedSymbol(ScopedSymbol field, Set<QualifiedName> context) {
         context.add(field.relation().getQualifiedName());
         return null;
     }
 
     @Override
     public Void visitMatchPredicate(MatchPredicate matchPredicate, Set<QualifiedName> context) {
-        for (Field field : matchPredicate.identBoostMap().keySet()) {
+        for (ScopedSymbol field : matchPredicate.identBoostMap().keySet()) {
             context.add(field.relation().getQualifiedName());
         }
         return null;

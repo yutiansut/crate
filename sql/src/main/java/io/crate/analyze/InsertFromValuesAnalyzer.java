@@ -35,9 +35,9 @@ import io.crate.exceptions.ColumnValidationException;
 import io.crate.execution.dml.upsert.TransportShardUpsertAction;
 import io.crate.expression.ValueExtractors;
 import io.crate.expression.eval.EvaluatingNormalizer;
-import io.crate.expression.symbol.Field;
 import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.RefReplacer;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.SymbolType;
 import io.crate.expression.symbol.format.SymbolFormatter;
@@ -92,13 +92,13 @@ class InsertFromValuesAnalyzer extends AbstractInsertAnalyzer {
         }
 
         @Override
-        public Symbol allocateAndResolve(Field argumentColumn) {
+        public Symbol allocateAndResolve(ScopedSymbol argumentColumn) {
             // use containsKey instead of checking result .get() for null because inserted value might actually be null
             Reference columnReference = tableRelation.resolveField(argumentColumn);
             if (!columns.contains(columnReference)) {
                 throw new IllegalArgumentException(String.format(Locale.ENGLISH,
                     "Referenced column '%s' isn't part of the column list of the INSERT statement",
-                    argumentColumn.path().sqlFqn()));
+                                                                 argumentColumn.representation()));
             }
             assert columnReference != null : "columnReference must not be null";
             DataType returnType = columnReference.valueType();
@@ -418,7 +418,7 @@ class InsertFromValuesAnalyzer extends AbstractInsertAnalyzer {
             for (int i = 0; i < onDuplicateKeyAssignments.size(); i++) {
                 Assignment assignment = onDuplicateKeyAssignments.get(i);
                 Reference columnName = tableRelation.resolveField(
-                    (Field) expressionAnalyzer.convert(assignment.columnName(), expressionAnalysisContext));
+                    (ScopedSymbol) expressionAnalyzer.convert(assignment.columnName(), expressionAnalysisContext));
                 assert columnName != null : "columnName must not be null";
 
                 Symbol valueSymbol = normalizer.normalize(

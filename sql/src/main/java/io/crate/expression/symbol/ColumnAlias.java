@@ -22,29 +22,52 @@
 
 package io.crate.expression.symbol;
 
-import java.util.function.Function;
+import io.crate.metadata.ColumnIdent;
+import io.crate.types.DataType;
+import org.elasticsearch.common.io.stream.StreamOutput;
 
-public final class FieldReplacer extends FunctionCopyVisitor<Function<? super ScopedSymbol, ? extends Symbol>> {
+import java.io.IOException;
 
-    private static final FieldReplacer REPLACER = new FieldReplacer();
+public class ColumnAlias extends Symbol {
 
-    private FieldReplacer() {
-        super();
-    }
+    private final ColumnIdent alias;
+    private final Symbol symbol;
 
-    public static Symbol replaceFields(Symbol tree, Function<? super ScopedSymbol, ? extends Symbol> replaceFunc) {
-        if (tree == null) {
-            return null;
-        }
-        return REPLACER.process(tree, replaceFunc);
-    }
-
-    public static Function<? super Symbol, ? extends Symbol> bind(Function<? super ScopedSymbol, ? extends Symbol> replaceFunc) {
-        return st -> replaceFields(st, replaceFunc);
+    public ColumnAlias(ColumnIdent alias, Symbol symbol) {
+        this.alias = alias;
+        this.symbol = symbol;
     }
 
     @Override
-    public Symbol visitScopedSymbol(ScopedSymbol field, Function<? super ScopedSymbol, ? extends Symbol> replaceFunc) {
-        return replaceFunc.apply(field);
+    public SymbolType symbolType() {
+        return symbol.symbolType();
+    }
+
+    @Override
+    public <C, R> R accept(SymbolVisitor<C, R> visitor, C context) {
+        return visitor.visitColumnAlias(this, context);
+    }
+
+    @Override
+    public DataType valueType() {
+        return symbol.valueType();
+    }
+
+    @Override
+    public String representation() {
+        return symbol.representation() + " AS " + alias;
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        symbol.writeTo(out);
+    }
+
+    public Symbol symbol() {
+        return symbol;
+    }
+
+    public ColumnIdent alias() {
+        return alias;
     }
 }

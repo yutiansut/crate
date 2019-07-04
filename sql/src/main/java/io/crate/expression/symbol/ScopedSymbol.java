@@ -28,7 +28,6 @@ import io.crate.types.DataType;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
 import java.io.IOException;
-import java.util.Objects;
 
 /**
  * A Field is a expression which refers to a column of a (virtual) table.
@@ -56,26 +55,19 @@ import java.util.Objects;
  *  Since the relation of a Field can be a virtual table,
  *  a Field can also represent the computation of a scalar or aggregation
  */
-public class Field extends Symbol {
+public class ScopedSymbol extends Symbol {
 
     private final AnalyzedRelation relation;
-    private final ColumnIdent path;
     private final Symbol pointer;
 
-    public Field(AnalyzedRelation relation, ColumnIdent path, Symbol pointer) {
-        assert path != null : "path must not be null";
+    public ScopedSymbol(AnalyzedRelation relation, Symbol pointer) {
         assert relation != null : "relation must not be null";
         this.relation = relation;
-        this.path = path;
         this.pointer = pointer;
     }
 
     public Symbol pointer() {
         return pointer;
-    }
-
-    public ColumnIdent path() {
-        return path;
     }
 
     public AnalyzedRelation relation() {
@@ -89,7 +81,7 @@ public class Field extends Symbol {
 
     @Override
     public <C, R> R accept(SymbolVisitor<C, R> visitor, C context) {
-        return visitor.visitField(this, context);
+        return visitor.visitScopedSymbol(this, context);
     }
 
     @Override
@@ -108,31 +100,35 @@ public class Field extends Symbol {
     }
 
     @Override
-    public String representation() {
-        return "Field{" + relation + "." + path +
-               ", pointer=" + pointer +
-               '}';
-    }
-
-    @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
-        Field that = (Field) o;
+        ScopedSymbol that = (ScopedSymbol) o;
 
-        if (!relation.equals(that.relation)) return false;
-        if (!path.equals(that.path)) return false;
-        if (!pointer.equals(that.pointer)) return false;
-
-        return true;
+        if (!relation.equals(that.relation)) {
+            return false;
+        }
+        return pointer.equals(that.pointer);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(relation.getQualifiedName());
-        result = 31 * result + path.hashCode();
+        int result = relation.hashCode();
         result = 31 * result + pointer.hashCode();
         return result;
+    }
+
+    @Override
+    public String representation() {
+        return relation.getQualifiedName().toString() + '.' + pointer.representation();
+    }
+
+    public ColumnIdent path() {
+        return Symbols.pathFromSymbol(pointer);
     }
 }

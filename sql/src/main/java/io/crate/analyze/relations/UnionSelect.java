@@ -27,7 +27,7 @@ import io.crate.analyze.HavingClause;
 import io.crate.analyze.OrderBy;
 import io.crate.analyze.WhereClause;
 import io.crate.exceptions.ColumnUnknownException;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.ColumnIdent;
@@ -58,7 +58,7 @@ public class UnionSelect implements AnalyzedRelation {
             // Or introduce a `UnionSymbol` or `UnionField` which would take two symbols it is pointing to
             // Since this currently has no effect we go with the left symbol until there is a good reason to change it.
             ColumnIdent path = Symbols.pathFromSymbol(field);
-            fields.add(path, new Field(this, path, field));
+            fields.add(path, new ScopedSymbol(this, field));
         }
     }
 

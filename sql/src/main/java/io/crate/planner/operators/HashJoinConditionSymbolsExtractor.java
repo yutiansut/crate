@@ -26,7 +26,7 @@ import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.expression.operator.AndOperator;
 import io.crate.expression.operator.EqOperator;
 import io.crate.expression.symbol.DefaultTraversalSymbolVisitor;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.SymbolVisitor;
@@ -136,7 +136,7 @@ public final class HashJoinConditionSymbolsExtractor {
         }
 
         @Override
-        public AnalyzedRelation visitField(Field field, Void context) {
+        public AnalyzedRelation visitScopedSymbol(ScopedSymbol field, Void context) {
             return field.relation();
         }
     }

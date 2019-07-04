@@ -24,7 +24,7 @@ package io.crate.analyze.relations;
 import io.crate.analyze.HavingClause;
 import io.crate.analyze.OrderBy;
 import io.crate.analyze.WhereClause;
-import io.crate.expression.symbol.Field;
+import io.crate.expression.symbol.ScopedSymbol;
 import io.crate.expression.symbol.Symbol;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.Reference;
@@ -206,9 +206,9 @@ public abstract class AbstractTableRelation<T extends TableInfo> implements Anal
 
     @Override
     @Nullable
-    public Reference resolveField(Field field) {
+    public Reference resolveField(ScopedSymbol field) {
         if (field.relation().equals(this)) {
-            return allocatedFields.get(field.path());
+            return (Reference) field.pointer();
         }
         return null;
     }
