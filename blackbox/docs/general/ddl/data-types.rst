@@ -351,7 +351,7 @@ Interval literal
 ................
 
 An interval literal represents a span of time and can be either
-a :ref:`year-month-literal` or :ref:`day-time-literal` literal. The generic
+a :ref:`year-month-literal`, :ref:`day-time-literal` literal. The generic
 literal synopsis defined as following
 
 ::
@@ -419,9 +419,70 @@ For example
 
 ::
 
-    INTERVAL '100.123' SECOND         - 100.123 seconds
+    INTERVAL '100.123' SECOND        - 100.123 seconds
     INTERVAL '40 23' DAY TO HOUR      - 40 days and 23 hours
     INTERVAL '10 23:10' DAY TO MINUTE - 10 days, 23 hours and 10 minutes
+
+sql-standard
+^^^^^^^^^^^^
+
+.. _sql-standard-literal:
+
+A ``sql-standard`` literal includes the following fields:
+
+``Y-M D``: Using a single value defines days only; using two values defines years
+and months.
+
+``H:M:S``: Using a single value defines seconds only; using two values defines hours
+ and minutes.
+
+All values must be integers and each Y-M D and H:M:S are optional. Start and end fields
+are optionally supported.
+
+
+For example
+
+::
+
+    INTERVAL '1-1 1'           - 1 year, 1 month and 1 day
+    INTERVAL '1:1:1'           - 1 hour, 1 minute and 1 second
+    INTERVAL '1-1 1 1-1-1'     - 1 year, 1 month, 1 day 1 hour, 1 minute and 1 second
+    INTERVAL '1-1 -1'          - 1 year, 1 month and -1 second
+    INTERVAL '1 1'             - 1 day and 1 second
+
+iso-8601
+^^^^^^^^
+
+.. _iso-8601-literal:
+
+A ``iso-8601`` literal can be expressed using the standard ISO 8601 format - PyYmMwWdDThHmMsS.
+
+For example
+
+::
+
+    INTERVAL 'P1Y2M3DT4H5M6S'   - 1 year, 2 month, 3 day, 4 hour, 5 minute and 6 second
+
+postgres
+^^^^^^^^
+
+.. postgres-literal:
+
+A ``postgres`` literal can be expressed using the following format:
+
+Traditional PostgreSQL Format: '1 year 2 months 3 days 4 hours 5 minutes 6 seconds'
+
+Abbreviated PostgreSQL Format: '1 yr 2 mons 3 d 4 hrs 5 mins 6 secs'
+
+All values must be integers, negative values are supported and each values are optional.
+Start and end fields are optionally supported.
+
+For example
+
+::
+
+    INTERVAL '1 year 2 months 3 days 4 hours 5 minutes 6 seconds'   - 1 year, 2 month, 3 day, 4 hour, 5 minute and 6 second
+    INTERVAL '1 yr 2 mons 3 d 4 hrs 5 mins 6 secs'                  - 1 year, 2 month, 3 day, 4 hour, 5 minute and 6 second
 
 .. _temporal-arithmetic:
 
