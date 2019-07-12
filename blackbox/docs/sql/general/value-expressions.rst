@@ -27,6 +27,8 @@ Different types have different notations. The simplest forms are:
 
 - numeric literals: ``42``
 
+- interval literals: ``INTERVAL '1' SECOND``
+
 .. SEEALSO::
 
     - :ref:`sql_lexical`
