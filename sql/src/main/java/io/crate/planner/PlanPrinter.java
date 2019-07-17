@@ -37,6 +37,7 @@ import io.crate.execution.dsl.phases.NestedLoopPhase;
 import io.crate.execution.dsl.phases.RoutedCollectPhase;
 import io.crate.execution.dsl.phases.UpstreamPhase;
 import io.crate.execution.dsl.projection.Projection;
+import io.crate.expression.symbol.Symbol;
 import io.crate.planner.distribution.DistributionInfo;
 import io.crate.planner.node.dql.Collect;
 import io.crate.planner.node.dql.CountPlan;
@@ -165,9 +166,13 @@ public final class PlanPrinter {
         }
 
         private ImmutableMap.Builder<String, Object> getBuilderForJoinPhase(JoinPhase phase) {
-            ImmutableMap.Builder<String, Object> b = upstreamPhase(
-                phase,
-                createSubMap(phase).put("joinType", phase.joinType()));
+            ImmutableMap.Builder<String, Object> builder = createSubMap(phase)
+                .put("joinType", phase.joinType());
+            Symbol joinCondition = phase.joinCondition();
+            if (joinCondition != null) {
+                builder.put("joinCondition", joinCondition);
+            }
+            ImmutableMap.Builder<String, Object> b = upstreamPhase(phase, builder);
             return createMap(phase, dqlPlanNode(phase, b));
         }
     }
