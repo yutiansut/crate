@@ -27,17 +27,31 @@ import java.util.Objects;
 public class Interval implements Comparable<Interval> {
 
     private final double seconds;
+    private final int minutes;
+    private final int hours;
     private final int days;
     private final int months;
+    private final int years;
 
-    public Interval(double seconds, int days, int months) {
+    public Interval(double seconds, int minutes, int hours, int days, int months, int years) {
         this.seconds = seconds;
+        this.minutes = minutes;
+        this.hours = hours;
         this.days = days;
         this.months = months;
+        this.years = years;
     }
 
     public double getSeconds() {
         return seconds;
+    }
+
+    public double getMinutes() {
+        return minutes;
+    }
+
+    public int getHours() {
+        return hours;
     }
 
     public int getDays() {
@@ -46,6 +60,10 @@ public class Interval implements Comparable<Interval> {
 
     public int getMonths() {
         return months;
+    }
+
+    public int getYears() {
+        return years;
     }
 
     @Override
@@ -58,13 +76,16 @@ public class Interval implements Comparable<Interval> {
         }
         Interval interval = (Interval) o;
         return Double.compare(interval.seconds, seconds) == 0 &&
+               minutes == interval.minutes &&
+               hours == interval.hours &&
                days == interval.days &&
-               months == interval.months;
+               months == interval.months &&
+               years == interval.years;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(seconds, days, months);
+        return Objects.hash(seconds, minutes, hours, days, months, years);
     }
 
     @Override
@@ -73,8 +94,14 @@ public class Interval implements Comparable<Interval> {
     }
 
     public static int compare(Interval i1, Interval i2) {
-        int msCmp = Double.compare(i1.seconds, i2.seconds);
-        if (msCmp != 0) return msCmp;
+        int sCmp = Double.compare(i1.seconds, i2.seconds);
+        if (sCmp != 0) return sCmp;
+
+        int mCmp = Integer.compare(i1.minutes, i2.minutes);
+        if (mCmp != 0) return mCmp;
+
+        int hCmp = Integer.compare(i1.hours, i2.hours);
+        if (hCmp != 0) return hCmp;
 
         int daysCmp = Integer.compare(i1.days, i2.days);
         if (daysCmp != 0) return daysCmp;

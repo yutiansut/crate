@@ -72,7 +72,7 @@ public class IntervalType extends DataType<Interval> implements FixedWidthType, 
     @Override
     public Interval readValueFrom(StreamInput in) throws IOException {
         if (in.readBoolean()) {
-            return new Interval(in.readLong(), in.readInt(), in.readInt());
+            return new Interval(in.readLong(), 0, 0, in.readInt(), in.readInt(), 0);
         } else {
             return null;
         }

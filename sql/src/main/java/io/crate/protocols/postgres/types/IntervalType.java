@@ -26,6 +26,7 @@ import io.crate.types.Interval;
 import io.netty.buffer.ByteBuf;
 
 import javax.annotation.Nonnull;
+import java.nio.charset.StandardCharsets;
 
 public class IntervalType extends PGType {
 
@@ -45,11 +46,11 @@ public class IntervalType extends PGType {
 
     @Override
     public int writeAsBinary(ByteBuf buffer, @Nonnull Object value) {
-        Interval MOnthDaySecondInterval = (Interval) value;
+        Interval interval = (Interval) value;
         buffer.writeInt(TYPE_LEN);
-        buffer.writeLong(Double.valueOf(MOnthDaySecondInterval.getSeconds()).longValue());
-        buffer.writeInt(MOnthDaySecondInterval.getDays());
-        buffer.writeInt(MOnthDaySecondInterval.getMonths());
+        buffer.writeLong(Double.valueOf(interval.getSeconds()).longValue());
+        buffer.writeInt(interval.getDays());
+        buffer.writeInt(interval.getMonths());
         return TYPE_LEN;
     }
 
@@ -57,12 +58,12 @@ public class IntervalType extends PGType {
     public Object readBinaryValue(ByteBuf buffer, int valueLength) {
         assert valueLength == TYPE_LEN : "length should be " + TYPE_LEN + " because interval is 16. Actual length: " +
                                          valueLength;
-        return new Interval(buffer.readLong(), buffer.readInt(), buffer.readInt());
+        return new Interval(buffer.readLong(), 0, 0,  buffer.readInt(), buffer.readInt(), 0);
     }
 
     @Override
     byte[] encodeAsUTF8Text(@Nonnull Object value) {
-        return new byte[0];
+       return "unsupported".getBytes(StandardCharsets.UTF_8);
     }
 
     @Override

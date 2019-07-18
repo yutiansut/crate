@@ -419,15 +419,15 @@ public class ExpressionAnalyzerTest extends CrateDummyClusterServiceUnitTest {
         Literal literal = (Literal) expressions.asSymbol("INTERVAL '1' MONTH");
         assertThat(literal.valueType(), is(DataTypes.INTERVAL));
         Interval interval = (Interval) literal.value();
-        assertThat(interval, is(new Interval(0,0,1)));
+        assertThat(interval, is(new Interval(0,0,0,0,1,0)));
     }
 
     @Test
-    public void testIntervalConversion() throws Exception {
+    public void testIntervalConversionHourToSecond() throws Exception {
         Literal literal = (Literal) expressions.asSymbol("INTERVAL '1' HOUR to SECOND");
         assertThat(literal.valueType(), is(DataTypes.INTERVAL));
         Interval interval = (Interval) literal.value();
-        assertThat(interval, is(new Interval(3600,0,0)));
+        assertThat(interval, is(new Interval(3600,0,0,0,0,0)));
     }
 
     @Test

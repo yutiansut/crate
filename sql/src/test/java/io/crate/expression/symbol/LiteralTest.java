@@ -46,7 +46,7 @@ public class LiteralTest extends CrateUnitTest {
             } else if (type.id() == DataTypes.IP.id()) {
                 value = type.value("123.34.243.23");
             } else if (type.id() == DataTypes.INTERVAL.id()) {
-                value = type.value(new Interval(100, 0, 0));
+                value = type.value(new Interval(100, 0, 0,0,0,0));
             } else {
                 value = type.value("0");
             }

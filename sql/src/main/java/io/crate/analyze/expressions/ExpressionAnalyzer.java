@@ -933,9 +933,12 @@ public class ExpressionAnalyzer {
             }
             int time = Integer.parseInt(value);
 
-            int months = 0;
-            int days = 0;
             double seconds = 0;
+            int minutes = 0;
+            int hours = 0;
+            int days = 0;
+            int months = 0;
+            int years = 0;
 
             IntervalLiteral.IntervalField startField = node.getStartField();
             IntervalLiteral.IntervalField endField = node.getEndField().orElse(null);
@@ -945,14 +948,14 @@ public class ExpressionAnalyzer {
             // converts it to seconds. The end of an interval must always be more significant
             // than the start e.g. '1' HOUR TO SECOND is valid, '1' SECOND TO HOUR is invalid.
             // Also it is not possible to convert between month and day since it impossible
-            // to determine what the amount of days of a month are. Therefore only conversions between
-            // year to month, or day to hour, minute, second, or hour to minute, second or
-            // minute to second are possible.
+            // to determine what the amount of days of a month are.
 
             if (startField == YEAR) {
                 Period yearPeriod = Period.ofYears(time);
-                if (endField == null || endField == MONTH) {
-                    months = Math.toIntExact(yearPeriod.toTotalMonths());
+                if (endField == null) {
+                    years = Math.toIntExact(yearPeriod.getYears());
+                } else if (endField == MONTH) {
+                    months = Math.toIntExact(yearPeriod.getMonths());
                 } else {
                     raiseInvalidStartEndCombination(startField, endField);
                 }
@@ -967,22 +970,33 @@ public class ExpressionAnalyzer {
                 Duration dayDuration = Duration.ofDays(time);
                 if (endField == null) {
                     days = Math.toIntExact(Duration.ofDays(time).toDays());
-                } else if (endField == HOUR || endField == MINUTE || endField == SECOND) {
-                    seconds = Math.toIntExact(dayDuration.getSeconds());
-                } else {
+                } else if (endField == HOUR) {
+                    hours = Math.toIntExact(dayDuration.toHours());
+                } else if (endField == MINUTE) {
+                    minutes = Math.toIntExact(dayDuration.toMinutes());
+                } else if (endField == SECOND) {
+                    seconds = Math.toIntExact(dayDuration.toSeconds());
+                }
+                else {
                     raiseInvalidStartEndCombination(startField, endField);
                 }
             } else if (startField == HOUR) {
                 Duration hourDuration = Duration.ofHours(time);
-                if (endField == null || endField == MINUTE || endField == SECOND) {
-                    seconds = Math.toIntExact(hourDuration.getSeconds());
+                if (endField == null) {
+                    hours = Math.toIntExact(hourDuration.toHours());
+                } else if (endField == MINUTE) {
+                    minutes = Math.toIntExact(hourDuration.toMinutes());
+                } else if (endField == SECOND) {
+                    seconds = Math.toIntExact(hourDuration.toSeconds());
                 } else {
                     raiseInvalidStartEndCombination(startField, endField);
                 }
             } else if (startField == MINUTE) {
                 Duration minuteDuration = Duration.ofMinutes(time);
-                if (endField == null || endField == SECOND) {
-                    seconds = Math.toIntExact(minuteDuration.getSeconds());
+                if (endField == null) {
+                    minutes = Math.toIntExact(minuteDuration.toMinutes());
+                } else if (endField == SECOND) {
+                    seconds = Math.toIntExact(minuteDuration.toSeconds());
                 } else {
                     raiseInvalidStartEndCombination(startField, endField);
                 }
@@ -997,9 +1011,9 @@ public class ExpressionAnalyzer {
             Interval interval;
 
             if (node.getSign() == IntervalLiteral.Sign.NEGATIVE) {
-                interval = new Interval(-seconds, -days, -months);
+                interval = new Interval(-seconds, -minutes, -hours, -days, -months, -years);
             } else {
-                interval = new Interval(seconds, days, months);
+                interval = new Interval(seconds, minutes, hours, days, months, years);
             }
 
             return Literal.newInterval(interval);

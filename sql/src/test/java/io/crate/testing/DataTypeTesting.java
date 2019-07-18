@@ -133,7 +133,7 @@ public class DataTypeTesting {
                 };
             case IntervalType.ID:
                 return () -> {
-                    return (T) new Interval(1000, 0, 0);
+                    return (T) new Interval(1000, 0, 0, 0,0,0);
                 };
 
         }
