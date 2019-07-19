@@ -149,12 +149,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.crate.common.collections.Lists2.mapTail;
-import static io.crate.sql.tree.IntervalLiteral.IntervalField.DAY;
 import static io.crate.sql.tree.IntervalLiteral.IntervalField.HOUR;
 import static io.crate.sql.tree.IntervalLiteral.IntervalField.MINUTE;
 import static io.crate.sql.tree.IntervalLiteral.IntervalField.MONTH;
 import static io.crate.sql.tree.IntervalLiteral.IntervalField.SECOND;
-import static io.crate.sql.tree.IntervalLiteral.IntervalField.YEAR;
 
 /**
  * <p>This Analyzer can be used to convert Expression from the SQL AST into symbols.</p>
@@ -946,54 +944,61 @@ public class ExpressionAnalyzer {
             // year to month, or day to hour, minute, second, or hour to minute, second or
             // minute to second are possible.
 
-            if (startField == YEAR) {
-                Period yearPeriod = Period.ofYears(time);
-                if (endField == null || endField == MONTH) {
-                    months = Math.toIntExact(yearPeriod.toTotalMonths());
-                } else {
-                    raiseInvalidStartEndCombination(startField, endField);
-                }
-            } else if (startField == MONTH) {
-                Period monthPeriod = Period.ofMonths(time);
-                if (endField == null) {
-                    months = Math.toIntExact(monthPeriod.toTotalMonths());
-                } else {
-                    raiseInvalidStartEndCombination(startField, endField);
-                }
-            } else if (startField == DAY) {
-                Duration dayDuration = Duration.ofDays(time);
-                if (endField == null) {
-                    days = Math.toIntExact(dayDuration.toDays());
-                } else if (endField == HOUR || endField == MINUTE || endField == SECOND) {
-                    seconds = Math.toIntExact(dayDuration.getSeconds());
-                } else {
-                    raiseInvalidStartEndCombination(startField, endField);
-                }
-            } else if (startField == HOUR) {
-                Duration hourDuration = Duration.ofHours(time);
-                if (endField == null || endField == MINUTE || endField == SECOND) {
-                    seconds = Math.toIntExact(hourDuration.getSeconds());
-                } else {
-                    raiseInvalidStartEndCombination(startField, endField);
-                }
-            } else if (startField == MINUTE) {
-                Duration minuteDuration = Duration.ofMinutes(time);
-                if (endField == null || endField == SECOND) {
-                    seconds = Math.toIntExact(minuteDuration.getSeconds());
-                } else {
-                    raiseInvalidStartEndCombination(startField, endField);
-                }
-            } else if (startField == SECOND) {
-                Duration secondDuration = Duration.ofSeconds(time);
-                if (endField == null) {
-                    seconds = Math.toIntExact(secondDuration.getSeconds());
-                } else {
-                    raiseInvalidStartEndCombination(startField, endField);
-                }
+            switch (startField) {
+                case YEAR:
+                    Period yearPeriod = Period.ofYears(time);
+                    if (endField == null || endField == MONTH) {
+                        months = Math.toIntExact(yearPeriod.toTotalMonths());
+                    } else {
+                        raiseInvalidStartEndCombination(startField, endField);
+                    }
+                    break;
+                case MONTH:
+                    Period monthPeriod = Period.ofMonths(time);
+                    if (endField == null) {
+                        months = Math.toIntExact(monthPeriod.toTotalMonths());
+                    } else {
+                        raiseInvalidStartEndCombination(startField, endField);
+                    }
+                    break;
+                case DAY:
+                    Duration dayDuration = Duration.ofDays(time);
+                    if (endField == null) {
+                       days = Math.toIntExact(dayDuration.toDays());
+                    } else if (endField == HOUR || endField == MINUTE || endField == SECOND) {
+                        seconds = Math.toIntExact(dayDuration.getSeconds());
+                    } else {
+                        raiseInvalidStartEndCombination(startField, endField);
+                    }
+                    break;
+                case HOUR:
+                    Duration hourDuration = Duration.ofHours(time);
+                    if (endField == null || endField == MINUTE || endField == SECOND) {
+                        seconds = Math.toIntExact(hourDuration.getSeconds());
+                    } else {
+                        raiseInvalidStartEndCombination(startField, endField);
+                    }
+                    break;
+                case MINUTE:
+                    Duration minuteDuration = Duration.ofMinutes(time);
+                    if (endField == null || endField == SECOND) {
+                        seconds = Math.toIntExact(minuteDuration.getSeconds());
+                    } else {
+                        raiseInvalidStartEndCombination(startField, endField);
+                    }
+                    break;
+                case SECOND:
+                    Duration secondDuration = Duration.ofSeconds(time);
+                    if (endField == null) {
+                        seconds = Math.toIntExact(secondDuration.getSeconds());
+                    } else {
+                        raiseInvalidStartEndCombination(startField, endField);
+                    }
+                    break;
             }
             Interval interval;
 
-            if (node.getSign() == IntervalLiteral.Sign.NEGATIVE) {
+            if (node.getSign() == IntervalLiteral.Sign.MINUS) {
                 interval = new Interval(-seconds, -days, -months);
             } else {
                 interval = new Interval(seconds, days, months);

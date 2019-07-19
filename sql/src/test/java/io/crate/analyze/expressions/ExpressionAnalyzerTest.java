@@ -413,27 +413,4 @@ public class ExpressionAnalyzerTest extends CrateDummyClusterServiceUnitTest {
         expectedException.expectMessage("Cannot PARTITION BY 'xs': invalid data type 'integer_array'");
         executor.analyze("select count(*) over(partition by xs) from tarr");
     }
-
-    @Test
-    public void testInterval() throws Exception {
-        Literal literal = (Literal) expressions.asSymbol("INTERVAL '1' MONTH");
-        assertThat(literal.valueType(), is(DataTypes.INTERVAL));
-        Interval interval = (Interval) literal.value();
-        assertThat(interval, is(new Interval(0,0,1)));
-    }
-
-    @Test
-    public void testIntervalConversion() throws Exception {
-        Literal literal = (Literal) expressions.asSymbol("INTERVAL '1' HOUR to SECOND");
-        assertThat(literal.valueType(), is(DataTypes.INTERVAL));
-        Interval interval = (Interval) literal.value();
-        assertThat(interval, is(new Interval(3600,0,0)));
-    }
-
-    @Test
-    public void testIntervalInvalidStartEnd() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Startfield MONTH must be less significant than Endfield YEAR");
-        expressions.asSymbol("INTERVAL '1' MONTH TO YEAR");
-    }
 }

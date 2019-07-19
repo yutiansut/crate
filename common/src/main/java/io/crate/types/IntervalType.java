@@ -25,6 +25,9 @@ package io.crate.types;
 import io.crate.Streamer;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.joda.time.Period;
+import org.joda.time.format.ISOPeriodFormat;
+import org.joda.time.format.PeriodFormat;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -61,6 +64,16 @@ public class IntervalType extends DataType<Interval> implements FixedWidthType, 
         }
         if (value instanceof Interval) {
             return (Interval) value;
+        }
+        if (value instanceof String) {
+            String text = (String) value;
+            try {
+                Period period = ISOPeriodFormat.standard().parsePeriod(text);
+                return new Interval(period.getSeconds(), period.getDays(), period.getMonths());
+            } catch (IllegalArgumentException e) {
+                Period period = PeriodFormat.wordBased(Locale.ENGLISH).parsePeriod(text);
+                return new Interval(period.getSeconds(), period.getDays(), period.getMonths());
+            }
         }
         throw new IllegalArgumentException(String.format(Locale.ENGLISH, "Cannot convert %s to interval", value));
     }
