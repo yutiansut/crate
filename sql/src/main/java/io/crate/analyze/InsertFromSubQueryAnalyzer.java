@@ -65,7 +65,6 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import static io.crate.analyze.InsertFromValuesAnalyzer.verifyOnConflictTargets;
 import static java.util.Objects.requireNonNull;
 
 class InsertFromSubQueryAnalyzer {
@@ -164,9 +163,34 @@ class InsertFromSubQueryAnalyzer {
             onDuplicateKeyAssignments);
     }
 
-    static Collection<Reference> resolveTargetColumns(Collection<String> targetColumnNames,
-                                                      DocTableInfo targetTable,
-                                                      int numSourceColumns) {
+    private static void verifyOnConflictTargets(Insert.DuplicateKeyContext duplicateKeyContext, DocTableInfo docTableInfo) {
+        List<String> constraintColumns = duplicateKeyContext.getConstraintColumns();
+        if (constraintColumns.isEmpty()) {
+            return;
+        }
+        List<ColumnIdent> pkColumnIdents = docTableInfo.primaryKey();
+        if (constraintColumns.size() != pkColumnIdents.size()) {
+            throw new IllegalArgumentException(
+                String.format(
+                    Locale.ENGLISH,
+                    "Number of conflict targets (%s) did not match the number of primary key columns (%s)",
+                    constraintColumns, pkColumnIdents));
+        }
+        Collection<Reference> constraintRefs = resolveTargetColumns(constraintColumns, docTableInfo, pkColumnIdents.size());
+        for (Reference contraintRef : constraintRefs) {
+            if (!pkColumnIdents.contains(contraintRef.column())) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        Locale.ENGLISH,
+                        "Conflict target (%s) did not match the primary key columns (%s)",
+                        constraintColumns, pkColumnIdents));
+            }
+        }
+    }
+
+    private static Collection<Reference> resolveTargetColumns(Collection<String> targetColumnNames,
+                                                              DocTableInfo targetTable,
+                                                              int numSourceColumns) {
         if (targetColumnNames.isEmpty()) {
             return targetColumnsFromTargetTable(targetTable, numSourceColumns);
         }

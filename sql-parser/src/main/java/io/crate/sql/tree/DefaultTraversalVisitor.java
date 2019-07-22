@@ -276,15 +276,6 @@ public abstract class DefaultTraversalVisitor<R, C>
     }
 
     @Override
-    public R visitInsertFromValues(InsertFromValues node, C context) {
-        process(node.table(), context);
-        for (ValuesList valuesList : node.valuesLists()) {
-            process(valuesList, context);
-        }
-        return null;
-    }
-
-    @Override
     public R visitValuesList(ValuesList node, C context) {
         for (Expression value : node.values()) {
             process(value, context);

@@ -425,8 +425,7 @@ objectKeyValue
     ;
 
 insertSource
-   : VALUES  values (',' values)*
-   | query
+   : query
    | '(' query ')'
    ;
 

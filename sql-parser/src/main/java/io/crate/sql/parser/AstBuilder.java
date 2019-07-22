@@ -103,7 +103,6 @@ import io.crate.sql.tree.IndexColumnConstraint;
 import io.crate.sql.tree.IndexDefinition;
 import io.crate.sql.tree.Insert;
 import io.crate.sql.tree.InsertFromSubquery;
-import io.crate.sql.tree.InsertFromValues;
 import io.crate.sql.tree.Intersect;
 import io.crate.sql.tree.IsNotNullPredicate;
 import io.crate.sql.tree.IsNullPredicate;
@@ -496,14 +495,6 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
                 }
             }
             throw e;
-        }
-
-        if (context.insertSource().VALUES() != null) {
-            return new InsertFromValues(
-                table,
-                visitCollection(context.insertSource().values(), ValuesList.class),
-                columns,
-                createDuplicateKeyContext(context));
         }
         return new InsertFromSubquery(
             table,

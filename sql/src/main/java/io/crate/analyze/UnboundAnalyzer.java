@@ -29,7 +29,6 @@ import io.crate.sql.tree.AstVisitor;
 import io.crate.sql.tree.Delete;
 import io.crate.sql.tree.Explain;
 import io.crate.sql.tree.InsertFromSubquery;
-import io.crate.sql.tree.InsertFromValues;
 import io.crate.sql.tree.Query;
 import io.crate.sql.tree.ShowColumns;
 import io.crate.sql.tree.ShowCreateTable;
@@ -56,7 +55,6 @@ class UnboundAnalyzer {
                     ShowStatementAnalyzer showStatementAnalyzer,
                     DeleteAnalyzer deleteAnalyzer,
                     UpdateAnalyzer updateAnalyzer,
-                    InsertFromValuesAnalyzer insertFromValuesAnalyzer,
                     InsertFromSubQueryAnalyzer insertFromSubQueryAnalyzer,
                     ExplainStatementAnalyzer explainStatementAnalyzer) {
         this.dispatcher = new UnboundDispatcher(
@@ -65,7 +63,6 @@ class UnboundAnalyzer {
             showStatementAnalyzer,
             deleteAnalyzer,
             updateAnalyzer,
-            insertFromValuesAnalyzer,
             insertFromSubQueryAnalyzer,
             explainStatementAnalyzer
         );
@@ -83,7 +80,6 @@ class UnboundAnalyzer {
         private final ShowStatementAnalyzer showStatementAnalyzer;
         private final DeleteAnalyzer deleteAnalyzer;
         private final UpdateAnalyzer updateAnalyzer;
-        private final InsertFromValuesAnalyzer insertFromValuesAnalyzer;
         private final InsertFromSubQueryAnalyzer insertFromSubQueryAnalyzer;
         private final ExplainStatementAnalyzer explainStatementAnalyzer;
 
@@ -92,7 +88,6 @@ class UnboundAnalyzer {
                           ShowStatementAnalyzer showStatementAnalyzer,
                           DeleteAnalyzer deleteAnalyzer,
                           UpdateAnalyzer updateAnalyzer,
-                          InsertFromValuesAnalyzer insertFromValuesAnalyzer,
                           InsertFromSubQueryAnalyzer insertFromSubQueryAnalyzer,
                           ExplainStatementAnalyzer explainStatementAnalyzer) {
             this.relationAnalyzer = relationAnalyzer;
@@ -100,7 +95,6 @@ class UnboundAnalyzer {
             this.showStatementAnalyzer = showStatementAnalyzer;
             this.deleteAnalyzer = deleteAnalyzer;
             this.updateAnalyzer = updateAnalyzer;
-            this.insertFromValuesAnalyzer = insertFromValuesAnalyzer;
             this.insertFromSubQueryAnalyzer = insertFromSubQueryAnalyzer;
             this.explainStatementAnalyzer = explainStatementAnalyzer;
         }
@@ -108,11 +102,6 @@ class UnboundAnalyzer {
         @Override
         public AnalyzedStatement visitInsertFromSubquery(InsertFromSubquery insert, Analysis analysis) {
             return insertFromSubQueryAnalyzer.analyze(insert, analysis.paramTypeHints(), analysis.transactionContext());
-        }
-
-        @Override
-        public AnalyzedStatement visitInsertFromValues(InsertFromValues insert, Analysis analysis) {
-            return insertFromValuesAnalyzer.analyze(insert, analysis.paramTypeHints(), analysis.transactionContext());
         }
 
         @Override

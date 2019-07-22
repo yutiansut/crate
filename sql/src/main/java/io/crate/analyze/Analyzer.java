@@ -71,7 +71,6 @@ import io.crate.sql.tree.Explain;
 import io.crate.sql.tree.GCDanglingArtifacts;
 import io.crate.sql.tree.GrantPrivilege;
 import io.crate.sql.tree.InsertFromSubquery;
-import io.crate.sql.tree.InsertFromValues;
 import io.crate.sql.tree.KillStatement;
 import io.crate.sql.tree.Node;
 import io.crate.sql.tree.OptimizeStatement;
@@ -121,7 +120,6 @@ public class Analyzer {
     private final AlterBlobTableAnalyzer alterBlobTableAnalyzer;
     private final AlterTableAddColumnAnalyzer alterTableAddColumnAnalyzer;
     private final AlterTableOpenCloseAnalyzer alterTableOpenCloseAnalyzer;
-    private final InsertFromValuesAnalyzer insertFromValuesAnalyzer;
     private final InsertFromSubQueryAnalyzer insertFromSubQueryAnalyzer;
     private final CopyAnalyzer copyAnalyzer;
     private final UpdateAnalyzer updateAnalyzer;
@@ -178,7 +176,6 @@ public class Analyzer {
         this.showStatementAnalyzer = new ShowStatementAnalyzer(this);
         this.updateAnalyzer = new UpdateAnalyzer(functions, relationAnalyzer);
         this.deleteAnalyzer = new DeleteAnalyzer(functions, relationAnalyzer);
-        this.insertFromValuesAnalyzer = new InsertFromValuesAnalyzer(functions, schemas);
         this.insertFromSubQueryAnalyzer = new InsertFromSubQueryAnalyzer(functions, schemas, relationAnalyzer);
         this.unboundAnalyzer = new UnboundAnalyzer(
             relationAnalyzer,
@@ -186,7 +183,6 @@ public class Analyzer {
             showStatementAnalyzer,
             deleteAnalyzer,
             updateAnalyzer,
-            insertFromValuesAnalyzer,
             insertFromSubQueryAnalyzer,
             explainStatementAnalyzer
         );
@@ -248,11 +244,6 @@ public class Analyzer {
         @Override
         public AnalyzedStatement visitDelete(Delete node, Analysis context) {
             return deleteAnalyzer.analyze(node, context.paramTypeHints(), context.transactionContext());
-        }
-
-        @Override
-        public AnalyzedStatement visitInsertFromValues(InsertFromValues node, Analysis context) {
-            return insertFromValuesAnalyzer.analyze(node, context);
         }
 
         @Override
