@@ -24,6 +24,7 @@ package io.crate.planner;
 import com.carrotsearch.hppc.IntIndexedContainer;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import com.google.common.collect.ImmutableMap;
+import io.crate.common.collections.Lists2;
 import io.crate.execution.dsl.phases.AbstractProjectionsPhase;
 import io.crate.execution.dsl.phases.CollectPhase;
 import io.crate.execution.dsl.phases.CountPhase;
@@ -233,11 +234,10 @@ public final class PlanPrinter {
         }
 
         @Override
-        public ImmutableMap.Builder<String, Object> visitUnionPlan(UnionExecutionPlan unionExecutionPlan, Void context) {
-            return createMap(unionExecutionPlan, createSubMap()
-                .put("left", createMap(unionExecutionPlan.left()))
-                .put("right", createMap(unionExecutionPlan.right()))
-                .put("mergePhase", phaseMap(unionExecutionPlan.mergePhase())));
+        public ImmutableMap.Builder<String, Object> visitUnionPlan(UnionExecutionPlan union, Void context) {
+            return createMap(union, createSubMap()
+                .put("children", Lists2.map(union.children(), ExecutionPlan2MapVisitor::createMap))
+                .put("mergePhase", phaseMap(union.mergePhase())));
         }
 
         @Override

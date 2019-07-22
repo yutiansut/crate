@@ -240,17 +240,15 @@ public final class NodeOperationTreeGenerator extends ExecutionPlanVisitor<NodeO
      * buckets required to merge the results of both branches.
      */
     @Override
-    public Void visitUnionPlan(UnionExecutionPlan unionExecutionPlan, NodeOperationTreeContext context) {
-        context.addPhase(unionExecutionPlan.mergePhase());
-
-        context.branch((byte) 0);
-        process(unionExecutionPlan.left(), context);
-        context.leaveBranch();
-
-        context.branch((byte) 1);
-        process(unionExecutionPlan.right(), context);
-        context.leaveBranch();
-
+    public Void visitUnionPlan(UnionExecutionPlan union, NodeOperationTreeContext context) {
+        context.addPhase(union.mergePhase());
+        List<ExecutionPlan> children = union.children();
+        for (int i = 0; i < children.size(); i++) {
+            context.branch((byte) i);
+            var child = children.get(i);
+            process(child, context);
+            context.leaveBranch();
+        }
         return null;
     }
 

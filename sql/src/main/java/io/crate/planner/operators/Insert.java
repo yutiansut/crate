@@ -25,23 +25,35 @@ package io.crate.planner.operators;
 import io.crate.analyze.OrderBy;
 import io.crate.analyze.relations.AbstractTableRelation;
 import io.crate.common.collections.Lists2;
+import io.crate.data.CollectingRowConsumer;
 import io.crate.data.Row;
+import io.crate.execution.dsl.phases.MergePhase;
+import io.crate.execution.dsl.phases.NodeOperationTree;
 import io.crate.execution.dsl.projection.ColumnIndexWriterProjection;
 import io.crate.execution.dsl.projection.EvalProjection;
 import io.crate.execution.dsl.projection.MergeCountProjection;
 import io.crate.execution.dsl.projection.Projection;
 import io.crate.execution.dsl.projection.builder.ProjectionBuilder;
+import io.crate.execution.engine.NodeOperationTreeGenerator;
+import io.crate.execution.engine.pipeline.TopN;
 import io.crate.expression.symbol.SelectSymbol;
 import io.crate.expression.symbol.Symbol;
+import io.crate.planner.DependencyCarrier;
 import io.crate.planner.ExecutionPlan;
 import io.crate.planner.Merge;
 import io.crate.planner.PlannerContext;
+import io.crate.planner.UnionExecutionPlan;
+import io.crate.planner.distribution.DistributionInfo;
+import io.crate.types.DataTypes;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class Insert implements LogicalPlan {
 
@@ -83,6 +95,72 @@ public class Insert implements LogicalPlan {
             }
             return localMerge;
         }
+    }
+
+    @Override
+    public List<CompletableFuture<Long>> executeBulk(DependencyCarrier dependencies,
+                                                     PlannerContext plannerContext,
+                                                     List<Row> bulkParams,
+                                                     SubQueryResults subQueryResults) {
+        ProjectionBuilder projectionBuilder = new ProjectionBuilder(dependencies.functions());
+        ArrayList<ExecutionPlan> plans = new ArrayList<>(bulkParams.size());
+        int numUpstreams = 0;
+        for (Row params : bulkParams) {
+            ExecutionPlan executionPlan = source.build(
+                plannerContext,
+                projectionBuilder,
+                TopN.NO_LIMIT,
+                0,
+                null,
+                null,
+                params,
+                subQueryResults
+            );
+            if (applyCasts != null) {
+                executionPlan.addProjection(applyCasts);
+            }
+            executionPlan.addProjection(writeToTable);
+            // TODO: inject eval projection that includes a bulkParam idx
+            plans.add(executionPlan);
+            numUpstreams += executionPlan.resultDescription().nodeIds().size();
+        }
+        var mergePhase = new MergePhase(
+            plannerContext.jobId(),
+            plannerContext.nextExecutionPhaseId(),
+            "insert-row-count-merge",
+            numUpstreams,
+            numUpstreams,
+            List.of(plannerContext.handlerNode()),
+            List.of(DataTypes.LONG),
+            List.of(),
+            DistributionInfo.DEFAULT_BROADCAST,
+            null
+        );
+        UnionExecutionPlan unionExecutionPlan = new UnionExecutionPlan(
+            plans,
+            mergePhase,
+            TopN.NO_LIMIT,
+            0,
+            1,
+            1,
+            null
+        );
+        NodeOperationTree nodeOperationTree = NodeOperationTreeGenerator.fromPlan(
+            unionExecutionPlan,
+            plannerContext.handlerNode());
+
+        // TODO: We've to split the result by bulk param idx
+        CollectingRowConsumer<Object, Long> consumer = new CollectingRowConsumer<>(Collectors.mapping(row -> ((long) row.get(
+            0)), Collectors.summingLong(x -> x)));
+        LogicalPlanner.executeNodeOpTree(
+            dependencies,
+            plannerContext.transactionContext(),
+            plannerContext.jobId(),
+            consumer,
+            false,
+            nodeOperationTree
+        );
+        return List.of(consumer.resultFuture(), consumer.resultFuture());
     }
 
     @Override

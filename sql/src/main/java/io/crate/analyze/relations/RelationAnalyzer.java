@@ -676,7 +676,8 @@ public class RelationAnalyzer extends DefaultTraversalVisitor<AnalyzedRelation, 
         ExpressionAnalyzer expressionAnalyzer = new ExpressionAnalyzer(
             functions,
             statementContext.transactionContext(),
-            statementContext.convertParamFunction(),
+            // TODO: We need to switch to do unbound analysis
+            ParamTypeHints.EMPTY,
             FieldProvider.UNSUPPORTED,
             null
         );

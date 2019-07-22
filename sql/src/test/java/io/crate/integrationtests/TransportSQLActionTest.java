@@ -374,10 +374,9 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
     @Test
     public void testSqlRequestWithNotEqual() throws Exception {
         execute("create table test (id string primary key) with (number_of_replicas = 0)");
-        ensureYellow();
-        execute("insert into test (id) values (?)", new Object[][]{
-            new Object[]{"id1"},
-            new Object[]{"id2"}
+        execute("insert into test (id) (select col1 from unnest([?]))", new Object[][]{
+            $("id1"),
+            $("id2")
         });
         refresh();
         execute("select id from test where id != 'id1'");

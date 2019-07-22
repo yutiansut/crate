@@ -22,26 +22,22 @@
 
 package io.crate.planner;
 
-import com.google.common.base.Preconditions;
-import io.crate.planner.distribution.DistributionInfo;
 import io.crate.execution.dsl.phases.MergePhase;
 import io.crate.execution.dsl.projection.Projection;
+import io.crate.planner.distribution.DistributionInfo;
 import io.crate.types.DataType;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Plan for Union which uses a MergePhase to combine the results of two plans (= two inputs).
  */
 public class UnionExecutionPlan implements ExecutionPlan, ResultDescription {
 
-    private final ExecutionPlan left;
-    private final ExecutionPlan right;
-
     private final MergePhase mergePhase;
+    private final List<ExecutionPlan> children;
 
     private int unfinishedLimit;
     private int unfinishedOffset;
@@ -64,18 +60,14 @@ public class UnionExecutionPlan implements ExecutionPlan, ResultDescription {
      * See also: {@link ResultDescription}
      *
      */
-    public UnionExecutionPlan(ExecutionPlan left,
-                              ExecutionPlan right,
+    public UnionExecutionPlan(List<ExecutionPlan> children,
                               MergePhase mergePhase,
                               int unfinishedLimit,
                               int unfinishedOffset,
                               int numOutputs,
                               int maxRowsPerNode,
                               @Nullable PositionalOrderBy orderBy) {
-        this.left = left;
-        this.right = right;
-        Preconditions.checkArgument(mergePhase.numInputs() == 2,
-            "Number of inputs of MergePhase needs to be two.");
+        this.children = children;
         this.mergePhase = mergePhase;
         this.unfinishedLimit = unfinishedLimit;
         this.unfinishedOffset = unfinishedOffset;
@@ -88,12 +80,8 @@ public class UnionExecutionPlan implements ExecutionPlan, ResultDescription {
         return mergePhase;
     }
 
-    public ExecutionPlan left() {
-        return left;
-    }
-
-    public ExecutionPlan right() {
-        return right;
+    public List<ExecutionPlan> children() {
+        return children;
     }
 
     @Override
@@ -162,30 +150,5 @@ public class UnionExecutionPlan implements ExecutionPlan, ResultDescription {
     @Override
     public List<DataType> streamOutputs() {
         return mergePhase.outputTypes();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        UnionExecutionPlan that = (UnionExecutionPlan) o;
-        return unfinishedLimit == that.unfinishedLimit &&
-               unfinishedOffset == that.unfinishedOffset &&
-               numOutputs == that.numOutputs &&
-               maxRowsPerNode == that.maxRowsPerNode &&
-               Objects.equals(left, that.left) &&
-               Objects.equals(right, that.right) &&
-               Objects.equals(mergePhase, that.mergePhase) &&
-               Objects.equals(orderBy, that.orderBy);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(left, right, mergePhase, unfinishedLimit, unfinishedOffset, numOutputs,
-            maxRowsPerNode, orderBy);
     }
 }

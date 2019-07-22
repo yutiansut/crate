@@ -146,6 +146,14 @@ public class Union implements LogicalPlan {
         ExecutionPlan right = rhs.build(
             plannerContext, projectionBuilder, limit + offset, offset, null, childPageSizeHint, params, subQueryResults);
 
+        return getExecutionPlan(plannerContext, limit, offset, left, right);
+    }
+
+    static ExecutionPlan getExecutionPlan(PlannerContext plannerContext,
+                                          int limit,
+                                          int offset,
+                                          ExecutionPlan left,
+                                          ExecutionPlan right) {
         left = addMergeIfNeeded(left, plannerContext);
         right = addMergeIfNeeded(right, plannerContext);
 
@@ -169,12 +177,11 @@ public class Union implements LogicalPlan {
         );
 
         return new UnionExecutionPlan(
-            left,
-            right,
+            List.of(left, right),
             mergePhase,
             limit,
             offset,
-            lhs.outputs().size(),
+            left.resultDescription().numOutputs(),
             TopN.NO_LIMIT,
             leftResultDesc.orderBy()
         );

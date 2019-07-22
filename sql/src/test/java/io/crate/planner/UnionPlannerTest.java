@@ -58,8 +58,10 @@ public class UnionPlannerTest extends CrateDummyClusterServiceUnitTest {
         UnionExecutionPlan unionExecutionPlan = (UnionExecutionPlan) plan;
         assertThat(unionExecutionPlan.orderBy(), is(nullValue()));
         assertThat(unionExecutionPlan.mergePhase().numInputs(), is(2));
-        assertThat(unionExecutionPlan.left(), instanceOf(Collect.class));
-        assertThat(unionExecutionPlan.right(), instanceOf(Collect.class));
+        assertThat(unionExecutionPlan.children(), contains(
+            instanceOf(Collect.class),
+            instanceOf(Collect.class)
+       ));
     }
 
     @Test
@@ -76,8 +78,9 @@ public class UnionPlannerTest extends CrateDummyClusterServiceUnitTest {
         assertThat(unionExecutionPlan.mergePhase().projections(), contains(
             instanceOf(TopNProjection.class)
         ));
-        assertThat(unionExecutionPlan.left(), instanceOf(Collect.class));
-        assertThat(unionExecutionPlan.right(), instanceOf(Collect.class));
+        assertThat(unionExecutionPlan.children(), contains(
+            instanceOf(Collect.class),
+            instanceOf(Collect.class)));
     }
 
     @Test
@@ -94,10 +97,12 @@ public class UnionPlannerTest extends CrateDummyClusterServiceUnitTest {
         assertThat(unionExecutionPlan.mergePhase().projections(), contains(
             instanceOf(TopNProjection.class)
         ));
-        assertThat(unionExecutionPlan.left(), instanceOf(Merge.class));
-        Merge merge = (Merge) unionExecutionPlan.left();
+        assertThat(unionExecutionPlan.children(), contains(
+            instanceOf(Merge.class),
+            instanceOf(Collect.class)));
+
+        Merge merge = (Merge) unionExecutionPlan.children().get(0);
         assertThat(merge.subPlan(), instanceOf(Collect.class));
-        assertThat(unionExecutionPlan.right(), instanceOf(Collect.class));
     }
 
     @Test
