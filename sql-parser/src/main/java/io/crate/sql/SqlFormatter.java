@@ -566,7 +566,7 @@ public final class SqlFormatter {
 
         @Override
         public Void visitColumnDefinition(ColumnDefinition node, Integer indent) {
-            builder.append(quoteIdentifierIfNeeded(node.ident()))
+            builder.append(quoteIdentifierIfNeeded(node.columnName()))
                 .append(" ");
             ColumnType type = node.type();
             if (type != null) {

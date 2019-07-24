@@ -87,7 +87,7 @@ public class AlterTableAnalyzer {
     private static TableParameterInfo getTableParameterInfo(Table table,
                                                             @Nullable PartitionName partitionName) {
         if (partitionName == null) {
-            return TableParameterInfo.TABLE_ALTER_PARAMETER_INFO;
+            return TableParameterInfo.ALTER_TABLE_OPTIONS;
         }
         assert !table.excludePartitions() : "Alter table ONLY not supported when using a partition";
         return TableParameterInfo.PARTITION_PARAMETER_INFO;
@@ -95,11 +95,13 @@ public class AlterTableAnalyzer {
 
     private static TableParameter getTableParameter(AlterTable node, Row parameters, TableParameterInfo tableParameterInfo) {
         TableParameter tableParameter = new TableParameter();
+        /* TODO:
         if (!node.genericProperties().isEmpty()) {
-            TablePropertiesAnalyzer.analyze(tableParameter, tableParameterInfo, node.genericProperties(), parameters);
+            TablePropertiesAnalyzer.analyze(tableParameter, tableWithOptions, node.genericProperties(), parameters);
         } else if (!node.resetProperties().isEmpty()) {
-            TablePropertiesAnalyzer.analyzeResetProperties(tableParameter, tableParameterInfo, node.resetProperties());
+            TablePropertiesAnalyzer.analyzeResetProperties(tableParameter, tableWithOptions, node.resetProperties());
         }
+         */
         return tableParameter;
     }
 

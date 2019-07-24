@@ -213,7 +213,7 @@ public class AlterTableOperation {
 
                 if (!analysis.excludePartitions()) {
                     // create new filtered partition table settings
-                    List<String> supportedSettings = TableParameterInfo.PARTITIONED_TABLE_PARAMETER_INFO_FOR_TEMPLATE_UPDATE
+                    List<String> supportedSettings = TableParameterInfo.PARTITIONED_TABLE_OPTIONS_FOR_TEMPLATE_UPDATE
                         .supportedSettings()
                         .values()
                         .stream()

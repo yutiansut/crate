@@ -54,6 +54,17 @@ import static org.elasticsearch.index.mapper.TypeParsers.DOC_VALUES;
 
 public class AnalyzedColumnDefinition {
 
+    static class Builder {
+
+        private final int position;
+
+        public Builder(int position) {
+            this.position = position;
+        }
+
+
+    }
+
     private static final DeprecationLogger DEPRECATION_LOGGER =
         new DeprecationLogger(LogManager.getLogger(AnalyzedColumnDefinition.class));
 

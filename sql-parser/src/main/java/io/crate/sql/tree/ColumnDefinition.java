@@ -29,7 +29,7 @@ import java.util.List;
 
 public class ColumnDefinition extends TableElement {
 
-    private final String ident;
+    private final String columnName;
 
     @Nullable
     private final Expression defaultExpression;
@@ -42,12 +42,12 @@ public class ColumnDefinition extends TableElement {
 
     private final List<ColumnConstraint> constraints;
 
-    public ColumnDefinition(String ident,
+    public ColumnDefinition(String columnName,
                             @Nullable Expression defaultExpression,
                             @Nullable Expression generatedExpression,
                             @Nullable ColumnType type,
                             List<ColumnConstraint> constraints) {
-        this.ident = ident;
+        this.columnName = columnName;
         this.defaultExpression = defaultExpression;
         this.generatedExpression = generatedExpression;
         this.type = type;
@@ -57,18 +57,18 @@ public class ColumnDefinition extends TableElement {
 
     private void validateColumnDefinition() {
         if (type == null && generatedExpression == null) {
-            throw new IllegalArgumentException("Column [" + ident + "]: data type needs to be provided " +
+            throw new IllegalArgumentException("Column [" + columnName + "]: data type needs to be provided " +
                                                "or column should be defined as a generated expression");
         }
 
         if (defaultExpression != null && generatedExpression != null) {
-            throw new IllegalArgumentException("Column [" + ident + "]: the default and generated expressions " +
+            throw new IllegalArgumentException("Column [" + columnName + "]: the default and generated expressions " +
                                                "are mutually exclusive");
         }
     }
 
-    public String ident() {
-        return ident;
+    public String columnName() {
+        return columnName;
     }
 
     @Nullable
@@ -92,7 +92,7 @@ public class ColumnDefinition extends TableElement {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(ident, defaultExpression, generatedExpression, type, constraints);
+        return Objects.hashCode(columnName, defaultExpression, generatedExpression, type, constraints);
     }
 
     @Override
@@ -102,7 +102,7 @@ public class ColumnDefinition extends TableElement {
 
         ColumnDefinition that = (ColumnDefinition) o;
 
-        if (!ident.equals(that.ident)) return false;
+        if (!columnName.equals(that.columnName)) return false;
         if (defaultExpression != null ? !defaultExpression.equals(that.defaultExpression) :
             that.defaultExpression != null) return false;
         if (generatedExpression != null ? !generatedExpression.equals(that.generatedExpression) :
@@ -116,7 +116,7 @@ public class ColumnDefinition extends TableElement {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-            .add("ident", ident)
+            .add("columnName", columnName)
             .add("defaultExpression", defaultExpression)
             .add("generatedExpression", generatedExpression)
             .add("type", type)

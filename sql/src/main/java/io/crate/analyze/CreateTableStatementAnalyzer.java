@@ -21,8 +21,12 @@
 
 package io.crate.analyze;
 
+import com.google.common.collect.Maps;
+import io.crate.analyze.expressions.ExpressionAnalysisContext;
+import io.crate.analyze.expressions.ExpressionAnalyzer;
 import io.crate.analyze.expressions.ExpressionToStringVisitor;
-import io.crate.data.Row;
+import io.crate.analyze.relations.FieldProvider;
+import io.crate.expression.symbol.Symbol;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.CoordinatorTxnCtx;
 import io.crate.metadata.FulltextAnalyzerResolver;
@@ -35,8 +39,9 @@ import io.crate.sql.tree.Expression;
 import io.crate.sql.tree.PartitionedBy;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 
-import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class CreateTableStatementAnalyzer {
 
@@ -57,86 +62,40 @@ public final class CreateTableStatementAnalyzer {
     }
 
     public CreateTableAnalyzedStatement analyze(CreateTable createTable,
-                                                ParameterContext parameterContext,
+                                                ParamTypeHints paramTypeHints,
                                                 CoordinatorTxnCtx coordinatorTxnCtx) {
-        CreateTableAnalyzedStatement statement = new CreateTableAnalyzedStatement();
-        Row parameters = parameterContext.parameters();
         RelationName relationName = RelationName
             .of(createTable.name().getName(), coordinatorTxnCtx.sessionContext().searchPath().currentSchema());
-        statement.table(relationName, createTable.ifNotExists(), schemas);
-
-        // apply default in case it is not specified in the genericProperties,
-        // if it is it will get overwritten afterwards.
-        TablePropertiesAnalyzer.analyze(
-            statement.tableParameter(),
-            TableParameterInfo.TABLE_CREATE_PARAMETER_INFO,
-            createTable.properties(),
-            parameters,
-            true
-        );
-        AnalyzedTableElements tableElements = TableElementsAnalyzer.analyze(
-            createTable.tableElements(), parameters, fulltextAnalyzerResolver, relationName, null);
-
-        // validate table elements
-        tableElements.finalizeAndValidate(
-            relationName,
-            Collections.emptyList(),
+        var expressionAnalyzer = new ExpressionAnalyzer(
             functions,
-            parameterContext,
-            coordinatorTxnCtx);
-
-        // update table settings
-        statement.tableParameter().settingsBuilder().put(tableElements.settings());
-        statement.tableParameter().settingsBuilder().put(
-            IndexMetaData.SETTING_NUMBER_OF_SHARDS, numberOfShards.defaultNumberOfShards());
-
-        statement.analyzedTableElements(tableElements);
-        createTable.clusteredBy().ifPresent(clusteredBy -> processClusteredBy(clusteredBy, statement, parameterContext));
-        createTable.partitionedBy().ifPresent(partitionedBy -> processPartitionedBy(partitionedBy, statement, parameterContext));
-        return statement;
-    }
-
-    private void processClusteredBy(ClusteredBy clusteredBy,
-                                    CreateTableAnalyzedStatement statement,
-                                    ParameterContext parameterContext) {
-        if (clusteredBy.column().isPresent()) {
-            ColumnIdent routingColumn = ColumnIdent.fromPath(
-                ExpressionToStringVisitor.convert(clusteredBy.column().get(), parameterContext.parameters()));
-
-            for (AnalyzedColumnDefinition column : statement.analyzedTableElements().partitionedByColumns) {
-                if (column.ident().equals(routingColumn)) {
-                    throw new IllegalArgumentException(CLUSTERED_BY_IN_PARTITIONED_ERROR);
-                }
-            }
-            if (!statement.hasColumnDefinition(routingColumn)) {
-                throw new IllegalArgumentException(
-                    String.format(Locale.ENGLISH, "Invalid or non-existent routing column \"%s\"",
-                        routingColumn));
-            }
-            if (statement.primaryKeys().size() > 0 &&
-                !statement.primaryKeys().contains(routingColumn.fqn())) {
-                throw new IllegalArgumentException("Clustered by column must be part of primary keys");
-            }
-
-            statement.routing(routingColumn);
-        }
-        statement.tableParameter().settingsBuilder().put(
-            IndexMetaData.SETTING_NUMBER_OF_SHARDS,
-            numberOfShards.fromClusteredByClause(clusteredBy, parameterContext.parameters())
+            coordinatorTxnCtx,
+            paramTypeHints,
+            FieldProvider.UNSUPPORTED,
+            null
         );
-    }
+        var expressionAnalysisContext = new ExpressionAnalysisContext();
+        Map<String, Symbol> analyzedProperties = createTable.properties().properties().entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey,
+                                      e -> expressionAnalyzer.convert(e.getValue(), expressionAnalysisContext)));
 
-    private void processPartitionedBy(PartitionedBy node,
-                                      CreateTableAnalyzedStatement statement,
-                                      ParameterContext parameterContext) {
-        for (Expression partitionByColumn : node.columns()) {
-            ColumnIdent partitionedByIdent = ColumnIdent.fromPath(
-                ExpressionToStringVisitor.convert(partitionByColumn, parameterContext.parameters()));
-            statement.analyzedTableElements().changeToPartitionedByColumn(partitionedByIdent, false, statement.tableIdent());
-            ColumnIdent routing = statement.routing();
-            if (routing != null && routing.equals(partitionedByIdent)) {
-                throw new IllegalArgumentException(CLUSTERED_BY_IN_PARTITIONED_ERROR);
-            }
+
+        TableElementsAnalyzer.analyze(
+            createTable.tableElements()
+        );
+        final Symbol clusteredByColumn;
+        final Symbol numberOfShards;
+        if (createTable.clusteredBy().isPresent()) {
+            ClusteredBy clusteredBy = createTable.clusteredBy().get();
+            clusteredByColumn = clusteredBy.column()
+                .map(e -> expressionAnalyzer.convert(e, expressionAnalysisContext))
+                .orElse(null);
+            numberOfShards = clusteredBy.numberOfShards()
+                .map(e -> expressionAnalyzer.convert(e, expressionAnalysisContext))
+                .orElse(null);
+        } else {
+            clusteredByColumn = null;
+            numberOfShards = null;
         }
+        return new CreateTableAnalyzedStatement();
     }
 }

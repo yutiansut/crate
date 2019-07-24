@@ -76,7 +76,7 @@ public class TableParameterInfo {
     static final Setting<Integer> MAX_NGRAM_DIFF = IndexSettings.MAX_NGRAM_DIFF_SETTING;
     static final Setting<Integer> MAX_SHINGLE_DIFF = IndexSettings.MAX_SHINGLE_DIFF_SETTING;
     static final Setting<String> COLUMN_POLICY =
-        new Setting<String>(
+        new Setting<>(
             new Setting.SimpleKey(ColumnPolicies.ES_MAPPING_NAME),
             s -> ColumnPolicy.STRICT.lowerCaseName(),
             s -> ColumnPolicies.encodeMappingValue(ColumnPolicy.of(s)),
@@ -133,14 +133,6 @@ public class TableParameterInfo {
             .put(stripIndexPrefix(NUMBER_OF_SHARDS.getKey()), NUMBER_OF_SHARDS)
             .build();
 
-    private static final Map<String, Setting<?>> SUPPORTED_SETTINGS_FOR_BLOB_CREATION
-        = ImmutableMap.<String, Setting<?>>builder()
-            .put(NUMBER_OF_REPLICAS.getKey(), NUMBER_OF_REPLICAS)
-            .put("blobs_path",
-                Setting.simpleString(BlobIndicesService.SETTING_INDEX_BLOBS_PATH.getKey(),
-                Validators.stringValidator("blobs_path")))
-            .build();
-
     private static final Map<String, Setting<?>> SUPPORTED_SETTINGS_FOR_BLOB_ALTERING = Map.of(
         NUMBER_OF_REPLICAS.getKey(), NUMBER_OF_REPLICAS);
 
@@ -148,16 +140,29 @@ public class TableParameterInfo {
 
     private static final Map<String, Setting<?>> EMPTY_MAP = Map.of();
 
-    static final TableParameterInfo TABLE_CREATE_PARAMETER_INFO
+    static final TableParameterInfo CREATE_TABLE_OPTIONS
         = new TableParameterInfo(SUPPORTED_SETTINGS_DEFAULT, SUPPORTED_MAPPINGS_DEFAULT);
-    static final TableParameterInfo TABLE_ALTER_PARAMETER_INFO
+
+    static final TableParameterInfo ALTER_TABLE_OPTIONS
         = new TableParameterInfo(SUPPORTED_SETTINGS_INCL_SHARDS, SUPPORTED_MAPPINGS_DEFAULT);
-    public static final TableParameterInfo PARTITIONED_TABLE_PARAMETER_INFO_FOR_TEMPLATE_UPDATE
+
+    public static final TableParameterInfo PARTITIONED_TABLE_OPTIONS_FOR_TEMPLATE_UPDATE
         = new TableParameterInfo(SUPPORTED_SETTINGS_DEFAULT, EMPTY_MAP);
+
     static final TableParameterInfo PARTITION_PARAMETER_INFO
         = new TableParameterInfo(SUPPORTED_SETTINGS_INCL_SHARDS, EMPTY_MAP);
-    static final TableParameterInfo BLOB_TABLE_CREATE_PARAMETER_INFO
-        = new TableParameterInfo(SUPPORTED_SETTINGS_FOR_BLOB_CREATION, EMPTY_MAP);
+
+    static final TableParameterInfo CREATE_BLOB_TABLE_OPTIONS = new TableParameterInfo(
+        Map.of(
+            NUMBER_OF_REPLICAS.getKey(), NUMBER_OF_REPLICAS,
+            "blobs_path", Setting.simpleString(
+                BlobIndicesService.SETTING_INDEX_BLOBS_PATH.getKey(),
+                Validators.stringValidator("blobs_path")
+            )
+        ),
+        Map.of()
+    );
+
     public static final TableParameterInfo BLOB_TABLE_ALTER_PARAMETER_INFO
         = new TableParameterInfo(SUPPORTED_SETTINGS_FOR_BLOB_ALTERING, EMPTY_MAP);
 
@@ -165,7 +170,7 @@ public class TableParameterInfo {
     private final Map<String, Setting<?>> supportedSettings;
     private final Map<String, Setting<?>> supportedMappings;
 
-    protected TableParameterInfo(Map<String, Setting<?>> supportedSettings, Map<String, Setting<?>> supportedMappings) {
+    private TableParameterInfo(Map<String, Setting<?>> supportedSettings, Map<String, Setting<?>> supportedMappings) {
         this.supportedSettings = supportedSettings;
         this.supportedMappings = supportedMappings;
     }

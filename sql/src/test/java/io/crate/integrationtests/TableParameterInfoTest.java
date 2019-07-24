@@ -31,7 +31,7 @@ import java.util.Map;
 import static io.crate.testing.TestingHelpers.printedTable;
 import static org.hamcrest.Matchers.is;
 
-public class TableSettingsTest extends SQLTransportIntegrationTest {
+public class TableParameterInfoTest extends SQLTransportIntegrationTest {
 
     @Before
     public void prepare() throws Exception {
