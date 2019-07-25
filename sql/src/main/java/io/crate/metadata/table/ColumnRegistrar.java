@@ -109,7 +109,7 @@ public class ColumnRegistrar<T> {
             rowGranularity,
             type,
             ColumnPolicy.STRICT,
-            Reference.IndexType.NOT_ANALYZED,
+            Reference.IndexType.PLAIN,
             nullable,
             position,
             null
@@ -146,7 +146,7 @@ public class ColumnRegistrar<T> {
                 rowGranularity,
                 innerType,
                 ColumnPolicy.STRICT,
-                Reference.IndexType.NOT_ANALYZED,
+                Reference.IndexType.PLAIN,
                 true,
                 pos,
                 null

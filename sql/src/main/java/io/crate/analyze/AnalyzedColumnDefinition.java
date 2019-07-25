@@ -37,9 +37,9 @@ import io.crate.types.DataTypes;
 import io.crate.types.GeoShapeType;
 import io.crate.types.ObjectType;
 import io.crate.types.StringType;
+import io.crate.types.TimestampType;
 import org.apache.logging.log4j.LogManager;
 import org.elasticsearch.common.logging.DeprecationLogger;
-import io.crate.types.TimestampType;
 import org.elasticsearch.common.settings.Settings;
 
 import javax.annotation.Nullable;
@@ -244,7 +244,7 @@ public class AnalyzedColumnDefinition {
         if (position != null) {
             mapping.put("position", position);
         }
-        if (indexType == Reference.IndexType.NO) {
+        if (indexType == Reference.IndexType.OFF) {
             // we must use a boolean <p>false</p> and NO string "false", otherwise parser support for old indices will fail
             mapping.put("index", false);
         }

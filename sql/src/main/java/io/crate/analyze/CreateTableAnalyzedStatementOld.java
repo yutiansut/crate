@@ -32,7 +32,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public class CreateTableAnalyzedStatement extends AbstractDDLAnalyzedStatement {
+public class CreateTableAnalyzedStatementOld extends AbstractDDLAnalyzedStatement {
 
     private AnalyzedTableElements analyzedTableElements;
     private Map<String, Object> mapping;
@@ -41,7 +41,7 @@ public class CreateTableAnalyzedStatement extends AbstractDDLAnalyzedStatement {
     private boolean noOp = false;
     private boolean ifNotExists = false;
 
-    public CreateTableAnalyzedStatement() {
+    public CreateTableAnalyzedStatementOld() {
     }
 
     public void table(RelationName relationName, boolean ifNotExists, Schemas schemas) {

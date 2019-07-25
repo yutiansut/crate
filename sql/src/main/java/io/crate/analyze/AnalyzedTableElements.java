@@ -508,7 +508,7 @@ public class AnalyzedTableElements {
                 columnDefinition.ident().sqlFqn()));
         }
         columnIdents.remove(columnDefinition.ident());
-        columnDefinition.indexConstraint(Reference.IndexType.NO);
+        columnDefinition.indexConstraint(Reference.IndexType.OFF);
         partitionedByColumns.add(columnDefinition);
     }
 

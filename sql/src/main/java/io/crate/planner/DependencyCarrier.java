@@ -26,6 +26,7 @@ import io.crate.action.sql.DCLStatementDispatcher;
 import io.crate.execution.TransportActionProvider;
 import io.crate.execution.ddl.DDLStatementDispatcher;
 import io.crate.execution.ddl.TransportSwapRelationsAction;
+import io.crate.execution.ddl.tables.TransportCreateTableAction;
 import io.crate.execution.ddl.tables.TransportDropTableAction;
 import io.crate.execution.ddl.views.TransportCreateViewAction;
 import io.crate.execution.ddl.views.TransportDropViewAction;
@@ -57,6 +58,7 @@ public class DependencyCarrier {
     private final DDLStatementDispatcher ddlAnalysisDispatcherProvider;
     private final ClusterService clusterService;
     private final DCLStatementDispatcher dclStatementDispatcher;
+    private final TransportCreateTableAction createTableTransport;
     private final TransportDropTableAction transportDropTableAction;
     private final ProjectionBuilder projectionBuilder;
     private final TransportCreateViewAction createViewAction;
@@ -75,6 +77,7 @@ public class DependencyCarrier {
                              ClusterService clusterService,
                              LicenseService licenseService,
                              DCLStatementDispatcher dclStatementDispatcher,
+                             TransportCreateTableAction createTableTransport,
                              TransportDropTableAction transportDropTableAction,
                              TransportCreateViewAction createViewAction,
                              TransportDropViewAction dropViewAction,
@@ -89,6 +92,7 @@ public class DependencyCarrier {
         this.clusterService = clusterService;
         this.licenseService = licenseService;
         this.dclStatementDispatcher = dclStatementDispatcher;
+        this.createTableTransport = createTableTransport;
         this.transportDropTableAction = transportDropTableAction;
         projectionBuilder = new ProjectionBuilder(functions);
         this.createViewAction = createViewAction;
@@ -162,5 +166,9 @@ public class DependencyCarrier {
 
     public TransportDropViewAction dropViewAction() {
         return dropViewAction;
+    }
+
+    public TransportCreateTableAction createTableTransport() {
+        return createTableTransport;
     }
 }

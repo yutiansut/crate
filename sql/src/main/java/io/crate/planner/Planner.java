@@ -26,6 +26,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import io.crate.analyze.AnalyzedBegin;
 import io.crate.analyze.AnalyzedCommit;
+import io.crate.analyze.AnalyzedCreateTableStatement;
 import io.crate.analyze.AnalyzedDecommissionNodeStatement;
 import io.crate.analyze.AnalyzedDeleteStatement;
 import io.crate.analyze.AnalyzedGCDanglingArtifacts;
@@ -36,7 +37,7 @@ import io.crate.analyze.AnalyzedUpdateStatement;
 import io.crate.analyze.CopyFromAnalyzedStatement;
 import io.crate.analyze.CopyToAnalyzedStatement;
 import io.crate.analyze.CreateAnalyzerAnalyzedStatement;
-import io.crate.analyze.CreateTableAnalyzedStatement;
+import io.crate.analyze.CreateTableAnalyzedStatementOld;
 import io.crate.analyze.CreateViewStmt;
 import io.crate.analyze.DCLStatement;
 import io.crate.analyze.DDLStatement;
@@ -63,6 +64,7 @@ import io.crate.metadata.table.TableInfo;
 import io.crate.planner.consumer.UpdatePlanner;
 import io.crate.planner.node.dcl.GenericDCLPlan;
 import io.crate.planner.node.ddl.CreateDropAnalyzerPlan;
+import io.crate.planner.node.ddl.CreateTablePlan;
 import io.crate.planner.node.ddl.DropTablePlan;
 import io.crate.planner.node.ddl.GenericDDLPlan;
 import io.crate.planner.node.ddl.UpdateSettingsPlan;
@@ -266,12 +268,19 @@ public class Planner extends AnalyzedStatementVisitor<PlannerContext, Plan> {
         return new DropTablePlan(table, dropTable.dropIfExists());
     }
 
+
+
     @Override
-    protected Plan visitCreateTableStatement(CreateTableAnalyzedStatement analysis, PlannerContext context) {
+    protected Plan visitCreateTableStatement(CreateTableAnalyzedStatementOld analysis, PlannerContext context) {
         if (analysis.noOp()) {
             return NoopPlan.INSTANCE;
         }
         return new GenericDDLPlan(analysis);
+    }
+
+    @Override
+    public Plan visitCreateTable(AnalyzedCreateTableStatement createTable, PlannerContext context) {
+        return new CreateTablePlan(createTable);
     }
 
     @Override

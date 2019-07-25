@@ -56,7 +56,7 @@ class AlterTableAddColumnAnalyzer {
         }
         DocTableInfo tableInfo = (DocTableInfo) schemas.resolveTableInfo(node.table().getName(), Operation.ALTER,
             analysis.sessionContext().searchPath());
-        AnalyzedTableElements tableElements = TableElementsAnalyzer.analyze(
+        AnalyzedTableElements tableElements = TableElementsAnalyzerOld.analyze(
             node.tableElement(),
             analysis.parameterContext().parameters(),
             fulltextAnalyzerResolver,

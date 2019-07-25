@@ -116,7 +116,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithAlternativePrimaryKeySyntax() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer, name string, primary key (id, name))"
         );
 
@@ -129,7 +129,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @Test
     @SuppressWarnings("unchecked")
     public void testSimpleCreateTable() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key, name string not null) " +
             "clustered into 3 shards with (number_of_replicas=0)");
 
@@ -159,13 +159,13 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithDefaultNumberOfShards() {
-        CreateTableAnalyzedStatement analysis = e.analyze("create table foo (id integer primary key, name string)");
+        CreateTableAnalyzedStatementOld analysis = e.analyze("create table foo (id integer primary key, name string)");
         assertThat(analysis.tableParameter().settings().get(IndexMetaData.INDEX_NUMBER_OF_SHARDS_SETTING.getKey()), is("6"));
     }
 
     @Test
     public void testCreateTableWithDefaultNumberOfShardsWithClusterByClause() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key) clustered by (id)"
         );
         assertThat(analysis.tableParameter().settings().get(IndexMetaData.INDEX_NUMBER_OF_SHARDS_SETTING.getKey()), is("6"));
@@ -173,7 +173,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableNumberOfShardsProvidedInClusteredClause() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key) " +
             "clustered by (id) into 8 shards"
         );
@@ -182,7 +182,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithTotalFieldsLimit() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "CREATE TABLE foo (id int primary key) " +
             "with (\"mapping.total_fields.limit\"=5000)");
         assertThat(analysis.tableParameter().settings().get(MapperService.INDEX_MAPPING_TOTAL_FIELDS_LIMIT_SETTING.getKey()), is("5000"));
@@ -190,7 +190,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithRefreshInterval() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "CREATE TABLE foo (id int primary key, content string) " +
             "with (refresh_interval='5000ms')");
         assertThat(analysis.tableParameter().settings().get(IndexSettings.INDEX_REFRESH_INTERVAL_SETTING.getKey()), is("5s"));
@@ -276,7 +276,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @Test
     @SuppressWarnings("unchecked")
     public void testCreateTableWithClusteredBy() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer, name string) clustered by(id)");
 
         Map<String, Object> meta = (Map) analysis.mapping().get("_meta");
@@ -293,7 +293,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @Test
     @SuppressWarnings("unchecked")
     public void testCreateTableWithObjects() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key, details object as (name string, age integer))");
 
         Map<String, Object> mappingProperties = analysis.mappingProperties();
@@ -313,7 +313,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @Test
     @SuppressWarnings("unchecked")
     public void testCreateTableWithStrictObject() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key, details object(strict) as (name string, age integer))");
 
         Map<String, Object> mappingProperties = analysis.mappingProperties();
@@ -326,7 +326,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @Test
     @SuppressWarnings("unchecked")
     public void testCreateTableWithIgnoredObject()  {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key, details object(ignored))");
 
         Map<String, Object> mappingProperties = analysis.mappingProperties();
@@ -339,7 +339,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @Test
     @SuppressWarnings("unchecked")
     public void testCreateTableWithSubscriptInFulltextIndexDefinition() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table my_table1g (" +
             "   title string, " +
             "   author object(dynamic) as ( " +
@@ -370,7 +370,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @SuppressWarnings("unchecked")
     @Test
     public void testCreateTableWithArray() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key, details array(string))");
         Map<String, Object> mappingProperties = analysis.mappingProperties();
         Map<String, Object> details = (Map<String, Object>) mappingProperties.get("details");
@@ -383,7 +383,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @Test
     @SuppressWarnings("unchecked")
     public void testCreateTableWithObjectsArray() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key, details array(object as (name string, age integer, tags array(string))))");
 
         Map<String, Object> mappingProperties = analysis.mappingProperties();
@@ -396,7 +396,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @Test
     @SuppressWarnings("unchecked")
     public void testCreateTableWithAnalyzer() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key, content string INDEX using fulltext with (analyzer='german'))");
 
         Map<String, Object> mappingProperties = analysis.mappingProperties();
@@ -409,7 +409,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @Test
     @SuppressWarnings("unchecked")
     public void testCreateTableWithAnalyzerParameter() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key, content string INDEX using fulltext with (analyzer=?))",
             new Object[]{"german"}
         );
@@ -424,7 +424,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @SuppressWarnings("unchecked")
     @Test
     public void textCreateTableWithCustomAnalyzerInNestedColumn() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table ft_search (" +
             "\"user\" object (strict) as (" +
             "name string index using fulltext with (analyzer='ft_search') " +
@@ -442,7 +442,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithSchemaName() {
-        CreateTableAnalyzedStatement analysis =
+        CreateTableAnalyzedStatementOld analysis =
             e.analyze("create table something.foo (id integer primary key)");
         RelationName relationName = analysis.tableIdent();
         assertThat(relationName.schema(), is("something"));
@@ -452,7 +452,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @Test
     @SuppressWarnings("unchecked")
     public void testCreateTableWithIndexColumn() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key, content string, INDEX content_ft using fulltext (content))");
 
         Map<String, Object> mappingProperties = analysis.mappingProperties();
@@ -469,7 +469,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @Test
     @SuppressWarnings("unchecked")
     public void testCreateTableWithPlainIndexColumn() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key, content string, INDEX content_ft using plain (content))");
 
         Map<String, Object> mappingProperties = analysis.mappingProperties();
@@ -531,7 +531,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithMultiplePrimaryKeys() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table test (id integer primary key, name string primary key)");
 
         String[] primaryKeys = analysis.primaryKeys().toArray(new String[0]);
@@ -542,7 +542,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithMultiplePrimaryKeysAndClusteredBy() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table test (id integer primary key, name string primary key) " +
             "clustered by(name)");
 
@@ -560,7 +560,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithObjectAndUnderscoreColumnPrefix() {
-        CreateTableAnalyzedStatement analysis = e.analyze("create table test (o object as (_id integer), name string)");
+        CreateTableAnalyzedStatementOld analysis = e.analyze("create table test (o object as (_id integer), name string)");
 
         assertThat(analysis.analyzedTableElements().columns().size(), is(2)); // id pk column is also added
         AnalyzedColumnDefinition column = analysis.analyzedTableElements().columns().get(0);
@@ -594,7 +594,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testHasColumnDefinition() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table my_table (" +
             "  id integer primary key, " +
             "  name string, " +
@@ -622,7 +622,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithGeoPoint() {
-        CreateTableAnalyzedStatement analyze = e.analyze(
+        CreateTableAnalyzedStatementOld analyze = e.analyze(
             "create table geo_point_table (\n" +
             "    id integer primary key,\n" +
             "    my_point geo_point\n" +
@@ -647,7 +647,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testEarlyPrimaryKeyConstraint() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table my_table (" +
             "primary key (id1, id2)," +
             "id1 integer," +
@@ -669,7 +669,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @SuppressWarnings("unchecked")
     @Test
     public void testEarlyIndexDefinition() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table my_table (" +
             "index ft using fulltext(title, name) with (analyzer='snowball')," +
             "title string," +
@@ -725,7 +725,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithClusteredIntoShardsParameter() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table t (id int primary key) clustered into ? shards", new Object[]{2});
         assertThat(analysis.tableParameter().settings().get(IndexMetaData.INDEX_NUMBER_OF_SHARDS_SETTING.getKey()), is("2"));
     }
@@ -750,7 +750,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
             .setSearchPath("firstSchema", "secondSchema")
             .build();
 
-        CreateTableAnalyzedStatement analysis = sqlExecutor.analyze("create table t (id int)");
+        CreateTableAnalyzedStatementOld analysis = sqlExecutor.analyze("create table t (id int)");
         assertThat(analysis.tableIdent().schema(), is(sqlExecutor.getSessionContext().searchPath().currentSchema()));
     }
 
@@ -788,7 +788,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testExplicitSchemaHasPrecedenceOverDefaultSchema() {
-        CreateTableAnalyzedStatement statement = (CreateTableAnalyzedStatement) e.analyzer.boundAnalyze(
+        CreateTableAnalyzedStatementOld statement = (CreateTableAnalyzedStatementOld) e.analyzer.boundAnalyze(
             SqlParser.createStatement("create table foo.bar (x string)"),
             new CoordinatorTxnCtx(new SessionContext(Option.NONE, User.CRATE_USER, "hoschi")),
             new ParameterContext(Row.EMPTY, Collections.emptyList())).analyzedStatement();
@@ -799,7 +799,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testDefaultSchemaIsAddedToTableIdentIfNoEplicitSchemaExistsInTheStatement() {
-        CreateTableAnalyzedStatement statement = (CreateTableAnalyzedStatement) e.analyzer.boundAnalyze(
+        CreateTableAnalyzedStatementOld statement = (CreateTableAnalyzedStatementOld) e.analyzer.boundAnalyze(
             SqlParser.createStatement("create table bar (x string)"),
             new CoordinatorTxnCtx(new SessionContext(Option.NONE, User.CRATE_USER, "hoschi")),
             new ParameterContext(Row.EMPTY, Collections.emptyList())).analyzedStatement();
@@ -916,7 +916,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateReadOnlyTable() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id integer primary key, name string) "
             + "clustered into 3 shards with (\"blocks.read_only\"=true)");
         assertThat(analysis.tableParameter().settings().get(IndexMetaData.INDEX_READ_ONLY_SETTING.getKey()), is("true"));
@@ -925,7 +925,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @SuppressWarnings("unchecked")
     @Test
     public void testCreateTableWithGeneratedColumn() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (" +
             "   ts timestamp with time zone," +
             "   day as date_trunc('day', ts))");
@@ -944,7 +944,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithColumnOfArrayTypeAndGeneratedExpression() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (arr array(integer) as ([1.0, 2.0]))");
 
         assertThat(
@@ -955,7 +955,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @SuppressWarnings("unchecked")
     @Test
     public void testCreateTableGeneratedColumnWithCast() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (" +
             "   ts timestamp with time zone," +
             "   day timestamp with time zone GENERATED ALWAYS as ts + 1)");
@@ -973,7 +973,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @SuppressWarnings("unchecked")
     @Test
     public void testCreateTableWithCurrentTimestampAsGeneratedColumnIsntNormalized() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (ts timestamp with time zone GENERATED ALWAYS as current_timestamp)");
 
         Map<String, Object> metaMapping = ((Map) analysis.mapping().get("_meta"));
@@ -986,7 +986,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @SuppressWarnings("unchecked")
     @Test
     public void testCreateTableGeneratedColumnWithSubscript() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (\"user\" object as (name string), name as concat(\"user\"['name'], 'foo'))");
 
         Map<String, Object> metaMapping = ((Map) analysis.mapping().get("_meta"));
@@ -997,7 +997,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
     @SuppressWarnings("unchecked")
     @Test
     public void testCreateTableGeneratedColumnParameter() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (\"user\" object as (name string), name as concat(\"user\"['name'], ?))", $("foo"));
         Map<String, Object> metaMapping = ((Map) analysis.mapping().get("_meta"));
         Map<String, String> generatedColumnsMapping = (Map<String, String>) metaMapping.get("generated_columns");
@@ -1046,7 +1046,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithDefaultExpressionLiteral() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (name text default 'bar')");
 
         Map<String, Object> mappingProperties = analysis.mappingProperties();
@@ -1056,7 +1056,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithDefaultExpressionFunction() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (name text default upper('bar'))");
 
         Map<String, Object> mappingProperties = analysis.mappingProperties();
@@ -1066,7 +1066,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithDefaultExpressionWithCast() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (id int default 3.5)");
 
         Map<String, Object> mappingProperties = analysis.mappingProperties();
@@ -1076,7 +1076,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithDefaultExpressionIsNotNormalized() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (ts timestamp with time zone default current_timestamp(3))");
 
         Map<String, Object> mappingProperties = analysis.mappingProperties();
@@ -1088,7 +1088,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithDefaultExpressionAsCompoundTypes() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (" +
             "   obj object as (key text) default {key=''}," +
             "   arr array(long) default [1, 2])");
@@ -1100,7 +1100,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithDefaultExpressionAsGeoTypes() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table foo (" +
             "   p geo_point default [0,0]," +
             "   s geo_shape default 'LINESTRING (0 0, 1 1)')");
@@ -1182,7 +1182,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testCreateTableWithColumnStoreDisabled() {
-        CreateTableAnalyzedStatement analysis = e.analyze(
+        CreateTableAnalyzedStatementOld analysis = e.analyze(
             "create table columnstore_disabled (s string STORAGE WITH (columnstore = false))");
         Map<String, Object> mappingProperties = analysis.mappingProperties();
         assertThat(mapToSortedString(mappingProperties), is("s={doc_values=false, position=1, type=keyword}"));
@@ -1207,7 +1207,7 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testGeneratedColumnInsideObjectIsProcessed() {
-        CreateTableAnalyzedStatement stmt = e.analyze("create table t (obj object as (c as 1 + 1))");
+        CreateTableAnalyzedStatementOld stmt = e.analyze("create table t (obj object as (c as 1 + 1))");
         AnalyzedColumnDefinition obj = stmt.analyzedTableElements().columns().get(0);
         AnalyzedColumnDefinition c = obj.children().get(0);
 
@@ -1220,14 +1220,14 @@ public class CreateAlterTableStatementAnalyzerTest extends CrateDummyClusterServ
 
     @Test
     public void testNumberOfRoutingShardsCanBeSetAtCreateTable() {
-        CreateTableAnalyzedStatement stmt = e.analyze("create table t (x int) with (number_of_routing_shards = 10)");
+        CreateTableAnalyzedStatementOld stmt = e.analyze("create table t (x int) with (number_of_routing_shards = 10)");
         assertThat(stmt.tableParameter().settings().get("index.number_of_routing_shards"), is("10"));
     }
 
     @Test
     public void testNumberOfRoutingShardsCanBeSetAtCreateTableForPartitionedTables() {
-        CreateTableAnalyzedStatement stmt = e.analyze("create table t (p int, x int) partitioned by (p) " +
-                                                      "with (number_of_routing_shards = 10)");
+        CreateTableAnalyzedStatementOld stmt = e.analyze("create table t (p int, x int) partitioned by (p) " +
+                                                         "with (number_of_routing_shards = 10)");
         assertThat(stmt.tableParameter().settings().get("index.number_of_routing_shards"), is("10"));
     }
 

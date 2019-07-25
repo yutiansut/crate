@@ -96,7 +96,7 @@ public class DocSysColumns {
                              RowGranularity.DOC,
                              dataType,
                              ColumnPolicy.STRICT,
-                             Reference.IndexType.NOT_ANALYZED,
+                             Reference.IndexType.PLAIN,
                              false,
                              null,
                              null

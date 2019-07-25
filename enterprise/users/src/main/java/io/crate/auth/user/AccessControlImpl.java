@@ -38,7 +38,7 @@ import io.crate.analyze.CreateBlobTableAnalyzedStatement;
 import io.crate.analyze.CreateFunctionAnalyzedStatement;
 import io.crate.analyze.CreateRepositoryAnalyzedStatement;
 import io.crate.analyze.CreateSnapshotAnalyzedStatement;
-import io.crate.analyze.CreateTableAnalyzedStatement;
+import io.crate.analyze.CreateTableAnalyzedStatementOld;
 import io.crate.analyze.CreateUserAnalyzedStatement;
 import io.crate.analyze.CreateViewStmt;
 import io.crate.analyze.DeallocateAnalyzedStatement;
@@ -276,7 +276,7 @@ public final class AccessControlImpl implements AccessControl {
         }
 
         @Override
-        protected Void visitCreateTableStatement(CreateTableAnalyzedStatement analysis, User user) {
+        protected Void visitCreateTableStatement(CreateTableAnalyzedStatementOld analysis, User user) {
             Privileges.ensureUserHasPrivilege(
                 Privilege.Type.DDL,
                 Privilege.Clazz.SCHEMA,

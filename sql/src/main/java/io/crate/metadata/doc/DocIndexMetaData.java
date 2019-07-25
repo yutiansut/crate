@@ -188,7 +188,7 @@ public class DocIndexMetaData {
         boolean partitionByColumn = partitionedBy.contains(column);
         String generatedExpression = generatedColumns.get(column.fqn());
         if (partitionByColumn) {
-            indexType = Reference.IndexType.NOT_ANALYZED;
+            indexType = Reference.IndexType.PLAIN;
         }
         if (generatedExpression == null) {
             ref = newInfo(position, column, type, defaultExpression, columnPolicy, indexType, isNotNull, columnStoreEnabled);
@@ -359,14 +359,14 @@ public class DocIndexMetaData {
             if ("text".equals(columnProperties.get("type"))) {
                 return Reference.IndexType.ANALYZED;
             }
-            return Reference.IndexType.NOT_ANALYZED;
+            return Reference.IndexType.PLAIN;
         }
         if (Boolean.FALSE.equals(index) || "no".equals(index) || "false".equals(index)) {
-            return Reference.IndexType.NO;
+            return Reference.IndexType.OFF;
         }
 
         if ("not_analyzed".equals(index)) {
-            return Reference.IndexType.NOT_ANALYZED;
+            return Reference.IndexType.PLAIN;
         }
         return Reference.IndexType.ANALYZED;
     }
@@ -410,7 +410,7 @@ public class DocIndexMetaData {
                        || (columnDataType.id() == ArrayType.ID
                            && ((ArrayType) columnDataType).innerType().id() == ObjectType.ID)) {
                 ColumnPolicy columnPolicy = ColumnPolicies.decodeMappingValue(columnProperties.get("dynamic"));
-                add(position, newIdent, columnDataType, defaultExpression, columnPolicy, Reference.IndexType.NO, nullable, false);
+                add(position, newIdent, columnDataType, defaultExpression, columnPolicy, Reference.IndexType.OFF, nullable, false);
 
                 if (columnProperties.get("properties") != null) {
                     // walk nested

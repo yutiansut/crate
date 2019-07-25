@@ -43,7 +43,7 @@ public class AnalyzedStatementVisitor<C, R> {
         return visitAnalyzedStatement(analysis, context);
     }
 
-    protected R visitCreateTableStatement(CreateTableAnalyzedStatement analysis, C context) {
+    protected R visitCreateTableStatement(CreateTableAnalyzedStatementOld analysis, C context) {
         return visitDDLStatement(analysis, context);
     }
 
@@ -241,5 +241,9 @@ public class AnalyzedStatementVisitor<C, R> {
 
     public R visitDropTable(DropTableAnalyzedStatement<?> dropTable, C context) {
         return visitDDLStatement(dropTable, context);
+    }
+
+    public R visitCreateTable(AnalyzedCreateTableStatement createTable, C context) {
+        return visitDDLStatement(createTable, context);
     }
 }

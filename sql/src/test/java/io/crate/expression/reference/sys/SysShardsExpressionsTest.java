@@ -156,7 +156,7 @@ public class SysShardsExpressionsTest extends CrateDummyClusterServiceUnitTest {
             RowGranularity.SHARD,
             IntegerType.INSTANCE,
             ColumnPolicy.STRICT,
-            Reference.IndexType.NOT_ANALYZED,
+            Reference.IndexType.PLAIN,
             true,
             3,
             null

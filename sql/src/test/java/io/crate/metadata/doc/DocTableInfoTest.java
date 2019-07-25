@@ -81,7 +81,7 @@ public class DocTableInfoTest extends CrateUnitTest {
             RowGranularity.DOC,
             ObjectType.untyped(),
             ColumnPolicy.STRICT,
-            Reference.IndexType.NOT_ANALYZED,
+            Reference.IndexType.PLAIN,
             true,
             null,
             null

@@ -44,8 +44,8 @@ public class Reference extends Symbol {
 
     public enum IndexType {
         ANALYZED,
-        NOT_ANALYZED,
-        NO;
+        PLAIN,
+        OFF
     }
 
     protected DataType type;
@@ -85,7 +85,7 @@ public class Reference extends Symbol {
              granularity,
              type,
              ColumnPolicy.DYNAMIC,
-             IndexType.NOT_ANALYZED,
+             IndexType.PLAIN,
              true,
              position,
              defaultExpression);

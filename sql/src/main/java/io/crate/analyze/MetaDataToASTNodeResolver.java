@@ -134,7 +134,7 @@ public class MetaDataToASTNodeResolver {
                 if (!info.isNullable()) {
                     constraints.add(new NotNullColumnConstraint());
                 }
-                if (info.indexType().equals(Reference.IndexType.NO)
+                if (info.indexType().equals(Reference.IndexType.OFF)
                     && info.valueType().id() != ObjectType.ID
                     && !(info.valueType().id() == ArrayType.ID &&
                          ((ArrayType) info.valueType()).innerType().id() == ObjectType.ID)) {
@@ -215,7 +215,7 @@ public class MetaDataToASTNodeResolver {
                             properties.add(new GenericProperty(FulltextAnalyzerResolver.CustomType.ANALYZER.getName(), new StringLiteral(analyzer)));
                         }
                         elements.add(new IndexDefinition(name, "fulltext", columns, properties));
-                    } else if (indexRef.indexType().equals(Reference.IndexType.NOT_ANALYZED)) {
+                    } else if (indexRef.indexType().equals(Reference.IndexType.PLAIN)) {
                         elements.add(new IndexDefinition(name, "plain", columns, GenericProperties.EMPTY));
                     }
                 }

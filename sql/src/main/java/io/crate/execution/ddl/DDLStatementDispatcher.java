@@ -35,7 +35,6 @@ import io.crate.analyze.CreateBlobTableAnalyzedStatement;
 import io.crate.analyze.CreateFunctionAnalyzedStatement;
 import io.crate.analyze.CreateRepositoryAnalyzedStatement;
 import io.crate.analyze.CreateSnapshotAnalyzedStatement;
-import io.crate.analyze.CreateTableAnalyzedStatement;
 import io.crate.analyze.CreateUserAnalyzedStatement;
 import io.crate.analyze.DropFunctionAnalyzedStatement;
 import io.crate.analyze.DropRepositoryAnalyzedStatement;
@@ -53,7 +52,6 @@ import io.crate.auth.user.UserManager;
 import io.crate.blob.v2.BlobAdminClient;
 import io.crate.data.Row;
 import io.crate.execution.ddl.tables.AlterTableOperation;
-import io.crate.execution.ddl.tables.TableCreator;
 import io.crate.execution.support.Transports;
 import io.crate.expression.udf.UserDefinedFunctionDDLClient;
 import io.crate.metadata.Functions;
@@ -99,7 +97,6 @@ public class DDLStatementDispatcher {
 
     private final Provider<BlobAdminClient> blobAdminClient;
     private ClusterService clusterService;
-    private final TableCreator tableCreator;
     private final AlterTableOperation alterTableOperation;
     private final RepositoryService repositoryService;
     private final SnapshotRestoreDDLDispatcher snapshotRestoreDDLDispatcher;
@@ -117,7 +114,6 @@ public class DDLStatementDispatcher {
     @Inject
     public DDLStatementDispatcher(Provider<BlobAdminClient> blobAdminClient,
                                   ClusterService clusterService,
-                                  TableCreator tableCreator,
                                   AlterTableOperation alterTableOperation,
                                   RepositoryService repositoryService,
                                   SnapshotRestoreDDLDispatcher snapshotRestoreDDLDispatcher,
@@ -130,7 +126,6 @@ public class DDLStatementDispatcher {
                                   Functions functions) {
         this.blobAdminClient = blobAdminClient;
         this.clusterService = clusterService;
-        this.tableCreator = tableCreator;
         this.alterTableOperation = alterTableOperation;
         this.repositoryService = repositoryService;
         this.snapshotRestoreDDLDispatcher = snapshotRestoreDDLDispatcher;
@@ -166,11 +161,6 @@ public class DDLStatementDispatcher {
         @Override
         protected CompletableFuture<Long> visitAnalyzedStatement(AnalyzedStatement analyzedStatement, Ctx ctx) {
             throw new UnsupportedOperationException(String.format(Locale.ENGLISH, "Can't handle \"%s\"", analyzedStatement));
-        }
-
-        @Override
-        public CompletableFuture<Long> visitCreateTableStatement(CreateTableAnalyzedStatement analysis, Ctx ctx) {
-            return tableCreator.create(analysis);
         }
 
         @Override
