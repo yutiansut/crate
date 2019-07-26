@@ -66,6 +66,42 @@ public final class Lists2 {
     }
 
     /**
+     * Change the layout from rows to column oriented.
+     *
+     * <pre>
+     *
+     * rows: [
+     *  [a, 1],
+     *  [b, 2]
+     * ]
+     *
+     * to
+     *
+     * columnValues: [
+     *  [a, b],
+     *  [1, 2]
+     * ]
+     * </pre>
+     */
+    public static <T> List<List<T>> toColumnOrientation(List<? extends List<T>> rows) {
+        if (rows.isEmpty()) {
+            return List.of();
+        }
+        List<T> firstRow = rows.get(0);
+        int numColumns = firstRow.size();
+        ArrayList<List<T>> columns = new ArrayList<>();
+        for (int c = 0; c < numColumns; c++) {
+            ArrayList<T> columnValues = new ArrayList<>(rows.size());
+            for (int r = 0; r < rows.size(); r++) {
+                List<T> row = rows.get(r);
+                columnValues.add(row.get(c));
+            }
+            columns.add(columnValues);
+        }
+        return columns;
+    }
+
+    /**
      * Apply the replace function on each item of the list and replaces the item.
      *
      * This is similar to Guava's com.google.common.collect.Lists#transform(List, com.google.common.base.Function),
@@ -200,6 +236,52 @@ public final class Lists2 {
             }
         }
         return firstPeer;
+    }
+
+    /**
+     * Finds the first item that's less than or equal to the probe in the slice of the sortedItems that starts with the index
+     * specified by @param itemIdx, according to the provided comparator.
+     * @return the index of the first LTE item, or -1 if there isn't any (eg. probe is less than all items)
+     */
+    public static <T> int findFirstLTEProbeValue(List<T> sortedItems, int itemIdx, T probe, Comparator<T> cmp) {
+        int start = itemIdx;
+        int end = sortedItems.size() - 1;
+
+        int firstLTEProbeIdx = -1;
+        while (start <= end) {
+            int mid = (start + end) / 2;
+            // Move to left side if mid is greater than probe
+            if (cmp.compare(sortedItems.get(mid), probe) > 0) {
+                end = mid - 1;
+            } else {
+                firstLTEProbeIdx = mid;
+                start = mid + 1;
+            }
+        }
+        return firstLTEProbeIdx;
+    }
+
+    /**
+     * Finds the first item that's greater than or equal to the probe in the slice of the sortedItems that ends with the index
+     * specified by @param itemIdx, according to the provided comparator.
+     * @return the index of the first GTE item, or -1 if there isn't any (eg. probe is greater than all items)
+     */
+    public static <T> int findFirstGTEProbeValue(List<T> sortedItems, int itemIdx, T probe, Comparator<T> cmp) {
+        int start = 0;
+        int end = itemIdx - 1;
+
+        int firstGTEProbeIdx = -1;
+        while (start <= end) {
+            int mid = (start + end) / 2;
+            // Move to right side if mid is less than probe
+            if (cmp.compare(sortedItems.get(mid), probe) < 0) {
+                start = mid + 1;
+            } else {
+                firstGTEProbeIdx = mid;
+                end = mid - 1;
+            }
+        }
+        return firstGTEProbeIdx;
     }
 
     /**

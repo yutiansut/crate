@@ -56,7 +56,6 @@ import io.crate.sql.tree.SubscriptExpression;
 import io.crate.sql.tree.Table;
 import io.crate.sql.tree.TableElement;
 import io.crate.types.ArrayType;
-import io.crate.types.CollectionType;
 import io.crate.types.DataType;
 import io.crate.types.DataTypes;
 import io.crate.types.ObjectType;
@@ -69,7 +68,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
-import static io.crate.analyze.TableParameterInfo.stripIndexPrefix;
+import static io.crate.analyze.TableParameters.stripIndexPrefix;
 
 public class MetaDataToASTNodeResolver {
 
@@ -119,14 +118,14 @@ public class MetaDataToASTNodeResolver {
                 if (info.valueType().id() == ObjectType.ID) {
                     columnType = new ObjectColumnType(info.columnPolicy().name(), extractColumnDefinitions(ident));
                 } else if (info.valueType().id() == ArrayType.ID) {
-                    DataType innerType = ((CollectionType) info.valueType()).innerType();
+                    DataType innerType = ((ArrayType) info.valueType()).innerType();
                     ColumnType innerColumnType;
                     if (innerType.id() == ObjectType.ID) {
                         innerColumnType = new ObjectColumnType(info.columnPolicy().name(), extractColumnDefinitions(ident));
                     } else {
                         innerColumnType = new ColumnType(innerType.getName());
                     }
-                    columnType = CollectionColumnType.array(innerColumnType);
+                    columnType = new CollectionColumnType(innerColumnType);
                 } else {
                     columnType = new ColumnType(info.valueType().getName());
                 }
@@ -138,7 +137,7 @@ public class MetaDataToASTNodeResolver {
                 if (info.indexType().equals(Reference.IndexType.NO)
                     && info.valueType().id() != ObjectType.ID
                     && !(info.valueType().id() == ArrayType.ID &&
-                         ((CollectionType) info.valueType()).innerType().id() == ObjectType.ID)) {
+                         ((ArrayType) info.valueType()).innerType().id() == ObjectType.ID)) {
                     constraints.add(IndexColumnConstraint.OFF);
                 } else if (info.indexType().equals(Reference.IndexType.ANALYZED)) {
                     String analyzer = tableInfo.getAnalyzerForColumnIdent(ident);
@@ -246,8 +245,8 @@ public class MetaDataToASTNodeResolver {
             GenericProperties properties = new GenericProperties();
             Expression numReplicas = new StringLiteral(tableInfo.numberOfReplicas());
             properties.add(new GenericProperty(
-                    TableParameterInfo.NUMBER_OF_REPLICAS.getKey(),
-                    numReplicas
+                TableParameters.NUMBER_OF_REPLICAS.getKey(),
+                numReplicas
                 )
             );
             // we want a sorted map of table parameters

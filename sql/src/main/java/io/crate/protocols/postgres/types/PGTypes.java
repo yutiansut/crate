@@ -26,7 +26,6 @@ import com.carrotsearch.hppc.IntObjectHashMap;
 import com.carrotsearch.hppc.IntObjectMap;
 import com.google.common.collect.ImmutableMap;
 import io.crate.types.ArrayType;
-import io.crate.types.CollectionType;
 import io.crate.types.DataType;
 import io.crate.types.DataTypes;
 import io.crate.types.ObjectType;
@@ -53,21 +52,21 @@ public class PGTypes {
         .put(DataTypes.IP, VarCharType.INSTANCE) // postgres has no IP type, so map it to varchar - it matches the client representation
         .put(DataTypes.UNDEFINED, VarCharType.INSTANCE)
         .put(DataTypes.GEO_SHAPE, JsonType.INSTANCE)
-        .put(new ArrayType(DataTypes.BYTE), PGArray.CHAR_ARRAY)
-        .put(new ArrayType(DataTypes.SHORT), PGArray.INT2_ARRAY)
-        .put(new ArrayType(DataTypes.INTEGER), PGArray.INT4_ARRAY)
-        .put(new ArrayType(DataTypes.LONG), PGArray.INT8_ARRAY)
-        .put(new ArrayType(DataTypes.FLOAT), PGArray.FLOAT4_ARRAY)
-        .put(new ArrayType(DataTypes.DOUBLE), PGArray.FLOAT8_ARRAY)
-        .put(new ArrayType(DataTypes.BOOLEAN), PGArray.BOOL_ARRAY)
-        .put(new ArrayType(DataTypes.TIMESTAMPZ), PGArray.TIMESTAMPZ_ARRAY)
-        .put(new ArrayType(DataTypes.TIMESTAMP), PGArray.TIMESTAMP_ARRAY)
-        .put(new ArrayType(DataTypes.STRING), PGArray.VARCHAR_ARRAY)
-        .put(new ArrayType(DataTypes.IP), PGArray.VARCHAR_ARRAY)
-        .put(new ArrayType(DataTypes.GEO_POINT), PGArray.FLOAT8_ARRAY)
-        .put(new ArrayType(DataTypes.GEO_SHAPE), PGArray.JSON_ARRAY)
-        .put(new ArrayType(ObjectType.untyped()), JsonType.INSTANCE)
-        .put(DataTypes.GEO_POINT, PGArray.FLOAT8_ARRAY)     // Must come after array(double) -> float8-array mapping to avoid override in the static block further below
+        .put(DataTypes.GEO_POINT, PointType.INSTANCE)
+        .put(new ArrayType<>(DataTypes.BYTE), PGArray.CHAR_ARRAY)
+        .put(new ArrayType<>(DataTypes.SHORT), PGArray.INT2_ARRAY)
+        .put(new ArrayType<>(DataTypes.INTEGER), PGArray.INT4_ARRAY)
+        .put(new ArrayType<>(DataTypes.LONG), PGArray.INT8_ARRAY)
+        .put(new ArrayType<>(DataTypes.FLOAT), PGArray.FLOAT4_ARRAY)
+        .put(new ArrayType<>(DataTypes.DOUBLE), PGArray.FLOAT8_ARRAY)
+        .put(new ArrayType<>(DataTypes.BOOLEAN), PGArray.BOOL_ARRAY)
+        .put(new ArrayType<>(DataTypes.TIMESTAMPZ), PGArray.TIMESTAMPZ_ARRAY)
+        .put(new ArrayType<>(DataTypes.TIMESTAMP), PGArray.TIMESTAMP_ARRAY)
+        .put(new ArrayType<>(DataTypes.STRING), PGArray.VARCHAR_ARRAY)
+        .put(new ArrayType<>(DataTypes.IP), PGArray.VARCHAR_ARRAY)
+        .put(new ArrayType<>(DataTypes.GEO_POINT), PGArray.POINT_ARRAY)
+        .put(new ArrayType<>(DataTypes.GEO_SHAPE), PGArray.JSON_ARRAY)
+        .put(new ArrayType<>(ObjectType.untyped()), JsonType.INSTANCE)
         .build();
 
     private static final IntObjectMap<DataType> PG_TYPES_TO_CRATE_TYPE = new IntObjectHashMap<>();
@@ -101,9 +100,9 @@ public class PGTypes {
     }
 
     public static PGType get(DataType type) {
-        if (type instanceof CollectionType) {
-            DataType<?> innerType = ((CollectionType) type).innerType();
-            if (innerType instanceof CollectionType) {
+        if (type instanceof ArrayType) {
+            DataType<?> innerType = ((ArrayType) type).innerType();
+            if (innerType instanceof ArrayType) {
                 // if this is a nested collection stream it as JSON because
                 // postgres binary format doesn't support multidimensional arrays with sub-arrays of different length
                 // (something like [ [1, 2], [3] ] is not supported)

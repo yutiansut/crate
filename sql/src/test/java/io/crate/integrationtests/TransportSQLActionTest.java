@@ -35,6 +35,9 @@ import org.elasticsearch.test.ESIntegTestCase;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.locationtech.spatial4j.context.jts.JtsSpatialContext;
+import org.locationtech.spatial4j.shape.Point;
+import org.locationtech.spatial4j.shape.impl.PointImpl;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -456,12 +459,12 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
 
         execute("select id, strings, integers from t1");
         assertThat(response.rowCount(), is(1L));
-        assertThat((Integer) response.rows()[0][0], is(1));
-        assertThat(((String) ((Object[]) response.rows()[0][1])[0]), is("foo"));
-        assertThat(((String) ((Object[]) response.rows()[0][1])[1]), is("bar"));
-        assertThat(((Integer) ((Object[]) response.rows()[0][2])[0]), is(1));
-        assertThat(((Integer) ((Object[]) response.rows()[0][2])[1]), is(2));
-        assertThat(((Integer) ((Object[]) response.rows()[0][2])[2]), is(3));
+        assertThat(response.rows()[0][0], is(1));
+        assertThat(((List) response.rows()[0][1]).get(0), is("foo"));
+        assertThat(((List) response.rows()[0][1]).get(1), is("bar"));
+        assertThat(((List) response.rows()[0][2]).get(0), is(1));
+        assertThat(((List) response.rows()[0][2]).get(1), is(2));
+        assertThat(((List) response.rows()[0][2]).get(2), is(3));
     }
 
     @Test
@@ -477,8 +480,8 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
 
         execute("select details['names'] from t1");
         assertThat(response.rowCount(), is(1L));
-        assertThat(((String) ((Object[]) response.rows()[0][0])[0]), is("Arthur"));
-        assertThat(((String) ((Object[]) response.rows()[0][0])[1]), is("Trillian"));
+        assertThat(((List) response.rows()[0][0]).get(0), is("Arthur"));
+        assertThat(((List) response.rows()[0][0]).get(1), is("Trillian"));
     }
 
     @Test
@@ -543,10 +546,10 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
 
         execute("select id, strings from t1");
         assertThat(response.rowCount(), is(1L));
-        assertThat((Integer) response.rows()[0][0], is(1));
-        assertThat(((String) ((Object[]) response.rows()[0][1])[0]), is("foo"));
-        assertThat(((Object[]) response.rows()[0][1])[1], nullValue());
-        assertThat(((String) ((Object[]) response.rows()[0][1])[2]), is("bar"));
+        assertThat(response.rows()[0][0], is(1));
+        assertThat(((List) response.rows()[0][1]).get(0), is("foo"));
+        assertThat(((List) response.rows()[0][1]).get(1), nullValue());
+        assertThat(((List) response.rows()[0][1]).get(2), is("bar"));
     }
 
     @Test
@@ -572,21 +575,22 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
         execute("select objects from t1");
         assertThat(response.rowCount(), is(1L));
 
-        Object[] objResults = ((Object[]) response.rows()[0][0]);
-        Map<String, Object> obj1Result = ((Map) objResults[0]);
-        assertThat((String) obj1Result.get("name"), is("foo"));
-        assertThat((Integer) obj1Result.get("age"), is(1));
+        List objResults = (List) response.rows()[0][0];
+        Map<String, Object> obj1Result = (Map) objResults.get(0);
+        assertThat(obj1Result.get("name"), is("foo"));
+        assertThat(obj1Result.get("age"), is(1));
 
-        Map<String, Object> obj2Result = ((Map) objResults[1]);
-        assertThat((String) obj2Result.get("name"), is("bar"));
-        assertThat((Integer) obj2Result.get("age"), is(2));
+        Map<String, Object> obj2Result = (Map) objResults.get(1);
+        assertThat(obj2Result.get("name"), is("bar"));
+        assertThat(obj2Result.get("age"), is(2));
 
         execute("select objects['name'] from t1");
         assertThat(response.rowCount(), is(1L));
 
-        String[] names = Arrays.copyOf(((Object[]) response.rows()[0][0]), 2, String[].class);
-        assertThat(names[0], is("foo"));
-        assertThat(names[1], is("bar"));
+        List names = (List) response.rows()[0][0];
+
+        assertThat(names.get(0), is("foo"));
+        assertThat(names.get(1), is("bar"));
 
         execute("select objects['name'] from t1 where ? = ANY (objects['name'])", new Object[]{"foo"});
         assertThat(response.rowCount(), is(1L));
@@ -1222,8 +1226,8 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
         execute("select p from geo_point_table order by id desc");
 
         assertThat(response.rowCount(), is(2L));
-        assertThat(((Object[]) response.rows()[0][0]), arrayContaining(new Object[]{57.22, 7.12}));
-        assertThat(((Object[]) response.rows()[1][0]), arrayContaining(new Object[]{47.22, 12.09}));
+        assertThat(response.rows()[0][0], is(new PointImpl(57.22, 7.12, JtsSpatialContext.GEO)));
+        assertThat(response.rows()[1][0], is(new PointImpl(47.22, 12.09, JtsSpatialContext.GEO)));
     }
 
     @Test
@@ -1266,38 +1270,38 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
         String expectedAggregate = "1| 2296582.8899438097\n";
         assertEquals(expectedAggregate, printedTable(response.rows()));
 
-        Double[] row;
+        Point point;
         // queries
         execute("select p from t where distance(p, 'POINT (11 21)') > 0.0");
         assertThat(response.rowCount(), is(1L));
-        row = Arrays.copyOf((Object[]) response.rows()[0][0], 2, Double[].class);
-        assertThat(row[0], is(10.0d));
-        assertThat(row[1], is(20.0d));
+        point = (Point) response.rows()[0][0];
+        assertThat(point.getX(), is(10.0d));
+        assertThat(point.getY(), is(20.0d));
 
         execute("select p from t where distance(p, 'POINT (11 21)') < 10.0");
         assertThat(response.rowCount(), is(1L));
-        row = Arrays.copyOf((Object[]) response.rows()[0][0], 2, Double[].class);
-        assertThat(row[0], is(11.0d));
-        assertThat(row[1], is(21.0d));
+        point = (Point) response.rows()[0][0];
+        assertThat(point.getX(), is(11.0d));
+        assertThat(point.getY(), is(21.0d));
 
         execute("select p from t where distance(p, 'POINT (11 21)') < 10.0 or distance(p, 'POINT (11 21)') > 10.0");
         assertThat(response.rowCount(), is(2L));
 
         execute("select p from t where distance(p, 'POINT (10 20)') >= 0.0 and distance(p, 'POINT (10 20)') <= 0.1");
         assertThat(response.rowCount(), is(1L));
-        row = Arrays.copyOf((Object[]) response.rows()[0][0], 2, Double[].class);
-        assertThat(row[0], is(10.0d));
-        assertThat(row[1], is(20.0d));
+        point = (Point) response.rows()[0][0];
+        assertThat(point.getX(), is(10.0d));
+        assertThat(point.getY(), is(20.0d));
 
         execute("select p from t where distance(p, 'POINT (10 20)') = 0.0");
         assertThat(response.rowCount(), is(1L));
-        row = Arrays.copyOf((Object[]) response.rows()[0][0], 2, Double[].class);
-        assertThat(row[0], is(10.0d));
-        assertThat(row[1], is(20.0d));
+        point = (Point) response.rows()[0][0];
+        assertThat(point.getX(), is(10.0d));
+        assertThat(point.getY(), is(20.0d));
 
         execute("select p from t where distance(p, 'POINT (10 20)') = 152354.3209044634");
         assertThat(printedTable(response.rows()),
-            is("[11.0, 21.0]\n"));
+            is("Pt(x=11.0,y=21.0)\n"));
     }
 
     @Test
@@ -1675,6 +1679,17 @@ public class TransportSQLActionTest extends SQLTransportIntegrationTest {
             printedTable(execute("select text from t order by 1 desc").rows()),
             is("The End\n" +
                "Hello World\n")
+        );
+    }
+
+    @Test
+    public void test_values_as_top_level_relation() {
+        execute("VALUES (1, 'a'), (2, 'b'), (3, (SELECT 'c'))");
+        assertThat(
+            printedTable(response.rows()),
+            is("1| a\n" +
+               "2| b\n" +
+               "3| c\n")
         );
     }
 }

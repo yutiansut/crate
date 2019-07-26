@@ -26,13 +26,13 @@ import com.google.common.base.Preconditions;
 import io.crate.data.Input;
 import io.crate.exceptions.ConversionException;
 import io.crate.types.ArrayType;
-import io.crate.types.CollectionType;
 import io.crate.types.DataType;
 import io.crate.types.DataTypes;
 import io.crate.types.ObjectType;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.locationtech.spatial4j.shape.Point;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class Literal<ReturnType> extends Symbol implements Input<ReturnType>, Co
     public static final Literal<Map<String, Object>> EMPTY_OBJECT = Literal.of(Collections.emptyMap());
 
     public static Collection<Literal> explodeCollection(Literal collectionLiteral) {
-        Preconditions.checkArgument(DataTypes.isCollectionType(collectionLiteral.valueType()));
+        Preconditions.checkArgument(DataTypes.isArray(collectionLiteral.valueType()));
         Iterable values;
         int size;
         Object literalValue = collectionLiteral.value();
@@ -74,7 +74,7 @@ public class Literal<ReturnType> extends Symbol implements Input<ReturnType>, Co
         List<Literal> literals = new ArrayList<>(size);
         for (Object value : values) {
             literals.add(new Literal<>(
-                ((CollectionType) collectionLiteral.valueType()).innerType(),
+                ((ArrayType) collectionLiteral.valueType()).innerType(),
                 value
             ));
         }
@@ -95,31 +95,6 @@ public class Literal<ReturnType> extends Symbol implements Input<ReturnType>, Co
 
     private static boolean typeMatchesValue(DataType type, Object value) {
         if (value == null) {
-            return true;
-        }
-        if (type.equals(DataTypes.STRING) && (value instanceof BytesRef || value instanceof String)) {
-            return true;
-        }
-        if (type instanceof ArrayType) {
-            DataType innerType = ((ArrayType) type).innerType();
-            while (innerType instanceof ArrayType && value.getClass().isArray()) {
-                type = innerType;
-                innerType = ((ArrayType) innerType).innerType();
-                value = ((Object[]) value)[0];
-            }
-            if (innerType.equals(DataTypes.STRING)) {
-                for (Object o : ((Object[]) value)) {
-                    if (o != null && !(o instanceof String || o instanceof BytesRef)) {
-                        return false;
-                    }
-                }
-                return true;
-            } else {
-                return Arrays.equals((Object[]) value, ((ArrayType) type).value(value));
-            }
-        }
-        // types like GeoPoint are represented as arrays
-        if (value.getClass().isArray() && Objects.deepEquals(value, type.value(value))) {
             return true;
         }
         if (type.id() == ObjectType.ID) {
@@ -237,7 +212,11 @@ public class Literal<ReturnType> extends Symbol implements Input<ReturnType>, Co
         return new Literal<>(ObjectType.untyped(), value);
     }
 
-    public static Literal<Object[]> of(Object[] value, DataType dataType) {
+    public static <T> Literal<List<T>> of(List<T> value, DataType<List<T>> dataType) {
+        return new Literal<>(dataType, value);
+    }
+
+    public static Literal<Double[]> of(Double[] value, DataType<Double[]> dataType) {
         return new Literal<>(dataType, value);
     }
 
@@ -276,7 +255,7 @@ public class Literal<ReturnType> extends Symbol implements Input<ReturnType>, Co
         return new Literal<>(DataTypes.FLOAT, value);
     }
 
-    public static Literal<Double[]> newGeoPoint(Object point) {
+    public static Literal<Point> newGeoPoint(Object point) {
         return new Literal<>(DataTypes.GEO_POINT, DataTypes.GEO_POINT.value(point));
     }
 

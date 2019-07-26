@@ -38,6 +38,7 @@ import io.crate.metadata.SearchPath;
 import io.crate.metadata.pgcatalog.PgCatalogSchemaInfo;
 import io.crate.protocols.postgres.types.PGType;
 import io.crate.protocols.postgres.types.PGTypes;
+import io.crate.shade.org.postgresql.geometric.PGpoint;
 import io.crate.shade.org.postgresql.util.PGobject;
 import io.crate.shade.org.postgresql.util.PSQLException;
 import io.crate.shade.org.postgresql.util.ServerErrorMessage;
@@ -64,6 +65,8 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.hamcrest.Matchers;
+import org.locationtech.spatial4j.context.jts.JtsSpatialContext;
+import org.locationtech.spatial4j.shape.impl.PointImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -468,11 +471,15 @@ public class SQLTransportExecutor {
                 for (Object json : (Object[]) resultSet.getArray(i + 1).getArray()) {
                     jsonObjects.add(jsonToObject(((PGobject) json).getValue()));
                 }
-                value = jsonObjects.toArray();
+                value = jsonObjects;
                 break;
             case "json":
                 String json = resultSet.getString(i + 1);
                 value = jsonToObject(json);
+                break;
+            case "point":
+                PGpoint pGpoint = resultSet.getObject(i + 1, PGpoint.class);
+                value = new PointImpl(pGpoint.x, pGpoint.y, JtsSpatialContext.GEO);
                 break;
             default:
                 value = resultSet.getObject(i + 1);
@@ -481,7 +488,7 @@ public class SQLTransportExecutor {
         if (value instanceof Timestamp) {
             value = ((Timestamp) value).getTime();
         } else if (value instanceof Array) {
-            value = ((Array) value).getArray();
+            value = Arrays.asList(((Object[]) ((Array) value).getArray()));
         }
         return value;
     }
@@ -494,7 +501,7 @@ public class SQLTransportExecutor {
                     NamedXContentRegistry.EMPTY, DeprecationHandler.THROW_UNSUPPORTED_OPERATION, bytes);
                 if (bytes.length >= 1 && bytes[0] == '[') {
                     parser.nextToken();
-                    return recursiveListToArray(parser.list());
+                    return parser.list();
                 } else {
                     return parser.mapOrdered();
                 }
@@ -504,18 +511,6 @@ public class SQLTransportExecutor {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private Object recursiveListToArray(Object value) {
-        if (value instanceof List) {
-            List list = (List) value;
-            Object[] arr = list.toArray(new Object[0]);
-            for (int i = 0; i < list.size(); i++) {
-                arr[i] = recursiveListToArray(list.get(i));
-            }
-            return arr;
-        }
-        return value;
     }
 
     /**

@@ -174,6 +174,7 @@ import io.crate.sql.tree.TrimMode;
 import io.crate.sql.tree.TryCast;
 import io.crate.sql.tree.Union;
 import io.crate.sql.tree.Update;
+import io.crate.sql.tree.Values;
 import io.crate.sql.tree.ValuesList;
 import io.crate.sql.tree.WhenClause;
 import io.crate.sql.tree.Window;
@@ -956,7 +957,7 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitQuerySpec(SqlBaseParser.QuerySpecContext context) {
+    public Node visitDefaultQuerySpec(SqlBaseParser.DefaultQuerySpecContext context) {
         List<SelectItem> selectItems = visitCollection(context.selectItem(), SelectItem.class);
         return new QuerySpecification(
             new Select(isDistinct(context.setQuant()), selectItems),
@@ -969,6 +970,11 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
             Optional.empty(),
             Optional.empty()
         );
+    }
+
+    @Override
+    public Node visitValuesRelation(SqlBaseParser.ValuesRelationContext ctx) {
+        return new Values(visitCollection(ctx.values(), ValuesList.class));
     }
 
     private Map<String, Window> getWindowDefinitions(List<SqlBaseParser.NamedWindowContext> windowContexts) {
@@ -1385,7 +1391,8 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
     @Override
     public Node visitFromStringLiteralCast(SqlBaseParser.FromStringLiteralCastContext context) {
         ColumnType targetType = (ColumnType) visit(context.dataType());
-        if (targetType.type() != ColumnType.Type.PRIMITIVE) {
+
+        if (targetType instanceof CollectionColumnType || targetType instanceof ObjectColumnType) {
             throw new UnsupportedOperationException("type 'string' cast notation only supports primitive types. " +
                                                     "Use '::' or cast() operator instead.");
         }
@@ -1422,6 +1429,20 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
     @Override
     public Node visitSubstring(SqlBaseParser.SubstringContext context) {
         return new FunctionCall(QualifiedName.of("substr"), visitCollection(context.expr(), Expression.class));
+    }
+
+    @Override
+    public Node visitLeft(SqlBaseParser.LeftContext context) {
+        Expression strOrColName = (Expression) visit(context.strOrColName);
+        Expression len = (Expression) visit(context.len);
+        return new FunctionCall(QualifiedName.of("left"), List.of(strOrColName, len));
+    }
+
+    @Override
+    public Node visitRight(SqlBaseParser.RightContext context) {
+        Expression strOrColName = (Expression) visit(context.strOrColName);
+        Expression len = (Expression) visit(context.len);
+        return new FunctionCall(QualifiedName.of("right"), List.of(strOrColName, len));
     }
 
     @Override
@@ -1603,7 +1624,7 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
 
     @Override
     public Node visitArrayTypeDefinition(SqlBaseParser.ArrayTypeDefinitionContext context) {
-        return CollectionColumnType.array((ColumnType) visit(context.dataType()));
+        return new CollectionColumnType((ColumnType) visit(context.dataType()));
     }
 
     @Override

@@ -31,14 +31,14 @@ import io.crate.metadata.Schemas;
 import io.crate.types.DataType;
 import io.crate.types.DataTypes;
 import io.crate.types.ObjectType;
-import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.lucene.BytesRefs;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.locationtech.spatial4j.context.jts.JtsSpatialContext;
+import org.locationtech.spatial4j.shape.impl.PointImpl;
 
 import javax.script.ScriptException;
 import java.util.Collections;
@@ -165,7 +165,7 @@ public class JavascriptUserDefinedFunctionTest extends AbstractScalarFunctionsTe
     @Test
     public void testArrayReturnType() throws Exception {
         registerUserDefinedFunction("f", DataTypes.DOUBLE_ARRAY, ImmutableList.of(), "function f() { return [1, 2]; }");
-        assertEvaluate("f()", new double[]{1.0, 2.0});
+        assertEvaluate("f()", List.of(1.0, 2.0));
     }
 
     @Test
@@ -204,14 +204,14 @@ public class JavascriptUserDefinedFunctionTest extends AbstractScalarFunctionsTe
     @Test
     public void testGeoTypeReturnTypeWithDoubleArray() throws Exception {
         registerUserDefinedFunction("f", DataTypes.GEO_POINT, ImmutableList.of(), "function f() { return [1, 1]; }");
-        assertEvaluate("f()", new double[]{1.0, 1.0});
+        assertEvaluate("f()", new PointImpl(1.0, 1.0, JtsSpatialContext.GEO));
     }
 
     @Test
     public void testGeoTypeReturnTypeWithWKT() throws Exception {
         registerUserDefinedFunction("f", DataTypes.GEO_POINT, ImmutableList.of(),
             "function f() { return \"POINT (1.0 2.0)\"; }");
-        assertEvaluate("f()", new double[]{1.0, 2.0});
+        assertEvaluate("f()", new PointImpl(1.0, 2.0, JtsSpatialContext.GEO));
     }
 
     @Test
@@ -291,7 +291,6 @@ public class JavascriptUserDefinedFunctionTest extends AbstractScalarFunctionsTe
         registerUserDefinedFunction("f", DataTypes.STRING, ImmutableList.of(DataTypes.STRING_ARRAY),
             "function f(a) { return Array.prototype.join.call(a, '.'); }");
         assertEvaluate("f(['a', 'b'])", is("a.b"));
-        assertEvaluate("f(['a', 'b'])", is("a.b"),
-            Literal.of(new BytesRef[]{BytesRefs.toBytesRef("a"), BytesRefs.toBytesRef("b")}, DataTypes.STRING_ARRAY));
+        assertEvaluate("f(['a', 'b'])", is("a.b"), Literal.of(List.of("a", "b"), DataTypes.STRING_ARRAY));
     }
 }

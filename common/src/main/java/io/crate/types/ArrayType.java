@@ -21,20 +21,65 @@
 
 package io.crate.types;
 
-import java.util.Arrays;
-import java.util.Collection;
+import com.google.common.base.Preconditions;
+import io.crate.Streamer;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
 
-public class ArrayType extends CollectionType {
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+/**
+ * A type which contains a collection of elements of another type.
+ */
+public class ArrayType<T> extends DataType<List<T>> {
 
     public static final String NAME = "array";
     public static final int ID = 100;
+    protected DataType<T> innerType;
+    protected Streamer<List<T>> streamer;
 
-    public ArrayType(DataType<?> innerType) {
-        super(innerType);
+    /**
+     * Construct a new Collection type
+     * @param innerType The type of the elements inside the collection
+     */
+    public ArrayType(DataType<T> innerType) {
+        this.innerType = Preconditions.checkNotNull(innerType,
+            "Inner type must not be null.");
     }
 
-    public ArrayType() {
-        super();
+    /**
+     * Constructor used for the {@link org.elasticsearch.common.io.stream.Streamable}
+     * interface which initializes the fields after object creation.
+     */
+    public ArrayType() {}
+
+    /**
+     * Defaults to the {@link ArrayStreamer} but subclasses may override this method.
+     */
+    @Override
+    public Streamer<List<T>> streamer() {
+        if (streamer == null) {
+            streamer = new ArrayStreamer(innerType);
+        }
+        return streamer;
+    }
+
+    @Override
+    public void readFrom(StreamInput in) throws IOException {
+        innerType = DataTypes.fromStream(in);
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        DataTypes.toStream(innerType, out);
+    }
+
+    @Override
+    public String getName() {
+        return innerType.getName() + "_" + NAME;
     }
 
     @Override
@@ -47,51 +92,124 @@ public class ArrayType extends CollectionType {
         return Precedence.ArrayType;
     }
 
-    @Override
-    public String getCollectionName() {
-        return NAME;
+    public final DataType<T> innerType() {
+        return innerType;
     }
 
     @Override
-    public Object[] value(Object value) {
-        // We can pass in Collections and Arrays here but we always
-        // have to return arrays since a lot of code makes assumptions
-        // about this.
+    public List<T> value(Object value) {
         if (value == null) {
             return null;
         }
-        Object[] result;
+        ArrayList<T> result;
         if (value instanceof Collection) {
             Collection values = (Collection) value;
-            result = new Object[values.size()];
-            int idx = 0;
+            result = new ArrayList<>(values.size());
             for (Object o : values) {
-                result[idx] = innerType.value(o);
-                idx++;
+                result.add(innerType.value(o));
             }
         } else {
             Object[] values = (Object[]) value;
-            result = new Object[values.length];
-            int idx = 0;
+            result = new ArrayList<>(values.length);
             for (Object o : values) {
-                result[idx] = innerType.value(o);
-                idx++;
+                result.add(innerType.value(o));
             }
         }
         return result;
     }
 
     @Override
-    public Object hashableValue(Object value) throws IllegalArgumentException, ClassCastException {
-        if (value instanceof Collection) {
-            return value;
-        } else {
-            return Arrays.asList((Object[]) value);
-        }
+    public int compareTo(Object o) {
+        if (!(o instanceof ArrayType)) return -1;
+        return Integer.compare(innerType.id(), ((ArrayType) o).innerType().id());
     }
 
     @Override
-    public CollectionType newInstance(DataType innerType) {
-        return new ArrayType(innerType);
+    public int compareValueTo(List<T> val1, List<T> val2) {
+        if (val2 == null) {
+            return 1;
+        } else if (val1 == null) {
+            return -1;
+        }
+        if (val1.size() > val2.size()) {
+            return 1;
+        } else if (val2.size() > val1.size()) {
+            return -1;
+        }
+        for (int i = 0; i < val1.size(); i++) {
+            int cmp = innerType.compareValueTo(val1.get(i), val2.get(i));
+            if (cmp != 0) {
+                return cmp;
+            }
+        }
+        return 0;
+    }
+
+    @Override
+    public boolean isConvertableTo(DataType other) {
+        return other.id() == UndefinedType.ID || other.id() == GeoPointType.ID ||
+               ((other instanceof ArrayType)
+                && this.innerType.isConvertableTo(((ArrayType) other).innerType()));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ArrayType)) return false;
+        if (!super.equals(o)) return false;
+
+        ArrayType arrayType = (ArrayType) o;
+        return innerType.equals(arrayType.innerType);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + innerType.hashCode();
+        return result;
+    }
+
+    public static DataType<?> unnest(DataType<?> dataType) {
+        while (dataType instanceof ArrayType) {
+            dataType = ((ArrayType<?>) dataType).innerType();
+        }
+        return dataType;
+    }
+
+    static class ArrayStreamer<T> implements Streamer<List<T>> {
+
+        private final DataType<T> innerType;
+
+        ArrayStreamer(DataType<T> innerType) {
+            this.innerType = innerType;
+        }
+
+        @Override
+        public List<T> readValueFrom(StreamInput in) throws IOException {
+            int size = in.readVInt();
+            // size of 0 is treated as null value so real size must be decreased by 1
+            if (size == 0) {
+                return null;
+            }
+            size--;
+            ArrayList<T> values = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                values.add(innerType.streamer().readValueFrom(in));
+            }
+            return values;
+        }
+
+        @Override
+        public void writeValueTo(StreamOutput out, List<T> values) throws IOException {
+            // write null as size 0, so increase real size by 1
+            if (values == null) {
+                out.writeVInt(0);
+                return;
+            }
+            out.writeVInt(values.size() + 1);
+            for (T value : values) {
+                innerType.streamer().writeValueTo(out, value);
+            }
+        }
     }
 }
