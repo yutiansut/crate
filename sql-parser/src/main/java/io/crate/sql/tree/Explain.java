@@ -26,17 +26,17 @@ import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Explain
-    extends Statement {
-    private final Statement statement;
+public class Explain<T> extends Statement<T> {
+
+    private final Statement<T> statement;
     private final boolean analyze;
 
-    public Explain(Statement statement, boolean analyze) {
+    public Explain(Statement<T> statement, boolean analyze) {
         this.statement = checkNotNull(statement, "statement is null");
         this.analyze = analyze;
     }
 
-    public Statement getStatement() {
+    public Statement<T> getStatement() {
         return statement;
     }
 

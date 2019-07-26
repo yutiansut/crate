@@ -22,21 +22,21 @@
 package io.crate.sql.tree;
 
 
-public class SubscriptExpression extends Expression {
+public class SubscriptExpression<T> extends Expression<T> {
 
-    private Expression name;
-    private Expression index;
+    private T name;
+    private T index;
 
-    public SubscriptExpression(Expression nameExpression, Expression indexExpression) {
+    public SubscriptExpression(T nameExpression, T indexExpression) {
         this.name = nameExpression;
         this.index = indexExpression;
     }
 
-    public Expression name() {
+    public T name() {
         return name;
     }
 
-    public Expression index() {
+    public T index() {
         return index;
     }
 

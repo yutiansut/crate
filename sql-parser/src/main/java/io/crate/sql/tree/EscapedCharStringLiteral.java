@@ -24,7 +24,8 @@ package io.crate.sql.tree;
 
 import io.crate.sql.Literals;
 
-public class EscapedCharStringLiteral extends StringLiteral {
+public class EscapedCharStringLiteral<T> extends StringLiteral<T> {
+
     private final String rawValue;
 
     public EscapedCharStringLiteral(String rawValue) {

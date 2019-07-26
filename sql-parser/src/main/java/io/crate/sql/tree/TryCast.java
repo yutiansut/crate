@@ -24,11 +24,12 @@ package io.crate.sql.tree;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class TryCast extends Expression {
-    private final Expression expression;
+public class TryCast<T> extends Expression<T> {
+
+    private final T expression;
     private final ColumnType type;
 
-    public TryCast(Expression expression, ColumnType type) {
+    public TryCast(T expression, ColumnType type) {
         checkNotNull(expression, "expression is null");
         checkNotNull(type, "type is null");
 
@@ -36,7 +37,7 @@ public class TryCast extends Expression {
         this.type = type;
     }
 
-    public Expression getExpression() {
+    public T getExpression() {
         return expression;
     }
 

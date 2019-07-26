@@ -28,13 +28,13 @@ package io.crate.sql.tree;
 
 import java.util.List;
 
-public class DropFunction extends Statement {
+public class DropFunction<T> extends Statement<T> {
 
     private final QualifiedName name;
     private final boolean exists;
-    private final List<FunctionArgument> arguments;
+    private final List<FunctionArgument<T>> arguments;
 
-    public DropFunction(QualifiedName name, boolean exists, List<FunctionArgument> arguments) {
+    public DropFunction(QualifiedName name, boolean exists, List<FunctionArgument<T>> arguments) {
         this.name = name;
         this.exists = exists;
         this.arguments = arguments;
@@ -48,7 +48,7 @@ public class DropFunction extends Statement {
         return exists;
     }
 
-    public List<FunctionArgument> arguments() {
+    public List<FunctionArgument<T>> arguments() {
         return arguments;
     }
 

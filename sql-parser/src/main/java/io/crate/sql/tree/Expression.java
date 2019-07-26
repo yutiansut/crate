@@ -23,10 +23,10 @@ package io.crate.sql.tree;
 
 import io.crate.sql.ExpressionFormatter;
 
-public abstract class Expression
-    extends Node {
+public abstract class Expression<T> extends Node<T> {
+
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitExpression(this, context);
     }
 

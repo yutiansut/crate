@@ -26,19 +26,19 @@ import com.google.common.base.Objects;
 
 import java.util.List;
 
-public class InsertFromSubquery extends Insert {
+public class InsertFromSubquery<T> extends Insert<T> {
 
-    private final Query subQuery;
+    private final Query<T> subQuery;
 
-    public InsertFromSubquery(Table table,
-                              Query subQuery,
+    public InsertFromSubquery(Table<T> table,
+                              Query<T> subQuery,
                               List<String> columns,
-                              DuplicateKeyContext duplicateKeyContext) {
+                              DuplicateKeyContext<T> duplicateKeyContext) {
         super(table, columns, duplicateKeyContext);
         this.subQuery = subQuery;
     }
 
-    public Query subQuery() {
+    public Query<T> subQuery() {
         return subQuery;
     }
 
@@ -70,7 +70,7 @@ public class InsertFromSubquery extends Insert {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitInsertFromSubquery(this, context);
     }
 }

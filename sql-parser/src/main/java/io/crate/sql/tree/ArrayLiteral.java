@@ -23,20 +23,20 @@ package io.crate.sql.tree;
 
 import java.util.List;
 
-public class ArrayLiteral extends Literal {
+public class ArrayLiteral<T> extends Literal<T> {
 
-    private final List<Expression> values;
+    private final List<Expression<T>> values;
 
-    public ArrayLiteral(List<Expression> values) {
+    public ArrayLiteral(List<Expression<T>> values) {
         this.values = values;
     }
 
-    public List<Expression> values() {
+    public List<Expression<T>> values() {
         return values;
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitArrayLiteral(this, context);
     }
 

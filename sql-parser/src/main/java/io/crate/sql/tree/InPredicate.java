@@ -21,21 +21,21 @@
 
 package io.crate.sql.tree;
 
-public class InPredicate
-    extends Expression {
-    private final Expression value;
-    private final Expression valueList;
+public class InPredicate<T> extends Expression<T> {
 
-    public InPredicate(Expression value, Expression valueList) {
+    private final T value;
+    private final T valueList;
+
+    public InPredicate(T value, T valueList) {
         this.value = value;
         this.valueList = valueList;
     }
 
-    public Expression getValue() {
+    public T getValue() {
         return value;
     }
 
-    public Expression getValueList() {
+    public T getValueList() {
         return valueList;
     }
 

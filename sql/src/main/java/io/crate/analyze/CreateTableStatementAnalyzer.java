@@ -21,8 +21,12 @@
 
 package io.crate.analyze;
 
+import io.crate.analyze.expressions.ExpressionAnalysisContext;
+import io.crate.analyze.expressions.ExpressionAnalyzer;
 import io.crate.analyze.expressions.ExpressionToStringVisitor;
+import io.crate.analyze.relations.FieldProvider;
 import io.crate.data.Row;
+import io.crate.expression.symbol.Symbol;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.CoordinatorTxnCtx;
 import io.crate.metadata.FulltextAnalyzerResolver;
@@ -56,9 +60,21 @@ public final class CreateTableStatementAnalyzer {
         this.numberOfShards = numberOfShards;
     }
 
-    public CreateTableAnalyzedStatement analyze(CreateTable createTable,
+    public CreateTableAnalyzedStatement analyze(CreateTable<Expression> createTable,
                                                 ParameterContext parameterContext,
                                                 CoordinatorTxnCtx coordinatorTxnCtx) {
+        // createTable.map(expressionAnalyzer...) -> CreateTable<Symbol>
+        ExpressionAnalyzer expressionAnalyzer = new ExpressionAnalyzer(
+            functions,
+            coordinatorTxnCtx,
+            parameterContext.typeHints(),
+            FieldProvider.UNSUPPORTED,
+            null
+        );
+        ExpressionAnalysisContext expressionAnalysisContext = new ExpressionAnalysisContext();
+        CreateTable<Symbol> analyzedCreateTable = createTable.map(x -> expressionAnalyzer.convert(x, expressionAnalysisContext));
+
+
         CreateTableAnalyzedStatement statement = new CreateTableAnalyzedStatement();
         Row parameters = parameterContext.parameters();
         RelationName relationName = RelationName
@@ -96,7 +112,7 @@ public final class CreateTableStatementAnalyzer {
         return statement;
     }
 
-    private void processClusteredBy(ClusteredBy clusteredBy,
+    private void processClusteredBy(ClusteredBy<Expression> clusteredBy,
                                     CreateTableAnalyzedStatement statement,
                                     ParameterContext parameterContext) {
         if (clusteredBy.column().isPresent()) {
@@ -126,7 +142,7 @@ public final class CreateTableStatementAnalyzer {
         );
     }
 
-    private void processPartitionedBy(PartitionedBy node,
+    private void processPartitionedBy(PartitionedBy<Expression> node,
                                       CreateTableAnalyzedStatement statement,
                                       ParameterContext parameterContext) {
         for (Expression partitionByColumn : node.columns()) {

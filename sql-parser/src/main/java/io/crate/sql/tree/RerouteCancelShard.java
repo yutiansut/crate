@@ -25,27 +25,27 @@ package io.crate.sql.tree;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
-public class RerouteCancelShard extends RerouteOption {
+public class RerouteCancelShard<T> extends RerouteOption<T> {
 
-    private final Expression nodeIdOrName;
-    private final Expression shardId;
-    private final GenericProperties properties;
+    private final T nodeIdOrName;
+    private final T shardId;
+    private final GenericProperties<T> properties;
 
-    public RerouteCancelShard(Expression shardId, Expression nodeIdOrName, GenericProperties properties) {
+    public RerouteCancelShard(T shardId, T nodeIdOrName, GenericProperties<T> properties) {
         this.shardId = shardId;
         this.nodeIdOrName = nodeIdOrName;
         this.properties = properties;
     }
 
-    public Expression nodeIdOrName() {
+    public T nodeIdOrName() {
         return nodeIdOrName;
     }
 
-    public Expression shardId() {
+    public T shardId() {
         return shardId;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return properties;
     }
 
@@ -77,7 +77,7 @@ public class RerouteCancelShard extends RerouteOption {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitRerouteCancelShard(this, context);
     }
 }

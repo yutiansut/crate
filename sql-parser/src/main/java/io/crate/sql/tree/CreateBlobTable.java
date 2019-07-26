@@ -25,27 +25,27 @@ import com.google.common.base.MoreObjects;
 
 import java.util.Optional;
 
-public class CreateBlobTable extends Statement {
+public class CreateBlobTable<T> extends Statement<T> {
 
-    private final Table name;
-    private final Optional<ClusteredBy> clusteredBy;
-    private final GenericProperties genericProperties;
+    private final Table<T> name;
+    private final Optional<ClusteredBy<T>> clusteredBy;
+    private final GenericProperties<T> genericProperties;
 
-    public CreateBlobTable(Table name, Optional<ClusteredBy> clusteredBy, GenericProperties properties) {
+    public CreateBlobTable(Table<T> name, Optional<ClusteredBy<T>> clusteredBy, GenericProperties<T> properties) {
         this.name = name;
         this.clusteredBy = clusteredBy;
         this.genericProperties = properties;
     }
 
-    public Table name() {
+    public Table<T> name() {
         return name;
     }
 
-    public Optional<ClusteredBy> clusteredBy() {
+    public Optional<ClusteredBy<T>> clusteredBy() {
         return clusteredBy;
     }
 
-    public GenericProperties genericProperties() {
+    public GenericProperties<T> genericProperties() {
         return genericProperties;
     }
 
@@ -80,7 +80,7 @@ public class CreateBlobTable extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitCreateBlobTable(this, context);
     }
 }

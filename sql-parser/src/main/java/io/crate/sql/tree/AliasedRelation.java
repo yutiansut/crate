@@ -26,13 +26,13 @@ import com.google.common.base.Preconditions;
 
 import java.util.List;
 
-public class AliasedRelation
-    extends Relation {
-    private final Relation relation;
+public class AliasedRelation<T> extends Relation<T> {
+
+    private final Relation<T> relation;
     private final String alias;
     private final List<String> columnNames;
 
-    public AliasedRelation(Relation relation, String alias, List<String> columnNames) {
+    public AliasedRelation(Relation<T> relation, String alias, List<String> columnNames) {
         Preconditions.checkNotNull(relation, "relation is null");
         Preconditions.checkNotNull(alias, "alias is null");
         Preconditions.checkNotNull(columnNames, "columnNames is null");
@@ -42,7 +42,7 @@ public class AliasedRelation
         this.columnNames = columnNames;
     }
 
-    public Relation getRelation() {
+    public Relation<T> getRelation() {
         return relation;
     }
 
@@ -78,7 +78,7 @@ public class AliasedRelation
             return false;
         }
 
-        AliasedRelation that = (AliasedRelation) o;
+        AliasedRelation<?> that = (AliasedRelation) o;
 
         if (!alias.equals(that.alias)) {
             return false;

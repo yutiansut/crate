@@ -23,20 +23,19 @@ package io.crate.sql.tree;
 
 import java.util.Optional;
 
-public class KillStatement extends Statement {
+public class KillStatement<T> extends Statement<T> {
 
-    private final Optional<Expression> jobId;
-
+    private final Optional<T> jobId;
 
     public KillStatement() {
         this.jobId = Optional.empty();
     }
 
-    public KillStatement(Expression jobId) {
+    public KillStatement(T jobId) {
         this.jobId = Optional.of(jobId);
     }
 
-    public Optional<Expression> jobId() {
+    public Optional<T> jobId() {
         return jobId;
     }
 
@@ -61,7 +60,7 @@ public class KillStatement extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitKillStatement(this, context);
     }
 }

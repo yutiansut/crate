@@ -28,13 +28,13 @@ import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Optional;
 
-public class Update extends Statement {
+public class Update<T> extends Statement<T> {
 
-    private final Relation relation;
-    private final List<Assignment> assignments;
-    private final Optional<Expression> where;
+    private final Relation<T> relation;
+    private final List<Assignment<T>> assignments;
+    private final Optional<T> where;
 
-    public Update(Relation relation, List<Assignment> assignments, Optional<Expression> where) {
+    public Update(Relation<T> relation, List<Assignment<T>> assignments, Optional<T> where) {
         Preconditions.checkNotNull(relation, "relation is null");
         Preconditions.checkNotNull(assignments, "assignments are null");
         this.relation = relation;
@@ -42,15 +42,15 @@ public class Update extends Statement {
         this.where = where;
     }
 
-    public Relation relation() {
+    public Relation<T> relation() {
         return relation;
     }
 
-    public List<Assignment> assignements() {
+    public List<Assignment<T>> assignements() {
         return assignments;
     }
 
-    public Optional<Expression> whereClause() {
+    public Optional<T> whereClause() {
         return where;
     }
 

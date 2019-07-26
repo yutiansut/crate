@@ -21,15 +21,15 @@
 
 package io.crate.sql.tree;
 
-public class SubqueryExpression
-    extends Expression {
-    private final Query query;
+public class SubqueryExpression<T> extends Expression<T> {
 
-    public SubqueryExpression(Query query) {
+    private final Query<T> query;
+
+    public SubqueryExpression(Query<T> query) {
         this.query = query;
     }
 
-    public Query getQuery() {
+    public Query<T> getQuery() {
         return query;
     }
 

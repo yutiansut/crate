@@ -21,7 +21,8 @@
 
 package io.crate.sql.tree;
 
-public class NullLiteral extends Literal {
+public class NullLiteral<T> extends Literal<T> {
+
     public static final NullLiteral INSTANCE = new NullLiteral();
 
     private NullLiteral(){

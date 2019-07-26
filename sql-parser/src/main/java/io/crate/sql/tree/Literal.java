@@ -28,42 +28,40 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Literal
-    extends Expression {
+public abstract class Literal<T> extends Expression<T> {
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitLiteral(this, context);
     }
 
-    public static Literal fromObject(Object value) {
-        Literal literal = null;
+    public static <T> Literal<T> fromObject(Object value) {
         if (value == null) {
-            literal = NullLiteral.INSTANCE;
+            return NullLiteral.INSTANCE;
         } else if (value instanceof Number) {
             if (value instanceof Float || value instanceof Double) {
-                literal = new DoubleLiteral(value.toString());
+                return new DoubleLiteral<>(value.toString());
             } else if (value instanceof Short || value instanceof Integer || value instanceof Long) {
-                literal = new LongLiteral(value.toString());
+                return new LongLiteral<>(value.toString());
             }
         } else if (value instanceof Boolean) {
-            literal = (Boolean) value ? BooleanLiteral.TRUE_LITERAL : BooleanLiteral.FALSE_LITERAL;
+            return (boolean) value ? BooleanLiteral.TRUE_LITERAL : BooleanLiteral.FALSE_LITERAL;
         } else if (value instanceof Object[]) {
-            List<Expression> expressions = new ArrayList<>();
+            List<Expression<T>> expressions = new ArrayList<>();
             for (Object o : (Object[]) value) {
                 expressions.add(fromObject(o));
             }
-            literal = new ArrayLiteral(expressions);
+            return new ArrayLiteral<>(expressions);
         } else if (value instanceof Map) {
-            Multimap<String, Expression> map = HashMultimap.create();
+            Multimap<String, Literal<T>> map = HashMultimap.create();
             @SuppressWarnings("unchecked") Map<String, Object> valueMap = (Map<String, Object>) value;
             for (Map.Entry<String, Object> entry : valueMap.entrySet()) {
                 map.put(entry.getKey(), fromObject(entry.getValue()));
             }
-            literal = new ObjectLiteral(map);
+            return new ObjectLiteral<>(map);
         } else {
-            literal = new StringLiteral(value.toString());
+            return new StringLiteral<>(value.toString());
         }
-        return literal;
+        throw new UnsupportedOperationException("TODO: unreachable");
     }
 }

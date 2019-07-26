@@ -24,20 +24,20 @@ package io.crate.sql.tree;
 
 import java.util.List;
 
-public final class Values extends QueryBody {
+public final class Values<T> extends QueryBody<T> {
 
-    private List<ValuesList> rows;
+    private List<ValuesList<T>> rows;
 
-    public Values(List<ValuesList> rows) {
+    public Values(List<ValuesList<T>> rows) {
         this.rows = rows;
     }
 
-    public List<ValuesList> rows() {
+    public List<ValuesList<T>> rows() {
         return rows;
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitValues(this, context);
     }
 

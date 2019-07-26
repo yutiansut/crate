@@ -23,16 +23,16 @@ package io.crate.sql.tree;
 
 import com.google.common.base.Preconditions;
 
-public class NotExpression
-    extends Expression {
-    private final Expression value;
+public class NotExpression<T> extends Expression<T> {
 
-    public NotExpression(Expression value) {
+    private final T value;
+
+    public NotExpression(T value) {
         Preconditions.checkNotNull(value, "value is null");
         this.value = value;
     }
 
-    public Expression getValue() {
+    public T getValue() {
         return value;
     }
 

@@ -23,16 +23,16 @@ package io.crate.sql.tree;
 
 import com.google.common.base.MoreObjects;
 
-public class ShowCreateTable extends Statement {
+public class ShowCreateTable<T> extends Statement<T> {
 
-    private final Table table;
+    private final Table<T> table;
 
     @Override
     public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
         return visitor.visitShowCreateTable(this, context);
     }
 
-    public ShowCreateTable(Table table) {
+    public ShowCreateTable(Table<T> table) {
         this.table = table;
     }
 
@@ -44,7 +44,6 @@ public class ShowCreateTable extends Statement {
         ShowCreateTable that = (ShowCreateTable) o;
 
         return table.equals(that.table);
-
     }
 
     @Override
@@ -59,7 +58,7 @@ public class ShowCreateTable extends Statement {
             .toString();
     }
 
-    public Table table() {
+    public Table<T> table() {
         return table;
     }
 }

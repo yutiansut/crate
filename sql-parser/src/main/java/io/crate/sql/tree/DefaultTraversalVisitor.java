@@ -21,10 +21,10 @@
 
 package io.crate.sql.tree;
 
-public abstract class DefaultTraversalVisitor<R, C>
-    extends AstVisitor<R, C> {
+public abstract class DefaultTraversalVisitor<T, R, C> extends AstVisitor<R, C> {
+
     @Override
-    protected R visitExtract(Extract node, C context) {
+    protected R visitExtract(Extract<T> node, C context) {
         return process(node.getExpression(), context);
     }
 

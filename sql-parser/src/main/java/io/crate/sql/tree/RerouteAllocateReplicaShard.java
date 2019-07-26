@@ -24,21 +24,21 @@ package io.crate.sql.tree;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
-public class RerouteAllocateReplicaShard extends RerouteOption {
+public class RerouteAllocateReplicaShard<T> extends RerouteOption<T> {
 
-    private final Expression nodeIdOrName;
-    private final Expression shardId;
+    private final T nodeIdOrName;
+    private final T shardId;
 
-    public RerouteAllocateReplicaShard(Expression shardId, Expression nodeIdOrName) {
+    public RerouteAllocateReplicaShard(T shardId, T nodeIdOrName) {
         this.shardId = shardId;
         this.nodeIdOrName = nodeIdOrName;
     }
 
-    public Expression nodeIdOrName() {
+    public T nodeIdOrName() {
         return nodeIdOrName;
     }
 
-    public Expression shardId() {
+    public T shardId() {
         return shardId;
     }
 
@@ -68,7 +68,7 @@ public class RerouteAllocateReplicaShard extends RerouteOption {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitRerouteAllocateReplicaShard(this, context);
     }
 }

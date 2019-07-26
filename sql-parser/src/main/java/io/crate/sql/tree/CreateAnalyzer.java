@@ -27,16 +27,16 @@ import com.google.common.base.Objects;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class CreateAnalyzer extends Statement {
+public class CreateAnalyzer<T> extends Statement<T> {
 
     private final String ident;
     @Nullable
     private final String extendedAnalyzer;
-    private final List<AnalyzerElement> elements;
+    private final List<AnalyzerElement<T>> elements;
 
     public CreateAnalyzer(String ident,
                           @Nullable String extendedAnalyzer,
-                          List<AnalyzerElement> elements) {
+                          List<AnalyzerElement<T>> elements) {
         this.ident = ident;
         this.extendedAnalyzer = extendedAnalyzer;
         this.elements = elements;
@@ -55,7 +55,7 @@ public class CreateAnalyzer extends Statement {
         return extendedAnalyzer != null;
     }
 
-    public List<AnalyzerElement> elements() {
+    public List<AnalyzerElement<T>> elements() {
         return elements;
     }
 
@@ -86,7 +86,7 @@ public class CreateAnalyzer extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitCreateAnalyzer(this, context);
     }
 }

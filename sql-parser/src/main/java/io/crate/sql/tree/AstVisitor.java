@@ -24,584 +24,585 @@ package io.crate.sql.tree;
 
 import javax.annotation.Nullable;
 
-public abstract class AstVisitor<R, C> {
-    public R process(Node node, @Nullable C context) {
+public abstract class AstVisitor<T, R, C> {
+
+    public R process(Node<T> node, @Nullable C context) {
         return node.accept(this, context);
     }
 
-    protected R visitNode(Node node, C context) {
+    protected R visitNode(Node<T> node, C context) {
         return null;
     }
 
-    protected R visitExpression(Expression node, C context) {
+    protected R visitExpression(Expression<T> node, C context) {
         return visitNode(node, context);
     }
 
-    protected R visitCurrentTime(CurrentTime node, C context) {
+    protected R visitCurrentTime(CurrentTime<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitExtract(Extract node, C context) {
+    protected R visitExtract(Extract<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitArithmeticExpression(ArithmeticExpression node, C context) {
+    protected R visitArithmeticExpression(ArithmeticExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitBetweenPredicate(BetweenPredicate node, C context) {
+    protected R visitBetweenPredicate(BetweenPredicate<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitComparisonExpression(ComparisonExpression node, C context) {
+    protected R visitComparisonExpression(ComparisonExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitLiteral(Literal node, C context) {
+    protected R visitLiteral(Literal<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitDoubleLiteral(DoubleLiteral node, C context) {
+    protected R visitDoubleLiteral(DoubleLiteral<T> node, C context) {
         return visitLiteral(node, context);
     }
 
-    protected R visitStatement(Statement node, C context) {
+    protected R visitStatement(Statement<T> node, C context) {
         return visitNode(node, context);
     }
 
-    protected R visitQuery(Query node, C context) {
+    protected R visitQuery(Query<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    protected R visitExplain(Explain node, C context) {
+    protected R visitExplain(Explain<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    protected R visitShowTables(ShowTables node, C context) {
+    protected R visitShowTables(ShowTables<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    protected R visitShowSchemas(ShowSchemas node, C context) {
+    protected R visitShowSchemas(ShowSchemas<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    protected R visitShowColumns(ShowColumns node, C context) {
+    protected R visitShowColumns(ShowColumns<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    protected R visitSelect(Select node, C context) {
+    protected R visitSelect(Select<T> node, C context) {
         return visitNode(node, context);
     }
 
-    protected R visitRelation(Relation node, C context) {
+    protected R visitRelation(Relation<T> node, C context) {
         return visitNode(node, context);
     }
 
-    protected R visitQueryBody(QueryBody node, C context) {
+    protected R visitQueryBody(QueryBody<T> node, C context) {
         return visitRelation(node, context);
     }
 
-    protected R visitQuerySpecification(QuerySpecification node, C context) {
+    protected R visitQuerySpecification(QuerySpecification<T> node, C context) {
         return visitQueryBody(node, context);
     }
 
-    protected R visitSetOperation(SetOperation node, C context) {
+    protected R visitSetOperation(SetOperation<T> node, C context) {
         return visitQueryBody(node, context);
     }
 
-    protected R visitUnion(Union node, C context) {
+    protected R visitUnion(Union<T> node, C context) {
         return visitSetOperation(node, context);
     }
 
-    protected R visitIntersect(Intersect node, C context) {
+    protected R visitIntersect(Intersect<T> node, C context) {
         return visitSetOperation(node, context);
     }
 
-    protected R visitExcept(Except node, C context) {
+    protected R visitExcept(Except<T> node, C context) {
         return visitSetOperation(node, context);
     }
 
-    protected R visitWhenClause(WhenClause node, C context) {
+    protected R visitWhenClause(WhenClause<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitInPredicate(InPredicate node, C context) {
+    protected R visitInPredicate(InPredicate<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitFunctionCall(FunctionCall node, C context) {
+    protected R visitFunctionCall(FunctionCall<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitSimpleCaseExpression(SimpleCaseExpression node, C context) {
+    protected R visitSimpleCaseExpression(SimpleCaseExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitStringLiteral(StringLiteral node, C context) {
+    protected R visitStringLiteral(StringLiteral<T> node, C context) {
         return visitLiteral(node, context);
     }
 
-    protected R visitEscapedCharStringLiteral(EscapedCharStringLiteral node, C context) {
+    protected R visitEscapedCharStringLiteral(EscapedCharStringLiteral<T> node, C context) {
         return visitLiteral(node, context);
     }
 
-    protected R visitBooleanLiteral(BooleanLiteral node, C context) {
+    protected R visitBooleanLiteral(BooleanLiteral<T> node, C context) {
         return visitLiteral(node, context);
     }
 
-    protected R visitInListExpression(InListExpression node, C context) {
+    protected R visitInListExpression(InListExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitQualifiedNameReference(QualifiedNameReference node, C context) {
+    protected R visitQualifiedNameReference(QualifiedNameReference<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitIfExpression(IfExpression node, C context) {
+    protected R visitIfExpression(IfExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitNullLiteral(NullLiteral node, C context) {
+    protected R visitNullLiteral(NullLiteral<T> node, C context) {
         return visitLiteral(node, context);
     }
 
-    protected R visitNegativeExpression(NegativeExpression node, C context) {
+    protected R visitNegativeExpression(NegativeExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitNotExpression(NotExpression node, C context) {
+    protected R visitNotExpression(NotExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitSelectItem(SelectItem node, C context) {
+    protected R visitSelectItem(SelectItem<T> node, C context) {
         return visitNode(node, context);
     }
 
-    protected R visitSingleColumn(SingleColumn node, C context) {
+    protected R visitSingleColumn(SingleColumn<T> node, C context) {
         return visitSelectItem(node, context);
     }
 
-    protected R visitAllColumns(AllColumns node, C context) {
+    protected R visitAllColumns(AllColumns<T> node, C context) {
         return visitSelectItem(node, context);
     }
 
-    protected R visitSearchedCaseExpression(SearchedCaseExpression node, C context) {
+    protected R visitSearchedCaseExpression(SearchedCaseExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitLikePredicate(LikePredicate node, C context) {
+    protected R visitLikePredicate(LikePredicate<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitIsNotNullPredicate(IsNotNullPredicate node, C context) {
+    protected R visitIsNotNullPredicate(IsNotNullPredicate<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitIsNullPredicate(IsNullPredicate node, C context) {
+    protected R visitIsNullPredicate(IsNullPredicate<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitLongLiteral(LongLiteral node, C context) {
+    protected R visitLongLiteral(LongLiteral<T> node, C context) {
         return visitLiteral(node, context);
     }
 
-    protected R visitLogicalBinaryExpression(LogicalBinaryExpression node, C context) {
+    protected R visitLogicalBinaryExpression(LogicalBinaryExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitSubqueryExpression(SubqueryExpression node, C context) {
+    protected R visitSubqueryExpression(SubqueryExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitSortItem(SortItem node, C context) {
+    protected R visitSortItem(SortItem<T> node, C context) {
         return visitNode(node, context);
     }
 
-    protected R visitTable(Table node, C context) {
+    protected R visitTable(Table<T> node, C context) {
         return visitQueryBody(node, context);
     }
 
-    protected R visitTableSubquery(TableSubquery node, C context) {
+    protected R visitTableSubquery(TableSubquery<T> node, C context) {
         return visitQueryBody(node, context);
     }
 
-    protected R visitAliasedRelation(AliasedRelation node, C context) {
+    protected R visitAliasedRelation(AliasedRelation<T> node, C context) {
         return visitRelation(node, context);
     }
 
-    protected R visitJoin(Join node, C context) {
+    protected R visitJoin(Join<T> node, C context) {
         return visitRelation(node, context);
     }
 
-    protected R visitExists(ExistsPredicate node, C context) {
+    protected R visitExists(ExistsPredicate<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitCast(Cast node, C context) {
+    protected R visitCast(Cast<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitTryCast(TryCast node, C context) {
+    protected R visitTryCast(TryCast<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitSubscriptExpression(SubscriptExpression node, C context) {
+    protected R visitSubscriptExpression(SubscriptExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    public R visitParameterExpression(ParameterExpression node, C context) {
+    public R visitParameterExpression(ParameterExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    public R visitInsert(Insert node, C context) {
+    public R visitInsert(Insert<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitValuesList(ValuesList node, C context) {
+    public R visitValuesList(ValuesList<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitDelete(Delete node, C context) {
+    public R visitDelete(Delete<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitUpdate(Update node, C context) {
+    public R visitUpdate(Update<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitAssignment(Assignment node, C context) {
+    public R visitAssignment(Assignment<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitCopyFrom(CopyFrom node, C context) {
+    public R visitCopyFrom(CopyFrom<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitCreateTable(CreateTable node, C context) {
+    public R visitCreateTable(CreateTable<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitCreateFunction(CreateFunction node, C context) {
+    public R visitCreateFunction(CreateFunction<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitFunctionArgument(FunctionArgument node, C context) {
+    public R visitFunctionArgument(FunctionArgument<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitDropFunction(DropFunction node, C context) {
+    public R visitDropFunction(DropFunction<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitDropUser(DropUser node, C context) {
+    public R visitDropUser(DropUser<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitGrantPrivilege(GrantPrivilege node, C context) {
+    public R visitGrantPrivilege(GrantPrivilege<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitDenyPrivilege(DenyPrivilege node, C context) {
+    public R visitDenyPrivilege(DenyPrivilege<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitRevokePrivilege(RevokePrivilege node, C context) {
+    public R visitRevokePrivilege(RevokePrivilege<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitShowCreateTable(ShowCreateTable node, C context) {
+    public R visitShowCreateTable(ShowCreateTable<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitTableElement(TableElement node, C context) {
+    public R visitTableElement(TableElement<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitClusteredBy(ClusteredBy node, C context) {
+    public R visitClusteredBy(ClusteredBy<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitColumnDefinition(ColumnDefinition node, C context) {
+    public R visitColumnDefinition(ColumnDefinition<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitColumnType(ColumnType node, C context) {
+    public R visitColumnType(ColumnType<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitObjectColumnType(ObjectColumnType node, C context) {
+    public R visitObjectColumnType(ObjectColumnType<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitColumnConstraint(ColumnConstraint node, C context) {
+    public R visitColumnConstraint(ColumnConstraint<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitPrimaryKeyColumnConstraint(PrimaryKeyColumnConstraint node, C context) {
+    public R visitPrimaryKeyColumnConstraint(PrimaryKeyColumnConstraint<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitNotNullColumnConstraint(NotNullColumnConstraint node, C context) {
+    public R visitNotNullColumnConstraint(NotNullColumnConstraint<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitIndexColumnConstraint(IndexColumnConstraint node, C context) {
+    public R visitIndexColumnConstraint(IndexColumnConstraint<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitColumnStorageDefinition(ColumnStorageDefinition node, C context) {
+    public R visitColumnStorageDefinition(ColumnStorageDefinition<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitGenericProperties(GenericProperties node, C context) {
+    public R visitGenericProperties(GenericProperties<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitGenericProperty(GenericProperty node, C context) {
+    public R visitGenericProperty(GenericProperty<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitPrimaryKeyConstraint(PrimaryKeyConstraint node, C context) {
+    public R visitPrimaryKeyConstraint(PrimaryKeyConstraint<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitIndexDefinition(IndexDefinition node, C context) {
+    public R visitIndexDefinition(IndexDefinition<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitCollectionColumnType(CollectionColumnType node, C context) {
+    public R visitCollectionColumnType(CollectionColumnType<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitDropTable(DropTable node, C context) {
+    public R visitDropTable(DropTable<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitCreateAnalyzer(CreateAnalyzer node, C context) {
+    public R visitCreateAnalyzer(CreateAnalyzer<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitDropAnalyzer(DropAnalyzer node, C context) {
+    public R visitDropAnalyzer(DropAnalyzer<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitTokenizer(Tokenizer node, C context) {
+    public R visitTokenizer(Tokenizer<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitCharFilters(CharFilters node, C context) {
+    public R visitCharFilters(CharFilters<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitTokenFilters(TokenFilters node, C context) {
+    public R visitTokenFilters(TokenFilters<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitCreateBlobTable(CreateBlobTable node, C context) {
+    public R visitCreateBlobTable(CreateBlobTable<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitDropBlobTable(DropBlobTable node, C context) {
+    public R visitDropBlobTable(DropBlobTable<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitRefreshStatement(RefreshStatement node, C context) {
+    public R visitRefreshStatement(RefreshStatement<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitOptimizeStatement(OptimizeStatement node, C context) {
+    public R visitOptimizeStatement(OptimizeStatement<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitAlterTable(AlterTable node, C context) {
+    public R visitAlterTable(AlterTable<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitAlterTableOpenClose(AlterTableOpenClose node, C context) {
+    public R visitAlterTableOpenClose(AlterTableOpenClose<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitAlterTableRename(AlterTableRename node, C context) {
+    public R visitAlterTableRename(AlterTableRename<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitAlterTableReroute(AlterTableReroute node, C context) {
+    public R visitAlterTableReroute(AlterTableReroute<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitAlterBlobTable(AlterBlobTable node, C context) {
+    public R visitAlterBlobTable(AlterBlobTable<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitAlterClusterRerouteRetryFailed(AlterClusterRerouteRetryFailed node, C context) {
+    public R visitAlterClusterRerouteRetryFailed(AlterClusterRerouteRetryFailed<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitAlterUser(AlterUser node, C context) {
+    public R visitAlterUser(AlterUser<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitCopyTo(CopyTo node, C context) {
+    public R visitCopyTo(CopyTo<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitPartitionedBy(PartitionedBy node, C context) {
+    public R visitPartitionedBy(PartitionedBy<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitArrayComparisonExpression(ArrayComparisonExpression node, C context) {
+    public R visitArrayComparisonExpression(ArrayComparisonExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    protected R visitArraySubQueryExpression(ArraySubQueryExpression node, C context) {
+    protected R visitArraySubQueryExpression(ArraySubQueryExpression<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    public R visitArrayLiteral(ArrayLiteral node, C context) {
+    public R visitArrayLiteral(ArrayLiteral<T> node, C context) {
         return visitLiteral(node, context);
     }
 
-    public R visitObjectLiteral(ObjectLiteral node, C context) {
+    public R visitObjectLiteral(ObjectLiteral<T> node, C context) {
         return visitLiteral(node, context);
     }
 
-    public R visitArrayLikePredicate(ArrayLikePredicate node, C context) {
+    public R visitArrayLikePredicate(ArrayLikePredicate<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    public R visitSetStatement(SetStatement node, C context) {
+    public R visitSetStatement(SetStatement<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitResetStatement(ResetStatement node, C context) {
+    public R visitResetStatement(ResetStatement<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitAlterTableAddColumnStatement(AlterTableAddColumn node, C context) {
+    public R visitAlterTableAddColumnStatement(AlterTableAddColumn<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitRerouteMoveShard(RerouteMoveShard node, C context) {
+    public R visitRerouteMoveShard(RerouteMoveShard<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitRerouteAllocateReplicaShard(RerouteAllocateReplicaShard node, C context) {
+    public R visitRerouteAllocateReplicaShard(RerouteAllocateReplicaShard<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitRerouteCancelShard(RerouteCancelShard node, C context) {
+    public R visitRerouteCancelShard(RerouteCancelShard<T> node, C context) {
         return visitNode(node, context);
     }
 
-    public R visitAddColumnDefinition(AddColumnDefinition node, C context) {
+    public R visitAddColumnDefinition(AddColumnDefinition<T> node, C context) {
         return visitTableElement(node, context);
     }
 
-    public R visitInsertFromValues(InsertFromValues node, C context) {
+    public R visitInsertFromValues(InsertFromValues<T> node, C context) {
         return visitInsert(node, context);
     }
 
-    public R visitInsertFromSubquery(InsertFromSubquery node, C context) {
+    public R visitInsertFromSubquery(InsertFromSubquery<T> node, C context) {
         return visitInsert(node, context);
     }
 
-    public R visitMatchPredicate(MatchPredicate node, C context) {
+    public R visitMatchPredicate(MatchPredicate<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    public R visitMatchPredicateColumnIdent(MatchPredicateColumnIdent node, C context) {
+    public R visitMatchPredicateColumnIdent(MatchPredicateColumnIdent<T> node, C context) {
         return visitExpression(node, context);
     }
 
-    public R visitKillStatement(KillStatement node, C context) {
+    public R visitKillStatement(KillStatement<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitDeallocateStatement(DeallocateStatement node, C context) {
+    public R visitDeallocateStatement(DeallocateStatement<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitDropRepository(DropRepository node, C context) {
+    public R visitDropRepository(DropRepository<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitCreateRepository(CreateRepository node, C context) {
+    public R visitCreateRepository(CreateRepository<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitDropSnapshot(DropSnapshot node, C context) {
+    public R visitDropSnapshot(DropSnapshot<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitCreateSnapshot(CreateSnapshot node, C context) {
+    public R visitCreateSnapshot(CreateSnapshot<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitRestoreSnapshot(RestoreSnapshot node, C context) {
+    public R visitRestoreSnapshot(RestoreSnapshot<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitTableFunction(TableFunction node, C context) {
+    public R visitTableFunction(TableFunction<T> node, C context) {
         return visitQueryBody(node, context);
     }
 
-    public R visitBegin(BeginStatement node, C context) {
+    public R visitBegin(BeginStatement<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitCommit(CommitStatement node, C context) {
+    public R visitCommit(CommitStatement<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitShowTransaction(ShowTransaction showTransaction, C context) {
+    public R visitShowTransaction(ShowTransaction<T> showTransaction, C context) {
         return visitStatement(showTransaction, context);
     }
 
-    public R visitShowSessionParameter(ShowSessionParameter node, C context) {
+    public R visitShowSessionParameter(ShowSessionParameter<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitCreateUser(CreateUser node, C context) {
+    public R visitCreateUser(CreateUser<T> node, C context) {
         return visitStatement(node, context);
     }
 
-    public R visitCreateView(CreateView createView, C context) {
+    public R visitCreateView(CreateView<T> createView, C context) {
         return visitStatement(createView, context);
     }
 
-    public R visitDropView(DropView dropView, C context) {
+    public R visitDropView(DropView<T> dropView, C context) {
         return visitStatement(dropView, context);
     }
 
-    public R visitSwapTable(SwapTable swapTable, C context) {
+    public R visitSwapTable(SwapTable<T> swapTable, C context) {
         return visitStatement(swapTable, context);
     }
 
-    public R visitFrameBound(FrameBound frameBound, C context) {
+    public R visitFrameBound(FrameBound<T> frameBound, C context) {
         return visitNode(frameBound, context);
     }
 
-    public R visitWindow(Window window, C context) {
+    public R visitWindow(Window<T> window, C context) {
         return visitNode(window, context);
     }
 
-    public R visitWindowFrame(WindowFrame windowFrame, C context) {
+    public R visitWindowFrame(WindowFrame<T> windowFrame, C context) {
         return visitNode(windowFrame, context);
     }
 
-    public R visitGCDanglingArtifacts(GCDanglingArtifacts gcDanglingArtifacts, C context) {
+    public R visitGCDanglingArtifacts(GCDanglingArtifacts<T> gcDanglingArtifacts, C context) {
         return visitStatement(gcDanglingArtifacts, context);
     }
 
-    public R visitAlterClusterDecommissionNode(DecommissionNodeStatement decommissionNodeStatement, C context) {
+    public R visitAlterClusterDecommissionNode(DecommissionNodeStatement<T> decommissionNodeStatement, C context) {
         return visitStatement(decommissionNodeStatement, context);
     }
 
-    public R visitReroutePromoteReplica(PromoteReplica promoteReplica, C context) {
+    public R visitReroutePromoteReplica(PromoteReplica<T> promoteReplica, C context) {
         return visitNode(promoteReplica, context);
     }
 
-    public R visitValues(Values values, C context) {
+    public R visitValues(Values<T> values, C context) {
         return visitRelation(values, context);
     }
 }

@@ -26,22 +26,22 @@ import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Optional;
 
-public class CopyTo extends Statement {
+public class CopyTo<T> extends Statement<T> {
 
-    private final Table table;
+    private final Table<T> table;
     private final boolean directoryUri;
-    private final Expression targetUri;
+    private final T targetUri;
 
-    private final GenericProperties genericProperties;
-    private final List<Expression> columns;
-    private final Optional<Expression> whereClause;
+    private final GenericProperties<T> genericProperties;
+    private final List<T> columns;
+    private final Optional<T> whereClause;
 
-    public CopyTo(Table table,
-                  List<Expression> columns,
-                  Optional<Expression> whereClause,
+    public CopyTo(Table<T> table,
+                  List<T> columns,
+                  Optional<T> whereClause,
                   boolean directoryUri,
-                  Expression targetUri,
-                  GenericProperties genericProperties) {
+                  T targetUri,
+                  GenericProperties<T> genericProperties) {
 
         this.table = table;
         this.directoryUri = directoryUri;
@@ -51,7 +51,7 @@ public class CopyTo extends Statement {
         this.whereClause = whereClause;
     }
 
-    public Table table() {
+    public Table<T> table() {
         return table;
     }
 
@@ -59,19 +59,19 @@ public class CopyTo extends Statement {
         return directoryUri;
     }
 
-    public Expression targetUri() {
+    public T targetUri() {
         return targetUri;
     }
 
-    public List<Expression> columns() {
+    public List<T> columns() {
         return columns;
     }
 
-    public GenericProperties genericProperties() {
+    public GenericProperties<T> genericProperties() {
         return genericProperties;
     }
 
-    public Optional<Expression> whereClause() {
+    public Optional<T> whereClause() {
         return whereClause;
     }
 
@@ -116,7 +116,7 @@ public class CopyTo extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitCopyTo(this, context);
     }
 }

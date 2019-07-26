@@ -27,22 +27,22 @@ import com.google.common.base.Objects;
 import java.util.Collections;
 import java.util.List;
 
-public class CreateSnapshot extends Statement {
+public class CreateSnapshot<T> extends Statement<T> {
 
     private final QualifiedName name;
-    private final GenericProperties properties;
-    private final List<Table> tableList;
+    private final GenericProperties<T> properties;
+    private final List<Table<T>> tableList;
 
     public CreateSnapshot(QualifiedName name,
-                          GenericProperties genericProperties) {
+                          GenericProperties<T> genericProperties) {
         this.name = name;
         this.properties = genericProperties;
         this.tableList = Collections.emptyList();
     }
 
     public CreateSnapshot(QualifiedName name,
-                          List<Table> tableList,
-                          GenericProperties genericProperties) {
+                          List<Table<T>> tableList,
+                          GenericProperties<T> genericProperties) {
         this.name = name;
         this.tableList = tableList;
         this.properties = genericProperties;
@@ -53,11 +53,11 @@ public class CreateSnapshot extends Statement {
         return this.name;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return properties;
     }
 
-    public List<Table> tableList() {
+    public List<Table<T>> tableList() {
         return tableList;
     }
 
@@ -88,7 +88,7 @@ public class CreateSnapshot extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitCreateSnapshot(this, context);
     }
 }

@@ -27,13 +27,13 @@ import com.google.common.base.Objects;
 import java.util.List;
 import java.util.Optional;
 
-public class RestoreSnapshot extends Statement {
+public class RestoreSnapshot<T> extends Statement<T> {
 
     private final QualifiedName name;
-    private final GenericProperties properties;
-    private final Optional<List<Table>> tableList;
+    private final GenericProperties<T> properties;
+    private final Optional<List<Table<T>>> tableList;
 
-    public RestoreSnapshot(QualifiedName name, GenericProperties genericProperties) {
+    public RestoreSnapshot(QualifiedName name, GenericProperties<T> genericProperties) {
         this.name = name;
         this.properties = genericProperties;
         this.tableList = Optional.empty();
@@ -41,8 +41,8 @@ public class RestoreSnapshot extends Statement {
     }
 
     public RestoreSnapshot(QualifiedName name,
-                           List<Table> tableList,
-                           GenericProperties genericProperties) {
+                           List<Table<T>> tableList,
+                           GenericProperties<T> genericProperties) {
         this.name = name;
         this.tableList = Optional.of(tableList);
         this.properties = genericProperties;
@@ -53,11 +53,11 @@ public class RestoreSnapshot extends Statement {
         return this.name;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return properties;
     }
 
-    public Optional<List<Table>> tableList() {
+    public Optional<List<Table<T>>> tableList() {
         return tableList;
     }
 
@@ -88,7 +88,7 @@ public class RestoreSnapshot extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitRestoreSnapshot(this, context);
     }
 }

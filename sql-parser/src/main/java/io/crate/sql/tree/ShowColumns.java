@@ -29,18 +29,18 @@ import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ShowColumns extends Statement {
+public class ShowColumns<T> extends Statement<T> {
 
     private final QualifiedName table;
     @Nullable
     private final QualifiedName schema;
     @Nullable
     private final String likePattern;
-    private final Optional<Expression> where;
+    private final Optional<T> where;
 
     public ShowColumns(QualifiedName table,
                        @Nullable QualifiedName schema,
-                       Optional<Expression> where,
+                       Optional<T> where,
                        @Nullable String likePattern) {
         this.table = checkNotNull(table, "table is null");
         this.schema = schema;
@@ -62,7 +62,7 @@ public class ShowColumns extends Statement {
         return likePattern;
     }
 
-    public Optional<Expression> where() {
+    public Optional<T> where() {
         return where;
     }
 

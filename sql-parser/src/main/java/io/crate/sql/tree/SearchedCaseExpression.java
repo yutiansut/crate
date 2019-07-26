@@ -24,21 +24,21 @@ package io.crate.sql.tree;
 import java.util.Collections;
 import java.util.List;
 
-public class SearchedCaseExpression
-    extends Expression {
-    private final List<WhenClause> whenClauses;
-    private final Expression defaultValue;
+public class SearchedCaseExpression<T> extends Expression<T> {
 
-    public SearchedCaseExpression(List<WhenClause> whenClauses, Expression defaultValue) {
+    private final List<WhenClause<T>> whenClauses;
+    private final T defaultValue;
+
+    public SearchedCaseExpression(List<WhenClause<T>> whenClauses, T defaultValue) {
         this.whenClauses = Collections.unmodifiableList(whenClauses);
         this.defaultValue = defaultValue;
     }
 
-    public List<WhenClause> getWhenClauses() {
+    public List<WhenClause<T>> getWhenClauses() {
         return whenClauses;
     }
 
-    public Expression getDefaultValue() {
+    public T getDefaultValue() {
         return defaultValue;
     }
 

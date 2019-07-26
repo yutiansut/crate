@@ -22,7 +22,7 @@
 
 package io.crate.sql.tree;
 
-public class NotNullColumnConstraint extends ColumnConstraint {
+public class NotNullColumnConstraint<T> extends ColumnConstraint<T> {
 
     private static final String NAME = "NOT NULL";
 
@@ -43,7 +43,7 @@ public class NotNullColumnConstraint extends ColumnConstraint {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitNotNullColumnConstraint(this, context);
     }
 }

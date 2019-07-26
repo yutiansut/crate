@@ -24,7 +24,7 @@ package io.crate.sql.tree;
 
 import java.util.List;
 
-public class DenyPrivilege extends PrivilegeStatement {
+public class DenyPrivilege<T> extends PrivilegeStatement<T> {
 
     public DenyPrivilege(List<String> userNames, String clazz, List<QualifiedName> tableOrSchemaNames) {
         super(userNames, clazz, tableOrSchemaNames);
@@ -33,7 +33,6 @@ public class DenyPrivilege extends PrivilegeStatement {
     public DenyPrivilege(List<String> userNames, List<String> privilegeTypes, String clazz, List<QualifiedName> tableOrSchemaNames) {
         super(userNames, privilegeTypes, clazz, tableOrSchemaNames);
     }
-
 
     @Override
     public <R, C> R accept(AstVisitor<R, C> visitor, C context) {

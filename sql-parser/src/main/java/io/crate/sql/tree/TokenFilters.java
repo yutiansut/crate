@@ -26,15 +26,15 @@ import com.google.common.base.Objects;
 
 import java.util.List;
 
-public class TokenFilters extends AnalyzerElement {
+public class TokenFilters<T> extends AnalyzerElement<T> {
 
-    private final List<NamedProperties> tokenFilters;
+    private final List<NamedProperties<T>> tokenFilters;
 
-    public TokenFilters(List<NamedProperties> tokenFilters) {
+    public TokenFilters(List<NamedProperties<T>> tokenFilters) {
         this.tokenFilters = tokenFilters;
     }
 
-    public List<NamedProperties> tokenFilters() {
+    public List<NamedProperties<T>> tokenFilters() {
         return tokenFilters;
     }
 
@@ -61,7 +61,7 @@ public class TokenFilters extends AnalyzerElement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitTokenFilters(this, context);
     }
 }

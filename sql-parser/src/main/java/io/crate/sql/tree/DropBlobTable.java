@@ -24,13 +24,13 @@ package io.crate.sql.tree;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
-public class DropBlobTable extends Statement {
+public class DropBlobTable<T> extends Statement<T> {
 
-    private final Table table;
+    private final Table<T> table;
 
     private final boolean ignoreNonExistentTable;
 
-    public DropBlobTable(Table table, boolean ignoreNonExistentTable) {
+    public DropBlobTable(Table<T> table, boolean ignoreNonExistentTable) {
         this.table = table;
         this.ignoreNonExistentTable = ignoreNonExistentTable;
     }
@@ -39,12 +39,12 @@ public class DropBlobTable extends Statement {
         return ignoreNonExistentTable;
     }
 
-    public Table table() {
+    public Table<T> table() {
         return table;
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitDropBlobTable(this, context);
     }
 

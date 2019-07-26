@@ -21,8 +21,9 @@
 
 package io.crate.sql.tree;
 
-public abstract class Node {
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+public abstract class Node<T> {
+
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitNode(this, context);
     }
 

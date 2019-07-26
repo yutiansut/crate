@@ -21,8 +21,8 @@
 
 package io.crate.sql.tree;
 
-public class ArithmeticExpression
-    extends Expression {
+public class ArithmeticExpression<T> extends Expression<T> {
+
     public enum Type {
         ADD("+"),
         SUBTRACT("-"),
@@ -41,10 +41,10 @@ public class ArithmeticExpression
     }
 
     private final Type type;
-    private final Expression left;
-    private final Expression right;
+    private final T left;
+    private final T right;
 
-    public ArithmeticExpression(Type type, Expression left, Expression right) {
+    public ArithmeticExpression(Type type, T left, T right) {
         this.type = type;
         this.left = left;
         this.right = right;
@@ -54,11 +54,11 @@ public class ArithmeticExpression
         return type;
     }
 
-    public Expression getLeft() {
+    public T getLeft() {
         return left;
     }
 
-    public Expression getRight() {
+    public T getRight() {
         return right;
     }
 

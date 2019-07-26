@@ -23,17 +23,17 @@ package io.crate.sql.tree;
 
 import com.google.common.base.Preconditions;
 
-public class LogicalBinaryExpression
-    extends Expression {
+public class LogicalBinaryExpression<T> extends Expression<T> {
+
     public enum Type {
         AND, OR
     }
 
     private final Type type;
-    private final Expression left;
-    private final Expression right;
+    private final T left;
+    private final T right;
 
-    public LogicalBinaryExpression(Type type, Expression left, Expression right) {
+    public LogicalBinaryExpression(Type type, T left, T right) {
         Preconditions.checkNotNull(type, "type is null");
         Preconditions.checkNotNull(left, "left is null");
         Preconditions.checkNotNull(right, "right is null");
@@ -47,11 +47,11 @@ public class LogicalBinaryExpression
         return type;
     }
 
-    public Expression getLeft() {
+    public T getLeft() {
         return left;
     }
 
-    public Expression getRight() {
+    public T getRight() {
         return right;
     }
 

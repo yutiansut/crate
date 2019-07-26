@@ -21,8 +21,8 @@
 
 package io.crate.sql.tree;
 
-public class QualifiedNameReference
-    extends Expression {
+public class QualifiedNameReference<T> extends Expression<T> {
+
     private final QualifiedName name;
 
     public QualifiedNameReference(QualifiedName name) {

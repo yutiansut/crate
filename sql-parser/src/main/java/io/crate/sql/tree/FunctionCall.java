@@ -24,18 +24,18 @@ package io.crate.sql.tree;
 import java.util.List;
 import java.util.Optional;
 
-public class FunctionCall extends Expression {
+public class FunctionCall<T> extends Expression<T> {
 
     private final QualifiedName name;
     private final boolean distinct;
-    private final List<Expression> arguments;
-    private final Optional<Window> window;
+    private final List<T> arguments;
+    private final Optional<Window<T>> window;
 
-    public FunctionCall(QualifiedName name, List<Expression> arguments) {
+    public FunctionCall(QualifiedName name, List<T> arguments) {
         this(name, false, arguments, Optional.empty());
     }
 
-    public FunctionCall(QualifiedName name, boolean distinct, List<Expression> arguments, Optional<Window> window) {
+    public FunctionCall(QualifiedName name, boolean distinct, List<T> arguments, Optional<Window<T>> window) {
         this.name = name;
         this.distinct = distinct;
         this.arguments = arguments;
@@ -50,11 +50,11 @@ public class FunctionCall extends Expression {
         return distinct;
     }
 
-    public List<Expression> getArguments() {
+    public List<T> getArguments() {
         return arguments;
     }
 
-    public Optional<Window> getWindow() {
+    public Optional<Window<T>> getWindow() {
         return window;
     }
 

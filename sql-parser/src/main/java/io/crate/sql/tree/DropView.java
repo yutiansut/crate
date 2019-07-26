@@ -24,7 +24,7 @@ package io.crate.sql.tree;
 
 import java.util.List;
 
-public final class DropView extends Statement {
+public final class DropView<T> extends Statement<T> {
 
     private final List<QualifiedName> names;
     private final boolean ifExists;
@@ -69,7 +69,7 @@ public final class DropView extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitDropView(this, context);
     }
 }

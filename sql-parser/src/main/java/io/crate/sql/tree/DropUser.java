@@ -24,7 +24,7 @@ package io.crate.sql.tree;
 
 import com.google.common.base.MoreObjects;
 
-public class DropUser extends Statement {
+public class DropUser<T> extends Statement<T> {
 
     private final String name;
     private final boolean ifExists;

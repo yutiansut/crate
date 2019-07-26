@@ -26,20 +26,20 @@ import com.google.common.base.MoreObjects;
 
 import java.util.Objects;
 
-public class ColumnStorageDefinition extends ColumnConstraint {
+public class ColumnStorageDefinition<T> extends ColumnConstraint<T> {
 
-    private final GenericProperties properties;
+    private final GenericProperties<T> properties;
 
-    public ColumnStorageDefinition(GenericProperties properties) {
+    public ColumnStorageDefinition(GenericProperties<T> properties) {
         this.properties = properties;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return properties;
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitColumnStorageDefinition(this, context);
     }
 

@@ -114,11 +114,11 @@ public final class SqlFormatter {
     private SqlFormatter() {
     }
 
-    public static String formatSql(Node root) {
+    public static String formatSql(Node<Expression> root) {
         return formatSql(root, null);
     }
 
-    public static String formatSql(Node root, @Nullable List<Expression> parameters) {
+    public static String formatSql(Node<Expression> root, @Nullable List<Expression> parameters) {
         StringBuilder builder = new StringBuilder();
         new Formatter(builder, parameters).process(root, 0);
         return builder.toString();

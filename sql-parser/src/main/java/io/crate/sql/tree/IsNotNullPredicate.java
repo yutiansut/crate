@@ -23,16 +23,16 @@ package io.crate.sql.tree;
 
 import com.google.common.base.Preconditions;
 
-public class IsNotNullPredicate
-    extends Expression {
-    private final Expression value;
+public class IsNotNullPredicate<T> extends Expression<T> {
 
-    public IsNotNullPredicate(Expression value) {
+    private final T value;
+
+    public IsNotNullPredicate(T value) {
         Preconditions.checkNotNull(value, "value is null");
         this.value = value;
     }
 
-    public Expression getValue() {
+    public T getValue() {
         return value;
     }
 

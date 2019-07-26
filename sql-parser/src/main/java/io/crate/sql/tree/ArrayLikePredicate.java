@@ -31,7 +31,7 @@ package io.crate.sql.tree;
  * left is pattern <br>
  * right is the array expression
  */
-public class ArrayLikePredicate extends LikePredicate implements ArrayComparison {
+public class ArrayLikePredicate<T> extends LikePredicate<T> implements ArrayComparison {
 
     private final Quantifier quantifier;
     private final boolean inverse;
@@ -44,9 +44,9 @@ public class ArrayLikePredicate extends LikePredicate implements ArrayComparison
      * @param inverse         if true, inverse the operation for every single comparison
      */
     public ArrayLikePredicate(Quantifier quantifier,
-                              Expression arrayExpression,
-                              Expression pattern,
-                              Expression escape,
+                              T arrayExpression,
+                              T pattern,
+                              T escape,
                               boolean inverse) {
         super(pattern, arrayExpression, escape);
         this.quantifier = quantifier;
@@ -84,7 +84,7 @@ public class ArrayLikePredicate extends LikePredicate implements ArrayComparison
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitArrayLikePredicate(this, context);
     }
 }

@@ -21,7 +21,8 @@
 
 package io.crate.sql.tree;
 
-public abstract class JoinCriteria {
+public abstract class JoinCriteria<T> {
+
     // Force subclasses to have a proper equals and hashcode implementation
     @Override
     public abstract boolean equals(Object obj);

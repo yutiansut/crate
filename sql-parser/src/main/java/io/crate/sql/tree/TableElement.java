@@ -21,10 +21,14 @@
 
 package io.crate.sql.tree;
 
-public abstract class TableElement extends Node {
+import java.util.function.Function;
+
+public abstract class TableElement<T> extends Node<T> {
+
+    abstract <U> TableElement<U> map(Function<? super T, ? extends U> mapper);
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitTableElement(this, context);
     }
 }

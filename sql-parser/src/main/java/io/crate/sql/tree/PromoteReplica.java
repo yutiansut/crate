@@ -22,36 +22,36 @@
 
 package io.crate.sql.tree;
 
-public class PromoteReplica extends RerouteOption {
+public class PromoteReplica<T> extends RerouteOption<T> {
 
-    private Expression node;
-    private final Expression shardId;
-    private final GenericProperties properties;
+    private T node;
+    private final T shardId;
+    private final GenericProperties<T> properties;
 
     public static class Properties {
         public static final String ACCEPT_DATA_LOSS = "accept_data_loss";
     }
 
-    public PromoteReplica(Expression node, Expression shardId, GenericProperties properties) {
+    public PromoteReplica(T node, T shardId, GenericProperties<T> properties) {
         this.node = node;
         this.shardId = shardId;
         this.properties = properties;
     }
 
-    public Expression node() {
+    public T node() {
         return node;
     }
 
-    public Expression shardId() {
+    public T shardId() {
         return shardId;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return properties;
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitReroutePromoteReplica(this, context);
     }
 

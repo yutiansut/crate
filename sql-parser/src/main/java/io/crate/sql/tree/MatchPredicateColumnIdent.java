@@ -27,26 +27,26 @@ import com.google.common.base.Preconditions;
 
 import javax.annotation.Nullable;
 
-public class MatchPredicateColumnIdent extends Expression {
+public class MatchPredicateColumnIdent<T> extends Expression<T> {
 
-    private final Expression ident;
-    private final Expression boost;
+    private final T ident;
+    private final T boost;
 
-    public MatchPredicateColumnIdent(Expression ident, @Nullable Expression boost) {
+    public MatchPredicateColumnIdent(T ident, @Nullable T boost) {
         this.ident = ident;
         if (boost != null) {
             Preconditions.checkArgument(
                 boost instanceof LongLiteral || boost instanceof DoubleLiteral || boost instanceof ParameterExpression,
                 "'boost' value must be a numeric literal or a parameter expression");
         }
-        this.boost = MoreObjects.firstNonNull(boost, NullLiteral.INSTANCE);
+        this.boost = MoreObjects.firstNonNull(boost, (T) NullLiteral.INSTANCE);
     }
 
-    public Expression columnIdent() {
+    public T columnIdent() {
         return ident;
     }
 
-    public Expression boost() {
+    public T boost() {
         return boost;
     }
 
@@ -77,7 +77,7 @@ public class MatchPredicateColumnIdent extends Expression {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitMatchPredicateColumnIdent(this, context);
     }
 }

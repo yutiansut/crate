@@ -26,16 +26,17 @@ import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Function;
 
-public class ColumnDefinition extends TableElement {
+public class ColumnDefinition<T> extends TableElement<T> {
 
     private final String ident;
 
     @Nullable
-    private final Expression defaultExpression;
+    private final T defaultExpression;
 
     @Nullable
-    private final Expression generatedExpression;
+    private final T generatedExpression;
 
     @Nullable
     private final ColumnType type;
@@ -43,8 +44,8 @@ public class ColumnDefinition extends TableElement {
     private final List<ColumnConstraint> constraints;
 
     public ColumnDefinition(String ident,
-                            @Nullable Expression defaultExpression,
-                            @Nullable Expression generatedExpression,
+                            @Nullable T defaultExpression,
+                            @Nullable T generatedExpression,
                             @Nullable ColumnType type,
                             List<ColumnConstraint> constraints) {
         this.ident = ident;
@@ -72,12 +73,12 @@ public class ColumnDefinition extends TableElement {
     }
 
     @Nullable
-    public Expression generatedExpression() {
+    public T generatedExpression() {
         return generatedExpression;
     }
 
     @Nullable
-    public Expression defaultExpression() {
+    public T defaultExpression() {
         return defaultExpression;
     }
 
@@ -122,6 +123,17 @@ public class ColumnDefinition extends TableElement {
             .add("type", type)
             .add("constraints", constraints)
             .toString();
+    }
+
+    @Override
+    <U> ColumnDefinition<U> map(Function<? super T, ? extends U> mapper) {
+        return new ColumnDefinition<>(
+            ident,
+            mapper.apply(defaultExpression),
+            mapper.apply(generatedExpression),
+            type,
+            constraints
+        );
     }
 
     @Override

@@ -26,15 +26,15 @@ import com.google.common.base.Objects;
 
 import java.util.List;
 
-public class CharFilters extends AnalyzerElement {
+public class CharFilters<T> extends AnalyzerElement<T> {
 
-    private final List<NamedProperties> charFilters;
+    private final List<NamedProperties<T>> charFilters;
 
-    public CharFilters(List<NamedProperties> charFilters) {
+    public CharFilters(List<NamedProperties<T>> charFilters) {
         this.charFilters = charFilters;
     }
 
-    public List<NamedProperties> charFilters() {
+    public List<NamedProperties<T>> charFilters() {
         return charFilters;
     }
 
@@ -61,7 +61,7 @@ public class CharFilters extends AnalyzerElement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitCharFilters(this, context);
     }
 }

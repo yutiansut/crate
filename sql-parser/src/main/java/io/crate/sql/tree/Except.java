@@ -25,21 +25,21 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
-public class Except extends SetOperation {
+public class Except<T> extends SetOperation<T> {
 
-    private final Relation left;
-    private final Relation right;
+    private final Relation<T> left;
+    private final Relation<T> right;
 
-    public Except(Relation left, Relation right) {
+    public Except(Relation<T> left, Relation<T> right) {
         this.left = Preconditions.checkNotNull(left, "relation must not be null");
         this.right = Preconditions.checkNotNull(right, "relation must not be null");
     }
 
-    public Relation getLeft() {
+    public Relation<T> getLeft() {
         return left;
     }
 
-    public Relation getRight() {
+    public Relation<T> getRight() {
         return right;
     }
 

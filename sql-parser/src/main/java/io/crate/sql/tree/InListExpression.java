@@ -23,15 +23,15 @@ package io.crate.sql.tree;
 
 import java.util.List;
 
-public class InListExpression
-    extends Expression {
-    private final List<Expression> values;
+public class InListExpression<T> extends Expression<T> {
 
-    public InListExpression(List<Expression> values) {
+    private final List<T> values;
+
+    public InListExpression(List<T> values) {
         this.values = values;
     }
 
-    public List<Expression> getValues() {
+    public List<T> getValues() {
         return values;
     }
 

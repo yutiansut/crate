@@ -25,23 +25,23 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
-public class Union extends SetOperation {
+public class Union<T> extends SetOperation<T> {
 
-    private final Relation left;
-    private final Relation right;
+    private final Relation<T> left;
+    private final Relation<T> right;
     private final boolean isDistinct;
 
-    public Union(Relation left, Relation right, boolean isDistinct) {
+    public Union(Relation<T> left, Relation<T> right, boolean isDistinct) {
         this.left = Preconditions.checkNotNull(left, "relation must not be null");
         this.right = Preconditions.checkNotNull(right, "relation must not be null");
         this.isDistinct = isDistinct;
     }
 
-    public Relation getLeft() {
+    public Relation<T> getLeft() {
         return left;
     }
 
-    public Relation getRight() {
+    public Relation<T> getRight() {
         return right;
     }
 

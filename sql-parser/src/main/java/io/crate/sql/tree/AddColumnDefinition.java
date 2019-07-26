@@ -25,18 +25,19 @@ import com.google.common.base.MoreObjects;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Function;
 
-public class AddColumnDefinition extends TableElement {
+public class AddColumnDefinition<T> extends TableElement<T> {
 
-    private final Expression name;
+    private final T name;
     @Nullable
-    private final Expression generatedExpression;
+    private final T generatedExpression;
     @Nullable
     private final ColumnType type;
     private final List<ColumnConstraint> constraints;
 
-    public AddColumnDefinition(Expression name,
-                               @Nullable Expression generatedExpression,
+    public AddColumnDefinition(T name,
+                               @Nullable T generatedExpression,
                                @Nullable ColumnType type,
                                List<ColumnConstraint> constraints) {
         this.name = name;
@@ -53,12 +54,12 @@ public class AddColumnDefinition extends TableElement {
         }
     }
 
-    public Expression name() {
+    public T name() {
         return name;
     }
 
     @Nullable
-    public Expression generatedExpression() {
+    public T generatedExpression() {
         return generatedExpression;
     }
 
@@ -106,7 +107,17 @@ public class AddColumnDefinition extends TableElement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    <U> AddColumnDefinition<U> map(Function<? super T, ? extends U> mapper) {
+        return new AddColumnDefinition<>(
+            mapper.apply(name),
+            mapper.apply(generatedExpression),
+            type,
+            constraints
+        );
+    }
+
+    @Override
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitAddColumnDefinition(this, context);
     }
 }

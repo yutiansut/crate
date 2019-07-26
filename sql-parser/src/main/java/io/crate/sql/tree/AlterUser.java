@@ -25,17 +25,17 @@ package io.crate.sql.tree;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
-public class AlterUser extends Statement {
+public class AlterUser<T> extends Statement<T> {
 
-    private final GenericProperties genericProperties;
+    private final GenericProperties<T> genericProperties;
     private final String name;
 
-    public AlterUser(String name, GenericProperties genericProperties) {
+    public AlterUser(String name, GenericProperties<T> genericProperties) {
         this.genericProperties = genericProperties;
         this.name = name;
     }
 
-    public GenericProperties genericProperties() {
+    public GenericProperties<T> genericProperties() {
         return genericProperties;
     }
 
@@ -68,7 +68,7 @@ public class AlterUser extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitAlterUser(this, context);
     }
 }

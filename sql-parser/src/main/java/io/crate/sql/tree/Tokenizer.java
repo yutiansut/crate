@@ -24,15 +24,15 @@ package io.crate.sql.tree;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
-public class Tokenizer extends AnalyzerElement {
+public class Tokenizer<T> extends AnalyzerElement<T> {
 
-    private final NamedProperties namedProperties;
+    private final NamedProperties<T> namedProperties;
 
-    public Tokenizer(NamedProperties namedProperties) {
+    public Tokenizer(NamedProperties<T> namedProperties) {
         this.namedProperties = namedProperties;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return namedProperties.properties();
     }
 
@@ -63,7 +63,7 @@ public class Tokenizer extends AnalyzerElement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitTokenizer(this, context);
     }
 }

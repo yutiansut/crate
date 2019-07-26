@@ -26,15 +26,15 @@ import com.google.common.base.Objects;
 
 import java.util.List;
 
-public class RefreshStatement extends Statement {
+public class RefreshStatement<T> extends Statement<T> {
 
-    private final List<Table> tables;
+    private final List<Table<T>> tables;
 
-    public RefreshStatement(List<Table> tableList) {
+    public RefreshStatement(List<Table<T>> tableList) {
         this.tables = tableList;
     }
 
-    public List<Table> tables() {
+    public List<Table<T>> tables() {
         return tables;
     }
 
@@ -63,7 +63,7 @@ public class RefreshStatement extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitRefreshStatement(this, context);
     }
 }

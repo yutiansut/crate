@@ -23,16 +23,16 @@ package io.crate.sql.tree;
 
 import com.google.common.base.Preconditions;
 
-public class ExistsPredicate
-    extends Expression {
-    private final Query subquery;
+public class ExistsPredicate<T> extends Expression<T> {
 
-    public ExistsPredicate(Query subquery) {
+    private final Query<T> subquery;
+
+    public ExistsPredicate(Query<T> subquery) {
         Preconditions.checkNotNull(subquery, "subquery is null");
         this.subquery = subquery;
     }
 
-    public Query getSubquery() {
+    public Query<T> getSubquery() {
         return subquery;
     }
 

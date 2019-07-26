@@ -26,15 +26,15 @@ import com.google.common.base.Objects;
 
 import java.util.List;
 
-public class ValuesList extends Node {
+public class ValuesList<T> extends Node<T> {
 
-    private final List<Expression> values;
+    private final List<T> values;
 
-    public ValuesList(List<Expression> values) {
+    public ValuesList(List<T> values) {
         this.values = values;
     }
 
-    public List<Expression> values() {
+    public List<T> values() {
         return values;
     }
 
@@ -42,7 +42,6 @@ public class ValuesList extends Node {
     public int hashCode() {
         return Objects.hashCode(values);
     }
-
 
     @Override
     public String toString() {

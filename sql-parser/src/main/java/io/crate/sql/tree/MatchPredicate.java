@@ -27,17 +27,17 @@ import com.google.common.base.Preconditions;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class MatchPredicate extends Expression {
+public class MatchPredicate<T> extends Expression<T> {
 
-    private final List<MatchPredicateColumnIdent> idents;
-    private final Expression value;
-    private final GenericProperties properties;
+    private final List<MatchPredicateColumnIdent<T>> idents;
+    private final T value;
+    private final GenericProperties<T> properties;
     private final String matchType;
 
-    public MatchPredicate(List<MatchPredicateColumnIdent> idents,
-                          Expression value,
+    public MatchPredicate(List<MatchPredicateColumnIdent<T>> idents,
+                          T value,
                           @Nullable String matchType,
-                          GenericProperties properties) {
+                          GenericProperties<T> properties) {
         Preconditions.checkArgument(idents.size() > 0, "at least one ident must be given");
         Preconditions.checkNotNull(value, "query_term is null");
         this.idents = idents;
@@ -46,11 +46,11 @@ public class MatchPredicate extends Expression {
         this.properties = properties;
     }
 
-    public List<MatchPredicateColumnIdent> idents() {
+    public List<MatchPredicateColumnIdent<T>> idents() {
         return idents;
     }
 
-    public Expression value() {
+    public T value() {
         return value;
     }
 
@@ -59,7 +59,7 @@ public class MatchPredicate extends Expression {
         return matchType;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return properties;
     }
 
@@ -93,7 +93,7 @@ public class MatchPredicate extends Expression {
 
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitMatchPredicate(this, context);
     }
 

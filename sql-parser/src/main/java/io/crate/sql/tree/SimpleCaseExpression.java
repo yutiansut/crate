@@ -26,28 +26,28 @@ import com.google.common.base.Preconditions;
 import java.util.Collections;
 import java.util.List;
 
-public class SimpleCaseExpression
-    extends Expression {
-    private final Expression operand;
-    private final List<WhenClause> whenClauses;
-    private final Expression defaultValue;
+public class SimpleCaseExpression<T> extends Expression<T> {
 
-    public SimpleCaseExpression(Expression operand, List<WhenClause> whenClauses, Expression defaultValue) {
+    private final T operand;
+    private final List<WhenClause<T>> whenClauses;
+    private final T defaultValue;
+
+    public SimpleCaseExpression(T operand, List<WhenClause<T>> whenClauses, T defaultValue) {
         Preconditions.checkNotNull(operand, "operand is null");
         this.operand = operand;
         this.whenClauses = Collections.unmodifiableList(whenClauses);
         this.defaultValue = defaultValue;
     }
 
-    public Expression getOperand() {
+    public T getOperand() {
         return operand;
     }
 
-    public List<WhenClause> getWhenClauses() {
+    public List<WhenClause<T>> getWhenClauses() {
         return whenClauses;
     }
 
-    public Expression getDefaultValue() {
+    public T getDefaultValue() {
         return defaultValue;
     }
 

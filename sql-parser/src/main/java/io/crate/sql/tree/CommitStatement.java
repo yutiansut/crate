@@ -22,7 +22,7 @@
 
 package io.crate.sql.tree;
 
-public class CommitStatement extends Statement {
+public class CommitStatement<T> extends Statement<T> {
 
     public CommitStatement() {
     }
@@ -43,7 +43,7 @@ public class CommitStatement extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitCommit(this, context);
     }
 }

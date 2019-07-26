@@ -27,14 +27,13 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Optional;
 
-public class ShowSchemas extends Statement {
+public class ShowSchemas<T> extends Statement<T> {
 
     @Nullable
     private final String likePattern;
-    private final Optional<Expression> whereExpression;
+    private final Optional<T> whereExpression;
 
-    public ShowSchemas(@Nullable String likePattern,
-                       Optional<Expression> whereExpr) {
+    public ShowSchemas(@Nullable String likePattern, Optional<T> whereExpr) {
         this.likePattern = likePattern;
         this.whereExpression = whereExpr;
     }
@@ -44,7 +43,7 @@ public class ShowSchemas extends Statement {
         return likePattern;
     }
 
-    public Optional<Expression> whereExpression() {
+    public Optional<T> whereExpression() {
         return whereExpression;
     }
 

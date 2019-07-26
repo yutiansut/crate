@@ -24,21 +24,20 @@ package io.crate.sql.tree;
 
 import com.google.common.base.MoreObjects;
 
-public class AlterTableRename extends Statement {
+public class AlterTableRename<T> extends Statement<T> {
 
-    private final Table table;
+    private final Table<T> table;
     private final boolean blob;
     private final QualifiedName newName;
 
-    public AlterTableRename(Table table, boolean blob, QualifiedName newName) {
+    public AlterTableRename(Table<T> table, boolean blob, QualifiedName newName) {
         this.table = table;
         this.blob = blob;
         this.newName = newName;
     }
 
-
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitAlterTableRename(this, context);
     }
 

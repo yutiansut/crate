@@ -21,21 +21,21 @@
 
 package io.crate.sql.tree;
 
-public class WhenClause
-    extends Expression {
-    private final Expression operand;
-    private final Expression result;
+public class WhenClause<T> extends Expression<T> {
 
-    public WhenClause(Expression operand, Expression result) {
+    private final T operand;
+    private final T result;
+
+    public WhenClause(T operand, T result) {
         this.operand = operand;
         this.result = result;
     }
 
-    public Expression getOperand() {
+    public T getOperand() {
         return operand;
     }
 
-    public Expression getResult() {
+    public T getResult() {
         return result;
     }
 

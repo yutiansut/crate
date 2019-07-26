@@ -34,14 +34,14 @@ package io.crate.sql.tree;
  * Use {@link #getLeft()} to access expression.
  * Use {@link #getRight()} to access arrayExpression
  */
-public class ArrayComparisonExpression extends ComparisonExpression implements ArrayComparison {
+public class ArrayComparisonExpression<T> extends ComparisonExpression<T> implements ArrayComparison {
 
     private final Quantifier quantifier;
 
     public ArrayComparisonExpression(Type type,
                                      Quantifier quantifier,
-                                     Expression expression,
-                                     Expression arrayExpression) {
+                                     T expression,
+                                     T arrayExpression) {
         super(type, expression, arrayExpression);
         this.quantifier = quantifier;
     }
@@ -52,7 +52,7 @@ public class ArrayComparisonExpression extends ComparisonExpression implements A
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitArrayComparisonExpression(this, context);
     }
 

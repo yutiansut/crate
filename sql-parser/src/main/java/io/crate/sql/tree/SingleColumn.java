@@ -26,19 +26,19 @@ import com.google.common.base.Preconditions;
 
 import javax.annotation.Nullable;
 
-public class SingleColumn
-    extends SelectItem {
-    @Nullable
-    private String alias;
-    private Expression expression;
+public class SingleColumn<T> extends SelectItem<T> {
 
-    public SingleColumn(Expression expression, @Nullable String alias) {
+    @Nullable
+    private final String alias;
+    private final T expression;
+
+    public SingleColumn(T expression, @Nullable String alias) {
         Preconditions.checkNotNull(expression, "expression is null");
         this.expression = expression;
         this.alias = alias;
     }
 
-    public SingleColumn(Expression expression) {
+    public SingleColumn(T expression) {
         this(expression, null);
     }
 
@@ -47,7 +47,7 @@ public class SingleColumn
         return alias;
     }
 
-    public Expression getExpression() {
+    public T getExpression() {
         return expression;
     }
 

@@ -30,26 +30,27 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * IF(v1,v2[,v3]): CASE WHEN v1 THEN v2 [ELSE v3] END
  */
-public class IfExpression extends Expression {
-    private final Expression condition;
-    private final Expression trueValue;
-    private final Optional<Expression> falseValue;
+public class IfExpression<T> extends Expression<T> {
 
-    public IfExpression(Expression condition, Expression trueValue, Optional<Expression> falseValue) {
+    private final T condition;
+    private final T trueValue;
+    private final Optional<T> falseValue;
+
+    public IfExpression(T condition, T trueValue, Optional<T> falseValue) {
         this.condition = checkNotNull(condition, "condition is null");
         this.trueValue = checkNotNull(trueValue, "trueValue is null");
         this.falseValue = falseValue;
     }
 
-    public Expression getCondition() {
+    public T getCondition() {
         return condition;
     }
 
-    public Expression getTrueValue() {
+    public T getTrueValue() {
         return trueValue;
     }
 
-    public Optional<Expression> getFalseValue() {
+    public Optional<T> getFalseValue() {
         return falseValue;
     }
 

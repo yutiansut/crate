@@ -29,17 +29,18 @@ import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Query extends Statement {
-    private final QueryBody queryBody;
-    private final List<SortItem> orderBy;
-    private final Optional<Expression> limit;
-    private final Optional<Expression> offset;
+public class Query<T> extends Statement<T> {
+
+    private final QueryBody<T> queryBody;
+    private final List<SortItem<T>> orderBy;
+    private final Optional<T> limit;
+    private final Optional<T> offset;
 
     public Query(
-        QueryBody queryBody,
-        List<SortItem> orderBy,
-        Optional<Expression> limit,
-        Optional<Expression> offset) {
+        QueryBody<T> queryBody,
+        List<SortItem<T>> orderBy,
+        Optional<T> limit,
+        Optional<T> offset) {
         checkNotNull(queryBody, "queryBody is null");
         checkNotNull(orderBy, "orderBy is null");
         checkNotNull(limit, "limit is null");
@@ -51,19 +52,19 @@ public class Query extends Statement {
         this.offset = offset;
     }
 
-    public QueryBody getQueryBody() {
+    public QueryBody<T> getQueryBody() {
         return queryBody;
     }
 
-    public List<SortItem> getOrderBy() {
+    public List<SortItem<T>> getOrderBy() {
         return orderBy;
     }
 
-    public Optional<Expression> getLimit() {
+    public Optional<T> getLimit() {
         return limit;
     }
 
-    public Optional<Expression> getOffset() {
+    public Optional<T> getOffset() {
         return offset;
     }
 

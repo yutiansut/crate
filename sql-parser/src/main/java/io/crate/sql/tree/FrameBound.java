@@ -32,7 +32,7 @@ import static io.crate.common.collections.Lists2.findFirstNonPeer;
 import static io.crate.common.collections.Lists2.findFirstPreviousPeer;
 import static io.crate.sql.tree.WindowFrame.Type.ROWS;
 
-public class FrameBound extends Node {
+public class FrameBound<T> extends Node<T> {
 
     public enum Type {
         UNBOUNDED_PRECEDING {
@@ -223,13 +223,13 @@ public class FrameBound extends Node {
     private final Type type;
 
     @Nullable
-    private final Expression value;
+    private final T value;
 
     public FrameBound(Type type) {
         this(type, null);
     }
 
-    public FrameBound(Type type, @Nullable Expression value) {
+    public FrameBound(Type type, @Nullable T value) {
         this.type = type;
         this.value = value;
     }
@@ -239,7 +239,7 @@ public class FrameBound extends Node {
     }
 
     @Nullable
-    public Expression getValue() {
+    public T getValue() {
         return value;
     }
 
@@ -270,7 +270,7 @@ public class FrameBound extends Node {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitFrameBound(this, context);
     }
 }

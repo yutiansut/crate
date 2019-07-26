@@ -24,16 +24,16 @@ package io.crate.sql.tree;
 /**
  * columntype that contains many values of a single type
  */
-public class CollectionColumnType extends ColumnType {
+public class CollectionColumnType<T> extends ColumnType<T> {
 
-    private final ColumnType innerType;
+    private final ColumnType<T> innerType;
 
-    public CollectionColumnType(ColumnType innerType) {
+    public CollectionColumnType(ColumnType<T> innerType) {
         super("ARRAY");
         this.innerType = innerType;
     }
 
-    public ColumnType innerType() {
+    public ColumnType<T> innerType() {
         return innerType;
     }
 
@@ -62,7 +62,7 @@ public class CollectionColumnType extends ColumnType {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitCollectionColumnType(this, context);
     }
 }

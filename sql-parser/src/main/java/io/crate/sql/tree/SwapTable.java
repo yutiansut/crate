@@ -22,13 +22,13 @@
 
 package io.crate.sql.tree;
 
-public final class SwapTable extends Statement {
+public final class SwapTable<T> extends Statement<T> {
 
     private final QualifiedName source;
     private final QualifiedName target;
-    private final GenericProperties properties;
+    private final GenericProperties<T> properties;
 
-    public SwapTable(QualifiedName source, QualifiedName target, GenericProperties properties) {
+    public SwapTable(QualifiedName source, QualifiedName target, GenericProperties<T> properties) {
         this.source = source;
         this.target = target;
         this.properties = properties;
@@ -42,12 +42,12 @@ public final class SwapTable extends Statement {
         return target;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return properties;
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitSwapTable(this, context);
     }
 

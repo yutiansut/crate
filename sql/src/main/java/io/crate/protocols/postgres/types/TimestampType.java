@@ -79,8 +79,7 @@ final class TimestampType extends BaseTimestampType {
     @Override
     byte[] encodeAsUTF8Text(@Nonnull Object value) {
         long millis = (long) value;
-        LocalDateTime ts =
-            LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC);
+        LocalDateTime ts = LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC);
         if (millis >= FIRST_MSEC_AFTER_CHRIST) {
             return ts.format(ISO_FORMATTER).getBytes(StandardCharsets.UTF_8);
         } else {

@@ -26,15 +26,15 @@ import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class JoinOn
-    extends JoinCriteria {
-    private final Expression expression;
+public class JoinOn<T> extends JoinCriteria<T> {
 
-    public JoinOn(Expression expression) {
+    private final T expression;
+
+    public JoinOn(T expression) {
         this.expression = checkNotNull(expression, "expression is null");
     }
 
-    public Expression getExpression() {
+    public T getExpression() {
         return expression;
     }
 

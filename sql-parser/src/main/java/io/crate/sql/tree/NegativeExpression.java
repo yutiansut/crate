@@ -21,11 +21,11 @@
 
 package io.crate.sql.tree;
 
-public class NegativeExpression
-    extends Expression {
-    private final Expression value;
+public class NegativeExpression<T> extends Expression<T> {
 
-    public NegativeExpression(Expression value) {
+    private final T value;
+
+    public NegativeExpression(T value) {
         this.value = value;
     }
 
@@ -43,7 +43,7 @@ public class NegativeExpression
         }
     }
 
-    public Expression getValue() {
+    public T getValue() {
         return value;
     }
 

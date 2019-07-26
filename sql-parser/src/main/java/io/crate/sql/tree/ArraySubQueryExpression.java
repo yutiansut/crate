@@ -24,15 +24,15 @@ package io.crate.sql.tree;
 
 import java.util.Objects;
 
-public class ArraySubQueryExpression extends Expression {
+public class ArraySubQueryExpression<T> extends Expression<T> {
 
-    private final SubqueryExpression subqueryExpression;
+    private final SubqueryExpression<T> subqueryExpression;
 
-    public ArraySubQueryExpression(SubqueryExpression subqueryExpression) {
+    public ArraySubQueryExpression(SubqueryExpression<T> subqueryExpression) {
         this.subqueryExpression = subqueryExpression;
     }
 
-    public SubqueryExpression subqueryExpression() {
+    public SubqueryExpression<T> subqueryExpression() {
         return subqueryExpression;
     }
 
@@ -50,7 +50,7 @@ public class ArraySubQueryExpression extends Expression {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitArraySubQueryExpression(this, context);
     }
 }

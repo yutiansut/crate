@@ -24,12 +24,12 @@ package io.crate.sql.tree;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
-public class NamedProperties extends Node {
+public class NamedProperties<T> extends Node<T> {
 
     private final String ident;
-    private final GenericProperties properties;
+    private final GenericProperties<T> properties;
 
-    public NamedProperties(String ident, GenericProperties properties) {
+    public NamedProperties(String ident, GenericProperties<T> properties) {
         this.ident = ident;
         this.properties = properties;
     }
@@ -38,7 +38,7 @@ public class NamedProperties extends Node {
         return ident;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return properties;
     }
 

@@ -29,7 +29,7 @@ package io.crate.sql.tree;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public class FunctionArgument extends Node {
+public class FunctionArgument<T> extends Node<T> {
 
     @Nullable
     private final String name;

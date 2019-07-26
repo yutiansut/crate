@@ -28,8 +28,9 @@ import java.util.Optional;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Join extends Relation {
-    public Join(Type type, Relation left, Relation right, Optional<JoinCriteria> criteria) {
+public class Join<T> extends Relation<T> {
+
+    public Join(Type type, Relation<T> left, Relation<T> right, Optional<JoinCriteria<T>> criteria) {
         checkNotNull(left, "left is null");
         checkNotNull(right, "right is null");
         if (type.equals(Type.CROSS)) {
@@ -49,23 +50,23 @@ public class Join extends Relation {
     }
 
     private final Type type;
-    private final Relation left;
-    private final Relation right;
-    private final Optional<JoinCriteria> criteria;
+    private final Relation<T> left;
+    private final Relation<T> right;
+    private final Optional<JoinCriteria<T>> criteria;
 
     public Type getType() {
         return type;
     }
 
-    public Relation getLeft() {
+    public Relation<T> getLeft() {
         return left;
     }
 
-    public Relation getRight() {
+    public Relation<T> getRight() {
         return right;
     }
 
-    public Optional<JoinCriteria> getCriteria() {
+    public Optional<JoinCriteria<T>> getCriteria() {
         return criteria;
     }
 

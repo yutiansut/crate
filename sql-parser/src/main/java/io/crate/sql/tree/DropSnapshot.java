@@ -24,7 +24,7 @@ package io.crate.sql.tree;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
-public class DropSnapshot extends Statement {
+public class DropSnapshot<T> extends Statement<T> {
 
     private final QualifiedName name;
 
@@ -56,7 +56,7 @@ public class DropSnapshot extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitDropSnapshot(this, context);
     }
 }

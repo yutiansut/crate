@@ -25,15 +25,15 @@ package io.crate.sql.tree;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
-public class DecommissionNodeStatement extends Statement {
+public class DecommissionNodeStatement<T> extends Statement<T> {
 
-    private final Expression nodeIdOrNameExpression;
+    private final T nodeIdOrNameExpression;
 
-    public DecommissionNodeStatement(Expression nodeIdOrNameExpression) {
+    public DecommissionNodeStatement(T nodeIdOrNameExpression) {
         this.nodeIdOrNameExpression = nodeIdOrNameExpression;
     }
 
-    public Expression nodeIdOrName() {
+    public T nodeIdOrName() {
         return nodeIdOrNameExpression;
     }
 
@@ -58,7 +58,7 @@ public class DecommissionNodeStatement extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitAlterClusterDecommissionNode(this, context);
     }
 }

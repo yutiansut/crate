@@ -23,15 +23,14 @@ package io.crate.sql.tree;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
-
 import java.util.Locale;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 @Immutable
-public class Extract
-    extends Expression {
-    private final Expression expression;
+public class Extract<T> extends Expression<T> {
+
+    private final T expression;
     private final Field field;
 
     public enum Field {
@@ -54,7 +53,7 @@ public class Extract
         EPOCH
     }
 
-    public Extract(@Nullable Expression expression, StringLiteral field) {
+    public Extract(@Nullable T expression, StringLiteral field) {
         checkNotNull(expression, "expression is null");
         // field: ident is converted to StringLiteral in SqlBase.g
         this.expression = expression;
@@ -62,7 +61,7 @@ public class Extract
     }
 
     @Nullable
-    public Expression getExpression() {
+    public T getExpression() {
         return expression;
     }
 

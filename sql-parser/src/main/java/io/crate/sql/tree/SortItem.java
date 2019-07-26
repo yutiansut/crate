@@ -23,8 +23,8 @@ package io.crate.sql.tree;
 
 import com.google.common.base.MoreObjects;
 
-public class SortItem
-    extends Node {
+public class SortItem<T> extends Node<T> {
+
     public enum Ordering {
         ASCENDING, DESCENDING
     }
@@ -33,17 +33,17 @@ public class SortItem
         FIRST, LAST, UNDEFINED
     }
 
-    private final Expression sortKey;
+    private final T sortKey;
     private final Ordering ordering;
     private final NullOrdering nullOrdering;
 
-    public SortItem(Expression sortKey, Ordering ordering, NullOrdering nullOrdering) {
+    public SortItem(T sortKey, Ordering ordering, NullOrdering nullOrdering) {
         this.ordering = ordering;
         this.sortKey = sortKey;
         this.nullOrdering = nullOrdering;
     }
 
-    public Expression getSortKey() {
+    public T getSortKey() {
         return sortKey;
     }
 

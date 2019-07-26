@@ -24,7 +24,7 @@ package io.crate.sql.tree;
 
 import java.util.Optional;
 
-public class WindowFrame extends Node {
+public class WindowFrame<T> extends Node<T> {
 
     public enum Type {
         RANGE,
@@ -32,10 +32,10 @@ public class WindowFrame extends Node {
     }
 
     private final Type frameType;
-    private final FrameBound start;
-    private final Optional<FrameBound> end;
+    private final FrameBound<T> start;
+    private final Optional<FrameBound<T>> end;
 
-    public WindowFrame(Type frameType, FrameBound start, Optional<FrameBound> end) {
+    public WindowFrame(Type frameType, FrameBound<T> start, Optional<FrameBound<T>> end) {
         this.frameType = frameType;
         this.start = start;
         this.end = end;
@@ -45,11 +45,11 @@ public class WindowFrame extends Node {
         return frameType;
     }
 
-    public FrameBound getStart() {
+    public FrameBound<T> getStart() {
         return start;
     }
 
-    public Optional<FrameBound> getEnd() {
+    public Optional<FrameBound<T>> getEnd() {
         return end;
     }
 
@@ -83,7 +83,7 @@ public class WindowFrame extends Node {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitWindowFrame(this, context);
     }
 }

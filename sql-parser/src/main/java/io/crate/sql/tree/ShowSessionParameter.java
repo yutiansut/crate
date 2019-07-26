@@ -25,7 +25,7 @@ package io.crate.sql.tree;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public class ShowSessionParameter extends Statement {
+public class ShowSessionParameter<T> extends Statement<T> {
 
     @Nullable
     private final QualifiedName parameter;
@@ -40,7 +40,7 @@ public class ShowSessionParameter extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitShowSessionParameter(this, context);
     }
 

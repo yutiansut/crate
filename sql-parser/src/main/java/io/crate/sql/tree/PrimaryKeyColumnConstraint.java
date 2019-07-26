@@ -21,7 +21,7 @@
 
 package io.crate.sql.tree;
 
-public class PrimaryKeyColumnConstraint extends ColumnConstraint {
+public class PrimaryKeyColumnConstraint<T> extends ColumnConstraint<T> {
 
     private static final String NAME = "PRIMARY_KEY";
 
@@ -44,7 +44,7 @@ public class PrimaryKeyColumnConstraint extends ColumnConstraint {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitPrimaryKeyColumnConstraint(this, context);
     }
 }

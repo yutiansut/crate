@@ -23,8 +23,8 @@ package io.crate.sql.tree;
 
 import com.google.common.base.Preconditions;
 
-public class StringLiteral
-    extends Literal {
+public class StringLiteral<T> extends Literal<T> {
+
     private final String value;
 
     public StringLiteral(String value) {

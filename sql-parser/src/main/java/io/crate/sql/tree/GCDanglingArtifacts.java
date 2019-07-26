@@ -22,7 +22,7 @@
 
 package io.crate.sql.tree;
 
-public final class GCDanglingArtifacts extends Statement {
+public final class GCDanglingArtifacts<T> extends Statement<T> {
 
     public static final GCDanglingArtifacts INSTANCE = new GCDanglingArtifacts();
 
@@ -45,7 +45,7 @@ public final class GCDanglingArtifacts extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitGCDanglingArtifacts(this, context);
     }
 }

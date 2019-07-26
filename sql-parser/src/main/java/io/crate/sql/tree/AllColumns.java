@@ -25,7 +25,7 @@ import com.google.common.base.Preconditions;
 
 import java.util.Optional;
 
-public class AllColumns extends SelectItem {
+public class AllColumns<T> extends SelectItem<T> {
 
     private final Optional<QualifiedName> prefix;
 

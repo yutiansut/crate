@@ -29,21 +29,21 @@ package io.crate.sql.tree;
 import java.util.List;
 import java.util.Objects;
 
-public class CreateFunction extends Statement {
+public class CreateFunction<T> extends Statement<T> {
 
     private final QualifiedName name;
     private final boolean replace;
-    private final List<FunctionArgument> arguments;
+    private final List<FunctionArgument<T>> arguments;
     private final ColumnType returnType;
-    private final Expression language;
-    private final Expression definition;
+    private final T language;
+    private final T definition;
 
     public CreateFunction(QualifiedName name,
                           boolean replace,
-                          List<FunctionArgument> arguments,
+                          List<FunctionArgument<T>> arguments,
                           ColumnType returnType,
-                          Expression language,
-                          Expression definition) {
+                          T language,
+                          T definition) {
         this.name = name;
         this.replace = replace;
         this.arguments = arguments;
@@ -60,7 +60,7 @@ public class CreateFunction extends Statement {
         return replace;
     }
 
-    public List<FunctionArgument> arguments() {
+    public List<FunctionArgument<T>> arguments() {
         return arguments;
     }
 
@@ -68,11 +68,11 @@ public class CreateFunction extends Statement {
         return returnType;
     }
 
-    public Expression language() {
+    public T language() {
         return language;
     }
 
-    public Expression definition() {
+    public T definition() {
         return definition;
     }
 

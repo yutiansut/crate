@@ -28,27 +28,28 @@ import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class QuerySpecification extends QueryBody {
-    private final Select select;
-    private final List<Relation> from;
-    private final Optional<Expression> where;
-    private final List<Expression> groupBy;
-    private final Optional<Expression> having;
-    private final List<SortItem> orderBy;
-    private final Optional<Expression> limit;
-    private final Optional<Expression> offset;
-    private final Map<String, Window> windows;
+public class QuerySpecification<T> extends QueryBody<T> {
+
+    private final Select<T> select;
+    private final List<Relation<T>> from;
+    private final Optional<T> where;
+    private final List<T> groupBy;
+    private final Optional<T> having;
+    private final List<SortItem<T>> orderBy;
+    private final Optional<T> limit;
+    private final Optional<T> offset;
+    private final Map<String, Window<T>> windows;
 
     public QuerySpecification(
-        Select select,
-        List<Relation> from,
-        Optional<Expression> where,
-        List<Expression> groupBy,
-        Optional<Expression> having,
-        Map<String, Window> windows,
-        List<SortItem> orderBy,
-        Optional<Expression> limit,
-        Optional<Expression> offset) {
+        Select<T> select,
+        List<Relation<T>> from,
+        Optional<T> where,
+        List<T> groupBy,
+        Optional<T> having,
+        Map<String, Window<T>> windows,
+        List<SortItem<T>> orderBy,
+        Optional<T> limit,
+        Optional<T> offset) {
         checkNotNull(select, "select is null");
         checkNotNull(where, "where is null");
         checkNotNull(groupBy, "groupBy is null");
@@ -72,35 +73,35 @@ public class QuerySpecification extends QueryBody {
         return select;
     }
 
-    public List<Relation> getFrom() {
+    public List<Relation<T>> getFrom() {
         return from;
     }
 
-    public Optional<Expression> getWhere() {
+    public Optional<T> getWhere() {
         return where;
     }
 
-    public List<Expression> getGroupBy() {
+    public List<T> getGroupBy() {
         return groupBy;
     }
 
-    public Optional<Expression> getHaving() {
+    public Optional<T> getHaving() {
         return having;
     }
 
-    public List<SortItem> getOrderBy() {
+    public List<SortItem<T>> getOrderBy() {
         return orderBy;
     }
 
-    public Optional<Expression> getLimit() {
+    public Optional<T> getLimit() {
         return limit;
     }
 
-    public Optional<Expression> getOffset() {
+    public Optional<T> getOffset() {
         return offset;
     }
 
-    public Map<String, Window> getWindows() {
+    public Map<String, Window<T>> getWindows() {
         return windows;
     }
 

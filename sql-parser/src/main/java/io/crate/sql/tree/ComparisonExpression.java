@@ -23,8 +23,8 @@ package io.crate.sql.tree;
 
 import com.google.common.base.Preconditions;
 
-public class ComparisonExpression
-    extends Expression {
+public class ComparisonExpression<T> extends Expression<T> {
+
     public enum Type {
         EQUAL("="),
         NOT_EQUAL("<>"),
@@ -51,10 +51,10 @@ public class ComparisonExpression
     }
 
     private final Type type;
-    private final Expression left;
-    private final Expression right;
+    private final T left;
+    private final T right;
 
-    public ComparisonExpression(Type type, Expression left, Expression right) {
+    public ComparisonExpression(Type type, T left, T right) {
         Preconditions.checkNotNull(type, "type is null");
         Preconditions.checkNotNull(left, "left is null");
         Preconditions.checkNotNull(right, "right is null");
@@ -68,16 +68,16 @@ public class ComparisonExpression
         return type;
     }
 
-    public Expression getLeft() {
+    public T getLeft() {
         return left;
     }
 
-    public Expression getRight() {
+    public T getRight() {
         return right;
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitComparisonExpression(this, context);
     }
 

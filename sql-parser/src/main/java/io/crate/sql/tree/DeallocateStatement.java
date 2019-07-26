@@ -25,21 +25,21 @@ package io.crate.sql.tree;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public class DeallocateStatement extends Statement {
+public class DeallocateStatement<T> extends Statement<T> {
 
     @Nullable
-    private final Expression preparedStmt;
+    private final T preparedStmt;
 
     public DeallocateStatement() {
         preparedStmt = null;
     }
 
-    public DeallocateStatement(Expression preparedStmt) {
+    public DeallocateStatement(T preparedStmt) {
         this.preparedStmt = preparedStmt;
     }
 
     @Nullable
-    public Expression preparedStmt() {
+    public T preparedStmt() {
         return preparedStmt;
     }
 
@@ -62,7 +62,7 @@ public class DeallocateStatement extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitDeallocateStatement(this, context);
     }
 }

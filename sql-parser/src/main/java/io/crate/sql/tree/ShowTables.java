@@ -27,17 +27,17 @@ import com.google.common.base.Objects;
 import javax.annotation.Nullable;
 import java.util.Optional;
 
-public class ShowTables extends Statement {
+public class ShowTables<T> extends Statement<T> {
 
     @Nullable
     private final QualifiedName schema;
     @Nullable
     private final String likePattern;
-    private final Optional<Expression> whereExpression;
+    private final Optional<T> whereExpression;
 
     public ShowTables(@Nullable QualifiedName schema,
                       @Nullable String likePattern,
-                      Optional<Expression> whereExpression) {
+                      Optional<T> whereExpression) {
         this.schema = schema;
         this.whereExpression = whereExpression;
         this.likePattern = likePattern;
@@ -53,7 +53,7 @@ public class ShowTables extends Statement {
         return likePattern;
     }
 
-    public Optional<Expression> whereExpression() {
+    public Optional<T> whereExpression() {
         return whereExpression;
     }
 

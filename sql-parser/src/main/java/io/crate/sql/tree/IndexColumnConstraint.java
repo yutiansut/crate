@@ -24,14 +24,14 @@ package io.crate.sql.tree;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
-public class IndexColumnConstraint extends ColumnConstraint {
+public class IndexColumnConstraint<T> extends ColumnConstraint<T> {
 
-    public static final IndexColumnConstraint OFF = new IndexColumnConstraint("OFF", GenericProperties.EMPTY);
+    public static final IndexColumnConstraint<?> OFF = new IndexColumnConstraint<>("OFF", GenericProperties.EMPTY);
 
     private final String indexMethod;
-    private final GenericProperties properties;
+    private final GenericProperties<T> properties;
 
-    public IndexColumnConstraint(String indexMethod, GenericProperties properties) {
+    public IndexColumnConstraint(String indexMethod, GenericProperties<T> properties) {
         this.indexMethod = indexMethod;
         this.properties = properties;
     }
@@ -40,7 +40,7 @@ public class IndexColumnConstraint extends ColumnConstraint {
         return indexMethod;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return properties;
     }
 
@@ -71,7 +71,7 @@ public class IndexColumnConstraint extends ColumnConstraint {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitIndexColumnConstraint(this, context);
     }
 }

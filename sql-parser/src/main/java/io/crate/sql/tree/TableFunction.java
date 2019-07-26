@@ -26,11 +26,11 @@ import com.google.common.base.MoreObjects;
 
 import java.util.Objects;
 
-public class TableFunction extends QueryBody {
+public class TableFunction<T> extends QueryBody<T> {
 
-    private final FunctionCall functionCall;
+    private final FunctionCall<T> functionCall;
 
-    public TableFunction(FunctionCall functionCall) {
+    public TableFunction(FunctionCall<T> functionCall) {
         this.functionCall = functionCall;
     }
 
@@ -63,7 +63,7 @@ public class TableFunction extends QueryBody {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitTableFunction(this, context);
     }
 }

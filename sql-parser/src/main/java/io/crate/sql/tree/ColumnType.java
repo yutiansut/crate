@@ -22,7 +22,7 @@
 package io.crate.sql.tree;
 
 
-public class ColumnType extends Expression {
+public class ColumnType<T> extends Expression<T> {
 
     protected final String name;
 
@@ -35,7 +35,7 @@ public class ColumnType extends Expression {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitColumnType(this, context);
     }
 

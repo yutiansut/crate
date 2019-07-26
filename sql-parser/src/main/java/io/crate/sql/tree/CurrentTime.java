@@ -26,7 +26,7 @@ import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class CurrentTime extends Expression {
+public class CurrentTime<T> extends Expression<T> {
 
     private final Type type;
     private final Optional<Integer> precision;

@@ -27,22 +27,22 @@ import com.google.common.base.Preconditions;
 
 import java.util.Optional;
 
-public class Delete extends Statement {
+public class Delete<T> extends Statement<T> {
 
-    private final Relation relation;
-    private final Optional<Expression> where;
+    private final Relation<T> relation;
+    private final Optional<T> where;
 
-    public Delete(Relation relation, Optional<Expression> where) {
+    public Delete(Relation<T> relation, Optional<T> where) {
         Preconditions.checkNotNull(relation, "relation is null");
         this.relation = relation;
         this.where = where;
     }
 
-    public Relation getRelation() {
+    public Relation<T> getRelation() {
         return relation;
     }
 
-    public Optional<Expression> getWhere() {
+    public Optional<T> getWhere() {
         return where;
     }
 
@@ -50,7 +50,6 @@ public class Delete extends Statement {
     public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
         return visitor.visitDelete(this, context);
     }
-
 
     @Override
     public int hashCode() {

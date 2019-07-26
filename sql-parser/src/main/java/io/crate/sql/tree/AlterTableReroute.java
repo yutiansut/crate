@@ -24,25 +24,24 @@ package io.crate.sql.tree;
 
 import com.google.common.base.MoreObjects;
 
-public class AlterTableReroute extends Statement {
+public class AlterTableReroute<T> extends Statement<T> {
 
-    private final Table table;
-    private final RerouteOption rerouteOption;
+    private final Table<T> table;
+    private final RerouteOption<T> rerouteOption;
     private final boolean blob;
 
-    public AlterTableReroute(Table table, boolean blob, RerouteOption rerouteOption) {
+    public AlterTableReroute(Table<T> table, boolean blob, RerouteOption<T> rerouteOption) {
         this.table = table;
         this.blob = blob;
         this.rerouteOption = rerouteOption;
     }
 
-
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitAlterTableReroute(this, context);
     }
 
-    public Table table() {
+    public Table<T> table() {
         return table;
     }
 
@@ -50,7 +49,7 @@ public class AlterTableReroute extends Statement {
         return blob;
     }
 
-    public RerouteOption rerouteOption() {
+    public RerouteOption<T> rerouteOption() {
         return rerouteOption;
     }
 

@@ -25,33 +25,32 @@ import com.google.common.base.MoreObjects;
 
 import java.util.Objects;
 
-public class CopyFrom extends Statement {
+public class CopyFrom<T> extends Statement<T> {
 
-    private final Table table;
-    private final Expression path;
-    private final GenericProperties genericProperties;
+    private final Table<T> table;
+    private final T path;
+    private final GenericProperties<T> genericProperties;
     private final boolean returnSummary;
 
-    public CopyFrom(Table table,
-                    Expression path,
-                    GenericProperties genericProperties,
+    public CopyFrom(Table<T> table,
+                    T path,
+                    GenericProperties<T> genericProperties,
                     boolean returnSummary) {
-
         this.table = table;
         this.path = path;
         this.genericProperties = genericProperties;
         this.returnSummary = returnSummary;
     }
 
-    public Table table() {
+    public Table<T> table() {
         return table;
     }
 
-    public Expression path() {
+    public T path() {
         return path;
     }
 
-    public GenericProperties genericProperties() {
+    public GenericProperties<T> genericProperties() {
         return genericProperties;
     }
 

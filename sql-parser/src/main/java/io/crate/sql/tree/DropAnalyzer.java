@@ -24,7 +24,7 @@ package io.crate.sql.tree;
 
 import java.util.Objects;
 
-public class DropAnalyzer extends Statement {
+public class DropAnalyzer<T> extends Statement<T> {
 
     private final String name;
 
@@ -46,7 +46,6 @@ public class DropAnalyzer extends Statement {
 
     @Override
     public int hashCode() {
-
         return Objects.hash(name);
     }
 
@@ -58,7 +57,7 @@ public class DropAnalyzer extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitDropAnalyzer(this, context);
     }
 }

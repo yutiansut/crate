@@ -23,13 +23,13 @@ package io.crate.sql.tree;
 
 import com.google.common.base.Preconditions;
 
-public class BetweenPredicate
-    extends Expression {
-    private final Expression value;
-    private final Expression min;
-    private final Expression max;
+public class BetweenPredicate<T> extends Expression<T> {
 
-    public BetweenPredicate(Expression value, Expression min, Expression max) {
+    private final T value;
+    private final T min;
+    private final T max;
+
+    public BetweenPredicate(T value, T min, T max) {
         Preconditions.checkNotNull(value, "value is null");
         Preconditions.checkNotNull(min, "min is null");
         Preconditions.checkNotNull(max, "max is null");
@@ -39,15 +39,15 @@ public class BetweenPredicate
         this.max = max;
     }
 
-    public Expression getValue() {
+    public T getValue() {
         return value;
     }
 
-    public Expression getMin() {
+    public T getMin() {
         return min;
     }
 
-    public Expression getMax() {
+    public T getMax() {
         return max;
     }
 

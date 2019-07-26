@@ -26,26 +26,26 @@ import com.google.common.base.Objects;
 
 import java.util.List;
 
-public class InsertFromValues extends Insert {
+public class InsertFromValues<T> extends Insert<T> {
 
-    private final List<ValuesList> valuesLists;
+    private final List<ValuesList<T>> valuesLists;
     private final int maxValuesLength;
 
-    public InsertFromValues(Table table,
-                            List<ValuesList> valuesLists,
+    public InsertFromValues(Table<T> table,
+                            List<ValuesList<T>> valuesLists,
                             List<String> columns,
-                            DuplicateKeyContext duplicateKeyContext) {
+                            DuplicateKeyContext<T> duplicateKeyContext) {
         super(table, columns, duplicateKeyContext);
         this.valuesLists = valuesLists;
 
         int i = 0;
-        for (ValuesList valuesList : valuesLists) {
+        for (ValuesList<?> valuesList : valuesLists) {
             i = Math.max(i, valuesList.values().size());
         }
         maxValuesLength = i;
     }
 
-    public List<ValuesList> valuesLists() {
+    public List<ValuesList<T>> valuesLists() {
         return valuesLists;
     }
 
@@ -84,7 +84,7 @@ public class InsertFromValues extends Insert {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitInsertFromValues(this, context);
     }
 }

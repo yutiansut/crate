@@ -26,17 +26,17 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 
-public final class Window extends Statement {
+public final class Window<T> extends Statement<T> {
 
     private final String windowRef;
-    private final List<Expression> partitions;
-    private final List<SortItem> orderBy;
-    private final Optional<WindowFrame> windowFrame;
+    private final List<T> partitions;
+    private final List<SortItem<T>> orderBy;
+    private final Optional<WindowFrame<T>> windowFrame;
 
     public Window(@Nullable String windowRef,
-                  List<Expression> partitions,
-                  List<SortItem> orderBy,
-                  Optional<WindowFrame> windowFrame) {
+                  List<T> partitions,
+                  List<SortItem<T>> orderBy,
+                  Optional<WindowFrame<T>> windowFrame) {
         this.partitions = partitions;
         this.orderBy = orderBy;
         this.windowFrame = windowFrame;
@@ -48,15 +48,15 @@ public final class Window extends Statement {
         return windowRef;
     }
 
-    public List<Expression> getPartitions() {
+    public List<T> getPartitions() {
         return partitions;
     }
 
-    public List<SortItem> getOrderBy() {
+    public List<SortItem<T>> getOrderBy() {
         return orderBy;
     }
 
-    public Optional<WindowFrame> getWindowFrame() {
+    public Optional<WindowFrame<T>> getWindowFrame() {
         return windowFrame;
     }
 
@@ -76,12 +76,12 @@ public final class Window extends Statement {
      *         window definition if the current definition is empty.
      * @throws IllegalArgumentException If the merge rules are violated.
      */
-    public Window merge(Window that) {
+    public Window<T> merge(Window<T> that) {
         if (this.empty()) {
             return that;
         }
 
-        final List<Expression> partitionBy;
+        final List<T> partitionBy;
         if (!this.partitions.isEmpty()) {
             throw new IllegalArgumentException(
                 "Cannot override PARTITION BY clause of window " + this.windowRef);
@@ -89,7 +89,7 @@ public final class Window extends Statement {
             partitionBy = that.getPartitions();
         }
 
-        final List<SortItem> orderBy;
+        final List<SortItem<T>> orderBy;
         if (that.getOrderBy().isEmpty()) {
             orderBy = this.getOrderBy();
         } else {
@@ -105,7 +105,7 @@ public final class Window extends Statement {
                 "Cannot copy window " + this.windowRef() + " because it has a frame clause");
         }
 
-        return new Window(that.windowRef, partitionBy, orderBy, this.getWindowFrame());
+        return new Window<>(that.windowRef, partitionBy, orderBy, this.getWindowFrame());
     }
 
     private boolean empty() {
@@ -142,7 +142,7 @@ public final class Window extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitWindow(this, context);
     }
 }

@@ -22,13 +22,13 @@
 
 package io.crate.sql.tree;
 
-public final class CreateView extends Statement {
+public final class CreateView<T> extends Statement<T> {
 
     private final QualifiedName name;
-    private final Query query;
+    private final Query<T> query;
     private final boolean replaceExisting;
 
-    public CreateView(QualifiedName name, Query query, boolean replaceExisting) {
+    public CreateView(QualifiedName name, Query<T> query, boolean replaceExisting) {
         this.name = name;
         this.query = query;
         this.replaceExisting = replaceExisting;
@@ -38,7 +38,7 @@ public final class CreateView extends Statement {
         return name;
     }
 
-    public Query query() {
+    public Query<T> query() {
         return query;
     }
 
@@ -76,7 +76,7 @@ public final class CreateView extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitCreateView(this, context);
     }
 }

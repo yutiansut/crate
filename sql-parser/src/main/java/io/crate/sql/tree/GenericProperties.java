@@ -28,6 +28,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 /**
@@ -46,34 +48,37 @@ import java.util.Set;
  * d=[1, 2, 3, 'abc']
  * </code>
  */
-public class GenericProperties extends Node {
+public class GenericProperties<T> extends Node<T> {
 
-    public static final GenericProperties EMPTY = new GenericProperties(ImmutableMap.of());
+    public static final GenericProperties<?> EMPTY = new GenericProperties<>(ImmutableMap.of());
+    public static <T> GenericProperties<T> empty() {
+        //noinspection unchecked
+        return (GenericProperties<T>) EMPTY;
+    }
 
-    private final Map<String, Expression> properties;
+    private final Map<String, T> properties;
 
     public GenericProperties() {
         properties = new HashMap<>();
     }
 
-    private GenericProperties(Map<String, Expression> map) {
+    private GenericProperties(Map<String, T> map) {
         this.properties = map;
     }
 
-    public Map<String, Expression> properties() {
+
+    public Map<String, T> properties() {
         return Collections.unmodifiableMap(properties);
     }
 
-    public Expression get(String key) {
+    public T get(String key) {
         return properties.get(key);
     }
 
     /**
      * merge the given {@linkplain io.crate.sql.tree.GenericProperty} into the contained map.
-     *
-     * @param property
      */
-    public void add(GenericProperty property) {
+    public void add(GenericProperty<T> property) {
         properties.put(property.key(), property.value());
     }
 
@@ -104,7 +109,7 @@ public class GenericProperties extends Node {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitGenericProperties(this, context);
     }
 
@@ -114,5 +119,14 @@ public class GenericProperties extends Node {
 
     public Set<String> keys() {
         return properties.keySet();
+    }
+
+    public <U> GenericProperties<U> map(Function<? super T, ? extends U> mapper) {
+        return new GenericProperties<>(
+            properties.entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getKey,
+                e -> mapper.apply(e.getValue())
+            ))
+        );
     }
 }

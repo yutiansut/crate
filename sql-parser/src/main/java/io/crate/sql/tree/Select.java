@@ -26,12 +26,12 @@ import com.google.common.base.MoreObjects;
 import java.util.Collections;
 import java.util.List;
 
-public class Select
-    extends Node {
-    private final boolean distinct;
-    private final List<SelectItem> selectItems;
+public class Select<T> extends Node<T> {
 
-    public Select(boolean distinct, List<SelectItem> selectItems) {
+    private final boolean distinct;
+    private final List<SelectItem<T>> selectItems;
+
+    public Select(boolean distinct, List<SelectItem<T>> selectItems) {
         this.distinct = distinct;
         this.selectItems = Collections.unmodifiableList(selectItems);
     }
@@ -40,7 +40,7 @@ public class Select
         return distinct;
     }
 
-    public List<SelectItem> getSelectItems() {
+    public List<SelectItem<T>> getSelectItems() {
         return selectItems;
     }
 

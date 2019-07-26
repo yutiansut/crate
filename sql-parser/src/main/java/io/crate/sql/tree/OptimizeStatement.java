@@ -26,21 +26,21 @@ import com.google.common.base.MoreObjects;
 
 import java.util.List;
 
-public class OptimizeStatement extends Statement {
+public class OptimizeStatement<T> extends Statement<T> {
 
-    private final List<Table> tables;
-    private final GenericProperties properties;
+    private final List<Table<T>> tables;
+    private final GenericProperties<T> properties;
 
-    public OptimizeStatement(List<Table> tables, GenericProperties properties) {
+    public OptimizeStatement(List<Table<T>> tables, GenericProperties<T> properties) {
         this.tables = tables;
         this.properties = properties;
     }
 
-    public List<Table> tables() {
+    public List<Table<T>> tables() {
         return tables;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return properties;
     }
 
@@ -70,7 +70,7 @@ public class OptimizeStatement extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitOptimizeStatement(this, context);
     }
 }

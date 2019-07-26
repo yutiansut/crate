@@ -23,15 +23,15 @@ package io.crate.sql.tree;
 
 import com.google.common.base.MoreObjects;
 
-public class TableSubquery
-    extends QueryBody {
-    private final Query query;
+public class TableSubquery<T> extends QueryBody<T> {
 
-    public TableSubquery(Query query) {
+    private final Query<T> query;
+
+    public TableSubquery(Query<T> query) {
         this.query = query;
     }
 
-    public Query getQuery() {
+    public Query<T> getQuery() {
         return query;
     }
 

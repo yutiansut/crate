@@ -26,15 +26,15 @@ import com.google.common.base.Objects;
 
 import java.util.List;
 
-public class ResetStatement extends Statement {
+public class ResetStatement<T> extends Statement<T> {
 
-    private final List<Expression> columns;
+    private final List<T> columns;
 
-    public ResetStatement(List<Expression> columns) {
+    public ResetStatement(List<T> columns) {
         this.columns = columns;
     }
 
-    public List<Expression> columns() {
+    public List<T> columns() {
         return columns;
     }
 
@@ -63,7 +63,7 @@ public class ResetStatement extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitResetStatement(this, context);
     }
 }

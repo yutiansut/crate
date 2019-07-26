@@ -25,12 +25,12 @@ package io.crate.sql.tree;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
-public class CreateUser extends Statement {
+public class CreateUser<T> extends Statement<T> {
 
     private final String name;
-    private final GenericProperties properties;
+    private final GenericProperties<T> properties;
 
-    public CreateUser(String name, GenericProperties properties) {
+    public CreateUser(String name, GenericProperties<T> properties) {
         this.name = name;
         this.properties = properties;
     }
@@ -39,7 +39,7 @@ public class CreateUser extends Statement {
         return name;
     }
 
-    public GenericProperties properties() {
+    public GenericProperties<T> properties() {
         return properties;
     }
 
@@ -68,7 +68,7 @@ public class CreateUser extends Statement {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitCreateUser(this, context);
     }
 }
