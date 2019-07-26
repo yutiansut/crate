@@ -123,7 +123,6 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.inject.ModulesBuilder;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.analysis.AnalysisRegistry;
@@ -440,17 +439,18 @@ public class SQLExecutor {
 
         public Builder addPartitionedTable(String createTableStmt, String... partitions) throws IOException {
             CreateTable stmt = (CreateTable) SqlParser.createStatement(createTableStmt);
+            CoordinatorTxnCtx txnCtx = new CoordinatorTxnCtx(SessionContext.systemSessionContext());
             AnalyzedCreateTableStatement analyzedStmt = createTableStatementAnalyzer.analyze(
-                stmt, ParamTypeHints.EMPTY.EMPTY, new CoordinatorTxnCtx(SessionContext.systemSessionContext()));
+                stmt, ParamTypeHints.EMPTY, txnCtx);
             if (analyzedStmt.partitionByColumns().isEmpty()) {
                 throw new IllegalArgumentException("use addTable(..) to add non partitioned tables");
             }
             ClusterState prevState = clusterService.state();
 
-            XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
-                .map(analyzedStmt.createMapping(Row.EMPTY, SubQueryResults.EMPTY));
-            CompressedXContent mapping = new CompressedXContent(BytesReference.bytes(mappingBuilder));
-            Settings settings = analyzedStmt.createSettings(Row.EMPTY, SubQueryResults.EMPTY);
+            var mapping = analyzedStmt.createMapping(txnCtx, functions, Row.EMPTY, SubQueryResults.EMPTY);
+            var mappingBuilder = XContentFactory.jsonBuilder().map(mapping);
+            var compressedMapping = new CompressedXContent(BytesReference.bytes(mappingBuilder));
+            Settings settings = analyzedStmt.createSettings(txnCtx, functions, Row.EMPTY, SubQueryResults.EMPTY);
             RelationName relationName = analyzedStmt.relationName();
             AliasMetaData.Builder alias = AliasMetaData.builder(relationName.indexNameOrAlias());
             String templateName = PartitionName.templateName(relationName.schema(), relationName.name());
@@ -458,7 +458,7 @@ public class SQLExecutor {
             IndexTemplateMetaData.Builder template = IndexTemplateMetaData.builder(templateName)
                 .patterns(singletonList(templatePrefix))
                 .order(100)
-                .putMapping(Constants.DEFAULT_MAPPING_TYPE, mapping)
+                .putMapping(Constants.DEFAULT_MAPPING_TYPE, compressedMapping)
                 .settings(settings)
                 .putAlias(alias);
 
@@ -469,8 +469,8 @@ public class SQLExecutor {
             for (String partition : partitions) {
                 IndexMetaData indexMetaData= getIndexMetaData(
                     partition,
-                    analyzedStmt.createSettings(Row.EMPTY, SubQueryResults.EMPTY),
-                    analyzedStmt.createMapping(Row.EMPTY, SubQueryResults.EMPTY),
+                    settings,
+                    mapping,
                     prevState.nodes().getSmallestNonClientNodeVersion())
                     .putAlias(alias)
                     .build();
@@ -491,8 +491,9 @@ public class SQLExecutor {
          */
         public Builder addTable(String createTableStmt) throws IOException {
             CreateTable stmt = (CreateTable) SqlParser.createStatement(createTableStmt);
+            CoordinatorTxnCtx txnCtx = new CoordinatorTxnCtx(SessionContext.systemSessionContext());
             AnalyzedCreateTableStatement analyzedStmt = createTableStatementAnalyzer.analyze(
-                stmt, ParamTypeHints.EMPTY.EMPTY, new CoordinatorTxnCtx(SessionContext.systemSessionContext()));
+                stmt, ParamTypeHints.EMPTY, txnCtx);
 
             if ((!analyzedStmt.partitionByColumns().isEmpty())) {
                 throw new IllegalArgumentException("use addPartitionedTable(..) to add partitioned tables");
@@ -501,8 +502,8 @@ public class SQLExecutor {
             RelationName relationName = analyzedStmt.relationName();
             IndexMetaData indexMetaData = getIndexMetaData(
                 relationName.indexNameOrAlias(),
-                analyzedStmt.createSettings(Row.EMPTY, SubQueryResults.EMPTY),
-                analyzedStmt.createMapping(Row.EMPTY, SubQueryResults.EMPTY),
+                analyzedStmt.createSettings(txnCtx, functions, Row.EMPTY, SubQueryResults.EMPTY),
+                analyzedStmt.createMapping(txnCtx, functions, Row.EMPTY, SubQueryResults.EMPTY),
                 prevState.nodes().getSmallestNonClientNodeVersion()
             ).build();
 

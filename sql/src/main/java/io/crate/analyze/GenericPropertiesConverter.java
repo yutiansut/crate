@@ -55,7 +55,7 @@ public class GenericPropertiesConverter {
             for (Expression expression : array.values()) {
                 values.add(ExpressionToStringVisitor.convert(expression, parameters));
             }
-            builder.putList(name, values.toArray(new String[0]));
+            builder.putList(name, values);
         } else {
             builder.put(name, ExpressionToStringVisitor.convert(value, parameters));
         }

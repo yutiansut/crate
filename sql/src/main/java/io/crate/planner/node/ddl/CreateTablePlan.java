@@ -32,6 +32,8 @@ import io.crate.exceptions.SQLExceptions;
 import io.crate.execution.ddl.tables.CreateTableRequest;
 import io.crate.execution.support.OneRowActionListener;
 import io.crate.execution.support.Transports;
+import io.crate.metadata.CoordinatorTxnCtx;
+import io.crate.metadata.Functions;
 import io.crate.metadata.PartitionName;
 import io.crate.planner.DependencyCarrier;
 import io.crate.planner.Plan;
@@ -70,8 +72,10 @@ public class CreateTablePlan implements Plan {
                               RowConsumer consumer,
                               Row params,
                               SubQueryResults subQueryResults) throws Exception {
-        Settings settings = createTable.createSettings(params, subQueryResults);
-        Map<String, Object> mapping = createTable.createMapping(params, subQueryResults);
+        CoordinatorTxnCtx txnCtx = plannerContext.transactionContext();
+        Functions functions = plannerContext.functions();
+        Settings settings = createTable.createSettings(txnCtx, functions, params, subQueryResults);
+        Map<String, Object> mapping = createTable.createMapping(txnCtx, functions, params, subQueryResults);
         var partitionByColumns = createTable.partitionByColumns();
         var relationName = createTable.relationName();
         final CreateTableRequest createTableRequest;

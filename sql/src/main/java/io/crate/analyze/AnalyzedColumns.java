@@ -24,6 +24,7 @@ package io.crate.analyze;
 
 import io.crate.analyze.relations.FieldProvider;
 import io.crate.expression.symbol.Literal;
+import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.table.Operation;
 import io.crate.sql.tree.QualifiedName;
 
@@ -60,5 +61,12 @@ public class AnalyzedColumns implements FieldProvider<Literal>, Iterable<Analyze
 
     public int size() {
         return columns.size();
+    }
+
+    public AnalyzedColumn getSafe(ColumnIdent column) {
+        for (AnalyzedColumn analyzedColumn : columns) {
+            return analyzedColumn;
+        }
+        throw new IllegalArgumentException("Column not found: " + column);
     }
 }

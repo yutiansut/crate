@@ -1064,12 +1064,13 @@ public class DocIndexMetaDataTest extends CrateDummyClusterServiceUnitTest {
             new NumberOfShards(clusterService)
         );
 
-        Analysis analysis = new Analysis(new CoordinatorTxnCtx(SessionContext.systemSessionContext()), ParameterContext.EMPTY, ParamTypeHints.EMPTY);
+        CoordinatorTxnCtx txnCtx = new CoordinatorTxnCtx(SessionContext.systemSessionContext());
+        Analysis analysis = new Analysis(txnCtx, ParameterContext.EMPTY, ParamTypeHints.EMPTY);
         AnalyzedCreateTableStatement analyzedStatement = analyzer.analyze(
             (CreateTable) statement, analysis.paramTypeHints(), analysis.transactionContext());
 
-        Settings settings = analyzedStatement.createSettings(Row.EMPTY, SubQueryResults.EMPTY);
-        Map<String, Object> mapping = analyzedStatement.createMapping(Row.EMPTY, SubQueryResults.EMPTY);
+        Settings settings = analyzedStatement.createSettings(txnCtx, functions, Row.EMPTY, SubQueryResults.EMPTY);
+        Map<String, Object> mapping = analyzedStatement.createMapping(txnCtx, functions, Row.EMPTY, SubQueryResults.EMPTY);
 
         Settings.Builder settingsBuilder = Settings.builder()
             .put("index.number_of_shards", 1)

@@ -24,13 +24,17 @@ package io.crate.analyze;
 
 import io.crate.data.Row;
 import io.crate.expression.symbol.Symbol;
+import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.Functions;
 import io.crate.metadata.RelationName;
 import io.crate.metadata.TransactionContext;
 import io.crate.planner.operators.SubQueryResults;
+import io.crate.types.DataTypes;
+import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,13 +96,26 @@ public class AnalyzedCreateTableStatement implements DDLStatement {
     public Settings createSettings(TransactionContext txnCtx, Functions functions, Row params, SubQueryResults subQueryResults) {
         Settings.Builder builder = Settings.builder();
         for (var entry : TableParameters.CREATE_TABLE_PARAMETERS.supportedSettings().entrySet()) {
-            builder.put(entry.getKey(), entry.getValue().getDefault(Settings.EMPTY).toString());
+            Setting<?> setting = entry.getValue();
+            if (setting instanceof Setting.AffixSetting) {
+                // User defined, has no default value
+                continue;
+            }
+            if (TableParameters.SETTINGS_WITH_COMPUTED_DEFAULT.contains(setting)) {
+                continue;
+            }
+            String settingName = entry.getKey();
+            Object value = setting.getDefault(Settings.EMPTY);
+            if (value instanceof Settings) {
+                builder.put((Settings) value);
+            } else {
+                builder.put(settingName, value.toString());
+            }
         }
         for (var entry : analyzedProperties.entrySet()) {
-            builder.put(
-                entry.getKey(),
-                SymbolEvaluator.evaluate(txnCtx, functions, entry.getValue(), params, subQueryResults).toString()
-            );
+            Object value = SymbolEvaluator.evaluate(txnCtx, functions, entry.getValue(), params, subQueryResults);
+            String settingName = entry.getKey();
+            builder.put(settingName, value.toString());
         }
         return builder.build();
     }
@@ -109,7 +126,14 @@ public class AnalyzedCreateTableStatement implements DDLStatement {
                                              SubQueryResults subQueryResults) {
         Map<String, Object> meta = new HashMap<>();
         if (!partitionByColumns.isEmpty()) {
-            // TODO:
+            List<List<String>> partitionedByNameAndTypePairs = new ArrayList<>(partitionByColumns.size());
+            for (Symbol partitionByColumn : partitionByColumns) {
+                String columnName = DataTypes.STRING.value(SymbolEvaluator.evaluate(
+                    txnCtx, functions, partitionByColumn, params, subQueryResults));
+                ColumnIdent column = ColumnIdent.fromPath(columnName);
+                partitionedByNameAndTypePairs.add(List.of(column.fqn(), analyzedColumns.getSafe(column).type().getName()));
+            }
+            meta.put("partitioned_by", partitionedByNameAndTypePairs);
         }
         Map<String, Object> properties = new HashMap<>(analyzedColumns.size());
         return Map.of(
