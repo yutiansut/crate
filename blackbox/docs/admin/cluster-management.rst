@@ -14,8 +14,8 @@ CrateDB clusters in the sense of forming new clusters, repairing broken
 clusters, and broken nodes.
 
 This section introduces you to the ``crate-node`` command that comprises the
-three modes ``repurpose``, ``unsafe-bootstrap``, and ``detach cluster`` at hand,
-to execute all of the above CrateDB cluster management operations.
+three modes ``repurpose``, ``unsafe-bootstrap``, and ``detach cluster``, that
+allow you to execute all of the above CrateDB cluster management operations.
 
 .. rubric:: Table of contents
 
@@ -44,17 +44,17 @@ Synopsis
 Modes
 ~~~~~
 
-The following list shows the commands to modify and recover nodes and when to use
-which mode in a troubleshooting situation:
+The ``crate-node`` command has three modes. The following list explains their
+typical use-cases:
 
 * Use ``crate-node repurpose`` to delete data from a node if it used to be a
   data node or a master-eligible node but has been repurposed to have none of
   these roles.
 
-* Use ``crate-node detach-cluster`` to move nodes from one cluster to another,
-  move nodes into a new cluster created with ``crate-node unsafe-bootstrap``,
-  and move nodes into a brand-new cluster if ``crate-node unsafe-bootstrap`` was
-  not possible.
+* Use ``crate-node detach-cluster`` to move nodes from one cluster to another.
+  You can also use it to move nodes into a new cluster that you have created
+  with ``crate-node unsafe-bootstrap``. If ``crate-node unsafe-bootstrap`` was
+  not possible, you can use this mode to move nodes into a brand-new cluster.
 
   * Use ``crate-node unsafe-bootstrap`` to perform unsafe cluster bootstrapping.
     It forces one of the nodes to form a new cluster on its own, using its local
@@ -63,5 +63,5 @@ which mode in a troubleshooting situation:
 Troubleshooting with the crate-node CLI tool
 --------------------------------------------
 
-For how-tos and use-case examples respecting the ``crate-node`` command please
-refer to :ref:`crate-node-cli`.
+For how-tos and further more detailed use-case examples on the ``crate-node``
+command please refer to :ref:`crate-node-cli`.
