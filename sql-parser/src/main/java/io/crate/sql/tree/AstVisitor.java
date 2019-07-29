@@ -34,8 +34,8 @@ public abstract class AstVisitor<T, R, C> {
         return null;
     }
 
-    protected R visitExpression(Expression<T> node, C context) {
-        return visitNode(node, context);
+    public R visitExpression(T tExpression, C context) {
+        return null;
     }
 
     protected R visitCurrentTime(CurrentTime<T> node, C context) {

@@ -22,17 +22,12 @@
 package io.crate.sql.tree;
 
 
-public class ParameterExpression<T> extends Expression<T> {
+public class ParameterExpression<T> extends Expression {
 
     private final int position;
 
     public ParameterExpression(int position) {
         this.position = position;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitParameterExpression(this, context);
     }
 
     @Override

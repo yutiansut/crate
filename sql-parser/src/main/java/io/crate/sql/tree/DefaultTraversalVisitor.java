@@ -117,7 +117,7 @@ public abstract class DefaultTraversalVisitor<T extends Node<T>, R, C> extends A
     @Override
     protected R visitSimpleCaseExpression(SimpleCaseExpression<T> node, C context) {
         process(node.getOperand(), context);
-        for (WhenClause clause : node.getWhenClauses()) {
+        for (WhenClause<T> clause : node.getWhenClauses()) {
             process(clause, context);
         }
         if (node.getDefaultValue() != null) {

@@ -25,6 +25,7 @@ package io.crate.sql.parser;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
+import io.crate.common.collections.Lists2;
 import io.crate.sql.parser.antlr.v4.SqlBaseBaseVisitor;
 import io.crate.sql.parser.antlr.v4.SqlBaseLexer;
 import io.crate.sql.parser.antlr.v4.SqlBaseParser;
@@ -127,7 +128,6 @@ import io.crate.sql.tree.NullLiteral;
 import io.crate.sql.tree.ObjectColumnType;
 import io.crate.sql.tree.ObjectLiteral;
 import io.crate.sql.tree.OptimizeStatement;
-import io.crate.sql.tree.ParameterExpression;
 import io.crate.sql.tree.PartitionedBy;
 import io.crate.sql.tree.PrimaryKeyColumnConstraint;
 import io.crate.sql.tree.PrimaryKeyConstraint;
@@ -197,46 +197,44 @@ import java.util.stream.Collectors;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
-class AstBuilder extends SqlBaseBaseVisitor<Node> {
+class AstBuilder extends SqlBaseBaseVisitor<Node<Expression>> {
 
-    private int parameterPosition = 1;
     private static final String CLUSTER = "CLUSTER";
     private static final String SCHEMA = "SCHEMA";
     private static final String TABLE = "TABLE";
     private static final String VIEW = "VIEW";
 
+    private final ExpressionBuilder expressionBuilder = new ExpressionBuilder();
 
     @Override
-    public Node visitSingleStatement(SqlBaseParser.SingleStatementContext context) {
+    public Node<Expression> visitSingleStatement(SqlBaseParser.SingleStatementContext context) {
         return visit(context.statement());
     }
 
     @Override
-    public Node visitSingleExpression(SqlBaseParser.SingleExpressionContext context) {
+    public Node<Expression> visitSingleExpression(SqlBaseParser.SingleExpressionContext context) {
         return visit(context.expr());
     }
 
-    //  Statements
-
     @Override
-    public Node visitBegin(SqlBaseParser.BeginContext context) {
-        return new BeginStatement();
+    public Node<Expression> visitBegin(SqlBaseParser.BeginContext context) {
+        return new BeginStatement<>();
     }
 
     @Override
-    public Node visitCommit(SqlBaseParser.CommitContext context) {
-        return new CommitStatement();
+    public Node<Expression> visitCommit(SqlBaseParser.CommitContext context) {
+        return new CommitStatement<>();
     }
 
     @Override
-    public Node visitOptimize(SqlBaseParser.OptimizeContext context) {
+    public Node<Expression> visitOptimize(SqlBaseParser.OptimizeContext context) {
         return new OptimizeStatement(
             visitCollection(context.tableWithPartitions().tableWithPartition(), Table.class),
             extractGenericProperties(context.withProperties()));
     }
 
     @Override
-    public Node visitCreateTable(SqlBaseParser.CreateTableContext context) {
+    public Node<Expression> visitCreateTable(SqlBaseParser.CreateTableContext context) {
         boolean notExists = context.EXISTS() != null;
         SqlBaseParser.PartitionedByOrClusteredIntoContext tableOptsCtx = context.partitionedByOrClusteredInto();
         Optional<ClusteredBy> clusteredBy = visitIfPresent(tableOptsCtx.clusteredBy(), ClusteredBy.class);
@@ -266,7 +264,7 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
 
     @Override
     public Node visitAlterClusterDecommissionNode(SqlBaseParser.AlterClusterDecommissionNodeContext ctx) {
-        return new DecommissionNodeStatement((Expression) visit(ctx.node));
+        return new DecommissionNodeStatement<>(expressionBuilder.visit(ctx.node));
     }
 
     @Override
@@ -460,30 +458,29 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitCopyFrom(SqlBaseParser.CopyFromContext context) {
+    public Node<Expression> visitCopyFrom(SqlBaseParser.CopyFromContext context) {
         boolean returnSummary = context.SUMMARY() != null;
-        return new CopyFrom(
-            (Table) visit(context.tableWithPartition()),
-            (Expression) visit(context.path),
+        return new CopyFrom<>(
+            (Table<Expression>) visit(context.tableWithPartition()),
+            expressionBuilder.visit(context.path),
             extractGenericProperties(context.withProperties()),
             returnSummary);
     }
 
     @Override
-    public Node visitCopyTo(SqlBaseParser.CopyToContext context) {
+    public Node<Expression> visitCopyTo(SqlBaseParser.CopyToContext context) {
         return new CopyTo<>(
-            (Table) visit(context.tableWithPartition()),
-            context.columns() == null ? emptyList() : visitCollection(context.columns().primaryExpression(), Expression.class),
-            visitIfPresent(context.where(), Expression.class),
+            (Table<Expression>) visit(context.tableWithPartition()),
+            context.columns() == null ? emptyList() : expressionBuilder.visitCollection(context.columns().primaryExpression()),
+            expressionBuilder.visitIfPresent(context.where()),
             context.DIRECTORY() != null,
-            (Expression) visit(context.path),
+            expressionBuilder.visit(context.path),
             extractGenericProperties(context.withProperties()));
     }
 
     @Override
-    public Node visitInsert(SqlBaseParser.InsertContext context) {
+    public Node<Expression> visitInsert(SqlBaseParser.InsertContext context) {
         List<String> columns = identsToStrings(context.ident());
-
         Table<Expression> table;
         try {
             table = (Table<Expression>) visit(context.table());
@@ -499,15 +496,15 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
         }
 
         if (context.insertSource().VALUES() != null) {
-            return new InsertFromValues(
+            return new InsertFromValues<>(
                 table,
                 visitCollection(context.insertSource().values(), ValuesList.class),
                 columns,
                 createDuplicateKeyContext(context));
         }
-        return new InsertFromSubquery(
+        return new InsertFromSubquery<>(
             table,
-            (Query) visit(context.insertSource().query()),
+            (Query<Expression>) visit(context.insertSource().query()),
             columns,
             createDuplicateKeyContext(context));
     }
@@ -515,7 +512,7 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
     /**
      * Creates a {@link io.crate.sql.tree.Insert.DuplicateKeyContext} based on the Insert
      */
-    private Insert.DuplicateKeyContext createDuplicateKeyContext(SqlBaseParser.InsertContext context) {
+    private Insert.DuplicateKeyContext<Expression> createDuplicateKeyContext(SqlBaseParser.InsertContext context) {
         if (context.onConflict() != null) {
             SqlBaseParser.OnConflictContext onConflictContext = context.onConflict();
             final List<String> conflictColumns;
@@ -527,7 +524,7 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
                 conflictColumns = emptyList();
             }
             if (onConflictContext.NOTHING() != null) {
-                return new Insert.DuplicateKeyContext(
+                return new Insert.DuplicateKeyContext<>(
                     Insert.DuplicateKeyContext.Type.ON_CONFLICT_DO_NOTHING,
                     emptyList(),
                     conflictColumns);
@@ -535,13 +532,14 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
                 if (conflictColumns.isEmpty()) {
                     throw new IllegalStateException("ON CONFLICT <conflict_target> <- conflict_target missing");
                 }
-                return new Insert.DuplicateKeyContext(
+                List<Assignment<Expression>> assignments = Lists2.map(onConflictContext.assignment(), x -> visitAssignment(x));
+                return new Insert.DuplicateKeyContext<>(
                     Insert.DuplicateKeyContext.Type.ON_CONFLICT_DO_UPDATE_SET,
-                    visitCollection(onConflictContext.assignment(), Assignment.class),
+                    assignments,
                     conflictColumns);
             }
         } else {
-            return Insert.DuplicateKeyContext.NONE;
+            return (Insert.DuplicateKeyContext<Expression>) Insert.DuplicateKeyContext.NONE;
         }
     }
 
@@ -806,8 +804,8 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
 
     // Properties
 
-    private GenericProperties extractGenericProperties(ParserRuleContext context) {
-        return visitIfPresent(context, GenericProperties.class).orElse(GenericProperties.EMPTY);
+    private GenericProperties<Expression> extractGenericProperties(ParserRuleContext context) {
+        return visitIfPresent(context, GenericProperties.class).orElse(GenericProperties.empty());
     }
 
     @Override
@@ -895,27 +893,30 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitAlterUser(SqlBaseParser.AlterUserContext context) {
-        return new AlterUser(
+    public Node<Expression> visitAlterUser(SqlBaseParser.AlterUserContext context) {
+        return new AlterUser<>(
             getIdentText(context.name),
             extractGenericProperties(context.genericProperties())
         );
     }
 
     @Override
-    public Node visitSetGlobalAssignment(SqlBaseParser.SetGlobalAssignmentContext context) {
-        return new Assignment((Expression) visit(context.primaryExpression()), (Expression) visit(context.expr()));
+    public Node<Expression> visitSetGlobalAssignment(SqlBaseParser.SetGlobalAssignmentContext context) {
+        return new Assignment<>(
+            expressionBuilder.visit(context.primaryExpression()),
+            expressionBuilder.visit(context.expr())
+        );
     }
 
     @Override
-    public Node visitAssignment(SqlBaseParser.AssignmentContext context) {
-        Expression column = (Expression) visit(context.primaryExpression());
+    public Node<Expression> visitAssignment(SqlBaseParser.AssignmentContext context) {
+        Expression column = expressionBuilder.visit(context.primaryExpression());
         // such as it is currently hard to restrict a left side of an assignment to subscript and
         // qname in the grammar, because of our current grammar structure which causes the
         // indirect left-side recursion when attempting to do so. We restrict it before initializing
         // an Assignment.
         if (column instanceof SubscriptExpression || column instanceof QualifiedNameReference) {
-            return new Assignment(column, (Expression) visit(context.expr()));
+            return new Assignment<>(column, expressionBuilder.visit(context.expr()));
         }
         throw new IllegalArgumentException(
             String.format(Locale.ENGLISH, "cannot use expression %s as a left side of an assignment", column));
@@ -1076,8 +1077,7 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
     @Nullable
     private String getIdentText(@Nullable SqlBaseParser.IdentContext ident) {
         if (ident != null) {
-            StringLiteral literal = (StringLiteral) visit(ident);
-            return literal.getValue();
+            return expressionBuilder.visitIdent(ident).getValue();
         }
         return null;
     }
@@ -1603,16 +1603,6 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitParameterPlaceholder(SqlBaseParser.ParameterPlaceholderContext context) {
-        return new ParameterExpression(parameterPosition++);
-    }
-
-    @Override
-    public Node visitPositionalParameter(SqlBaseParser.PositionalParameterContext context) {
-        return new ParameterExpression(Integer.valueOf(context.integerLiteral().getText()));
-    }
-
-    @Override
     public Node visitOn(SqlBaseParser.OnContext context) {
         return BooleanLiteral.TRUE_LITERAL;
     }
@@ -1683,13 +1673,13 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
         return null;
     }
 
-    private <T> Optional<T> visitIfPresent(@Nullable ParserRuleContext context, Class<T> clazz) {
+    private <T extends Node<Expression>> Optional<T> visitIfPresent(@Nullable ParserRuleContext context, Class<T> clazz) {
         return Optional.ofNullable(context)
             .map(this::visit)
             .map(clazz::cast);
     }
 
-    private <T> List<T> visitCollection(List<? extends ParserRuleContext> contexts, Class<T> clazz) {
+    private <T extends Node<Expression>> List<T> visitCollection(List<? extends ParserRuleContext> contexts, Class<T> clazz) {
         return contexts.stream()
             .map(this::visit)
             .map(clazz::cast)

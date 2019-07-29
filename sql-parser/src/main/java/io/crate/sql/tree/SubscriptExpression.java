@@ -22,7 +22,7 @@
 package io.crate.sql.tree;
 
 
-public class SubscriptExpression<T> extends Expression<T> {
+public class SubscriptExpression<T> extends Expression {
 
     private T name;
     private T index;
@@ -38,11 +38,6 @@ public class SubscriptExpression<T> extends Expression<T> {
 
     public T index() {
         return index;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitSubscriptExpression(this, context);
     }
 
     @Override

@@ -21,7 +21,7 @@
 
 package io.crate.sql.tree;
 
-public class QualifiedNameReference<T> extends Expression<T> {
+public class QualifiedNameReference<T> extends Expression {
 
     private final QualifiedName name;
 
@@ -31,11 +31,6 @@ public class QualifiedNameReference<T> extends Expression<T> {
 
     public QualifiedName getName() {
         return name;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitQualifiedNameReference(this, context);
     }
 
     @Override

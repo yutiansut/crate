@@ -28,7 +28,7 @@ import java.util.Locale;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 @Immutable
-public class Extract<T> extends Expression<T> {
+public class Extract<T> extends Expression {
 
     private final T expression;
     private final Field field;
