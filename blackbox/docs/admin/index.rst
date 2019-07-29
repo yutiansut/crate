@@ -21,6 +21,7 @@ database administrator.
     ssl
     optimization
     jobs-management
+    cluster-management
     monitoring
     snapshots
     discovery
