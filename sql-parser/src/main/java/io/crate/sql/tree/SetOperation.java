@@ -24,7 +24,7 @@ package io.crate.sql.tree;
 public abstract class SetOperation<T> extends QueryBody<T> {
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitSetOperation(this, context);
     }
 }

@@ -38,7 +38,7 @@ public class TableFunction<T> extends QueryBody<T> {
         return functionCall.getName().toString();
     }
 
-    public FunctionCall functionCall() {
+    public FunctionCall<T> functionCall() {
         return functionCall;
     }
 

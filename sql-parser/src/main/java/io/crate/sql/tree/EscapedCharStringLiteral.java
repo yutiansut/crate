@@ -38,7 +38,7 @@ public class EscapedCharStringLiteral<T> extends StringLiteral<T> {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitEscapedCharStringLiteral(this, context);
     }
 }

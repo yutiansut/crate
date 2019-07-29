@@ -69,7 +69,7 @@ public class QuerySpecification<T> extends QueryBody<T> {
         this.offset = offset;
     }
 
-    public Select getSelect() {
+    public Select<T> getSelect() {
         return select;
     }
 
@@ -106,7 +106,7 @@ public class QuerySpecification<T> extends QueryBody<T> {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitQuerySpecification(this, context);
     }
 

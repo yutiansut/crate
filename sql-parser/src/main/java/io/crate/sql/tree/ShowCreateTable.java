@@ -28,7 +28,7 @@ public class ShowCreateTable<T> extends Statement<T> {
     private final Table<T> table;
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitShowCreateTable(this, context);
     }
 

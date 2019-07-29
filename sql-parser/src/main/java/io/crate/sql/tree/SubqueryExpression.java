@@ -34,7 +34,7 @@ public class SubqueryExpression<T> extends Expression<T> {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitSubqueryExpression(this, context);
     }
 

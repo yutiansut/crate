@@ -1174,7 +1174,7 @@ public class TestStatementBuilder {
 
     @Test
     public void testSafeSubscriptExpression() {
-        MatchPredicate matchPredicate = (MatchPredicate) SqlParser.createExpression("match (a['1']['2'], 'abc')");
+        MatchPredicate<Expression> matchPredicate = (MatchPredicate<Expression>) SqlParser.createExpression("match (a['1']['2'], 'abc')");
         assertThat(matchPredicate.idents().get(0).columnIdent().toString(), is("\"a\"['1']['2']"));
 
         matchPredicate = (MatchPredicate) SqlParser.createExpression("match (a['1']['2']['4'], 'abc')");

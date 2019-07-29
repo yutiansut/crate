@@ -52,7 +52,7 @@ public final class CreateTable<T> extends Statement<T> {
         return ifNotExists;
     }
 
-    public Table name() {
+    public Table<T> name() {
         return name;
     }
 
@@ -73,7 +73,7 @@ public final class CreateTable<T> extends Statement<T> {
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context) {
+    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitCreateTable(this, context);
     }
 

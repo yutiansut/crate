@@ -124,7 +124,7 @@ public final class SqlFormatter {
         return builder.toString();
     }
 
-    private static class Formatter extends AstVisitor<Void, Integer> {
+    private static class Formatter extends AstVisitor<Expression, Void, Integer> {
         private final StringBuilder builder;
 
         @Nullable
@@ -136,12 +136,12 @@ public final class SqlFormatter {
         }
 
         @Override
-        protected Void visitNode(Node node, Integer indent) {
+        protected Void visitNode(Node<Expression> node, Integer indent) {
             throw new UnsupportedOperationException("not yet implemented: " + node);
         }
 
         @Override
-        public Void visitSwapTable(SwapTable swapTable, Integer indent) {
+        public Void visitSwapTable(SwapTable<Expression> swapTable, Integer indent) {
             append(indent, "ALTER CLUSTER SWAP TABLE ");
             append(indent, swapTable.source().toString());
             append(indent, " TO ");
@@ -154,13 +154,13 @@ public final class SqlFormatter {
         }
 
         @Override
-        public Void visitGCDanglingArtifacts(GCDanglingArtifacts gcDanglingArtifacts, Integer indent) {
+        public Void visitGCDanglingArtifacts(GCDanglingArtifacts<Expression> gcDanglingArtifacts, Integer indent) {
             append(indent, "ALTER CLUSTER GC DANGLING ARTIFACTS");
             return null;
         }
 
         @Override
-        public Void visitAlterClusterDecommissionNode(DecommissionNodeStatement decommissionNodeStatement,
+        public Void visitAlterClusterDecommissionNode(DecommissionNodeStatement<Expression> decommissionNodeStatement,
                                                       Integer indent) {
             append(indent, "ALTER CLUSTER DECOMMISSION ");
             process(decommissionNodeStatement.nodeIdOrName(), indent);
@@ -168,7 +168,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        public Void visitCopyFrom(CopyFrom node, Integer indent) {
+        public Void visitCopyFrom(CopyFrom<Expression> node, Integer indent) {
             append(indent, "COPY ");
             process(node.table(), indent);
             append(indent, " FROM ");
@@ -184,14 +184,14 @@ public final class SqlFormatter {
         }
 
         @Override
-        public Void visitRefreshStatement(RefreshStatement node, Integer indent) {
+        public Void visitRefreshStatement(RefreshStatement<Expression> node, Integer indent) {
             append(indent, "REFRESH TABLE ");
             appendFlatNodeList(node.tables(), indent);
             return null;
         }
 
         @Override
-        protected Void visitExplain(Explain node, Integer indent) {
+        protected Void visitExplain(Explain<Expression> node, Integer indent) {
             append(indent, "EXPLAIN");
             if (node.isAnalyze()) {
                 builder.append(" ANALYZE");
@@ -200,13 +200,13 @@ public final class SqlFormatter {
         }
 
         @Override
-        protected Void visitExpression(Expression node, Integer indent) {
+        protected Void visitExpression(Expression<Expression> node, Integer indent) {
             builder.append(formatStandaloneExpression(node, parameters));
             return null;
         }
 
         @Override
-        protected Void visitQuery(Query node, Integer indent) {
+        protected Void visitQuery(Query<Expression> node, Integer indent) {
             process(node.getQueryBody(), indent);
 
             if (!node.getOrderBy().isEmpty()) {
@@ -231,7 +231,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        protected Void visitQuerySpecification(QuerySpecification node, Integer indent) {
+        protected Void visitQuerySpecification(QuerySpecification<Expression> node, Integer indent) {
             process(node.getSelect(), indent);
 
             if (!node.getFrom().isEmpty()) {
@@ -239,7 +239,7 @@ public final class SqlFormatter {
                 if (node.getFrom().size() > 1) {
                     builder.append('\n');
                     append(indent, "  ");
-                    Iterator<Relation> relations = node.getFrom().iterator();
+                    Iterator<Relation<Expression>> relations = node.getFrom().iterator();
                     while (relations.hasNext()) {
                         process(relations.next(), indent);
                         if (relations.hasNext()) {
@@ -277,7 +277,7 @@ public final class SqlFormatter {
                 append(indent, "WINDOW ");
                 var windows = node.getWindows().entrySet().iterator();
                 while (windows.hasNext()) {
-                    Map.Entry<String, Window> window = windows.next();
+                    Map.Entry<String, Window<Expression>> window = windows.next();
                     append(indent, window.getKey()).append(" AS ");
                     process(window.getValue(), indent);
                     if (windows.hasNext()) {
@@ -334,7 +334,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        protected Void visitSelect(Select node, Integer indent) {
+        protected Void visitSelect(Select<Expression> node, Integer indent) {
             append(indent, "SELECT");
             if (node.isDistinct()) {
                 builder.append(" DISTINCT");
@@ -342,7 +342,7 @@ public final class SqlFormatter {
 
             if (node.getSelectItems().size() > 1) {
                 boolean first = true;
-                for (SelectItem item : node.getSelectItems()) {
+                for (SelectItem<Expression> item : node.getSelectItems()) {
                     builder.append("\n")
                         .append(indentString(indent))
                         .append(first ? "  " : ", ");
@@ -360,7 +360,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        protected Void visitSingleColumn(SingleColumn node, Integer indent) {
+        protected Void visitSingleColumn(SingleColumn<Expression> node, Integer indent) {
             builder.append(formatStandaloneExpression(node.getExpression(), parameters));
             if (node.getAlias() != null) {
                 builder.append(' ')
@@ -395,7 +395,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        protected Void visitTable(Table node, Integer indent) {
+        protected Void visitTable(Table<Expression> node, Integer indent) {
             if (node.excludePartitions()) {
                 builder.append("ONLY ");
             }
@@ -565,7 +565,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        public Void visitColumnDefinition(ColumnDefinition node, Integer indent) {
+        public Void visitColumnDefinition(ColumnDefinition<Expression> node, Integer indent) {
             builder.append(quoteIdentifierIfNeeded(node.ident()))
                 .append(" ");
             ColumnType type = node.type();
@@ -597,7 +597,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        public Void visitObjectColumnType(ObjectColumnType node, Integer indent) {
+        public Void visitObjectColumnType(ObjectColumnType<Expression> node, Integer indent) {
             builder.append("OBJECT");
             if (node.objectType().isPresent()) {
                 builder.append('(');
@@ -699,7 +699,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        protected Void visitJoin(Join node, Integer indent) {
+        protected Void visitJoin(Join<Expression> node, Integer indent) {
             JoinCriteria criteria = node.getCriteria().orElse(null);
             String type = node.getType().toString();
             if (criteria instanceof NaturalJoin) {
@@ -720,7 +720,7 @@ public final class SqlFormatter {
                     .append(String.join(", ", using.getColumns()))
                     .append(")");
             } else if (criteria instanceof JoinOn) {
-                JoinOn on = (JoinOn) criteria;
+                JoinOn<Expression> on = (JoinOn<Expression>) criteria;
                 builder.append(" ON (")
                     .append(formatStandaloneExpression(on.getExpression(), parameters))
                     .append(")");
@@ -762,7 +762,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        public Void visitCreateSnapshot(CreateSnapshot node, Integer indent) {
+        public Void visitCreateSnapshot(CreateSnapshot<Expression> node, Integer indent) {
             builder.append("CREATE SNAPSHOT ")
                 .append(formatQualifiedName(node.name()));
             if (!node.tableList().isEmpty()) {
@@ -803,7 +803,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        public Void visitDropView(DropView node, Integer indent) {
+        public Void visitDropView(DropView<Expression> node, Integer indent) {
             builder.append("DROP VIEW ");
             if (node.ifExists()) {
                 builder.append("IF EXISTS ");
@@ -840,7 +840,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        public Void visitWindow(Window window, Integer indent) {
+        public Void visitWindow(Window<Expression> window, Integer indent) {
             append(indent, "(");
             if (window.windowRef() != null) {
                 append(indent, window.windowRef());
@@ -871,7 +871,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        public Void visitWindowFrame(WindowFrame frame, Integer indent) {
+        public Void visitWindowFrame(WindowFrame<Expression> frame, Integer indent) {
             append(indent, " ");
             append(indent, frame.getType().name());
 
@@ -891,7 +891,7 @@ public final class SqlFormatter {
         }
 
         @Override
-        protected Void visitSortItem(SortItem node, Integer indent) {
+        protected Void visitSortItem(SortItem<Expression> node, Integer indent) {
             process(node.getSortKey(), indent);
             return null;
         }
@@ -988,7 +988,7 @@ public final class SqlFormatter {
         }
     }
 
-    static String formatSortItem(SortItem sortItem, List<Expression> parameters) {
+    static String formatSortItem(SortItem<Expression> sortItem, List<Expression> parameters) {
         StringBuilder sb = new StringBuilder();
         sb.append(formatStandaloneExpression(sortItem.getSortKey(), parameters));
         switch (sortItem.getOrdering()) {

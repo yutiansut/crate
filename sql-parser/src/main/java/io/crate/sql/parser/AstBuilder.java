@@ -471,7 +471,7 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
 
     @Override
     public Node visitCopyTo(SqlBaseParser.CopyToContext context) {
-        return new CopyTo(
+        return new CopyTo<>(
             (Table) visit(context.tableWithPartition()),
             context.columns() == null ? emptyList() : visitCollection(context.columns().primaryExpression(), Expression.class),
             visitIfPresent(context.where(), Expression.class),
@@ -484,11 +484,11 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
     public Node visitInsert(SqlBaseParser.InsertContext context) {
         List<String> columns = identsToStrings(context.ident());
 
-        Table table;
+        Table<Expression> table;
         try {
-            table = (Table) visit(context.table());
+            table = (Table<Expression>) visit(context.table());
         } catch (ClassCastException e) {
-            TableFunction tf = (TableFunction) visit(context.table());
+            TableFunction<Expression> tf = (TableFunction<Expression>) visit(context.table());
             for (Expression ex : tf.functionCall().getArguments()) {
                 if (!(ex instanceof QualifiedNameReference)) {
                     throw new IllegalArgumentException(String.format(Locale.ENGLISH,

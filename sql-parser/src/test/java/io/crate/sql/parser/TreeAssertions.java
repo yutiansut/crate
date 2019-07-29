@@ -24,6 +24,7 @@ package io.crate.sql.parser;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import io.crate.sql.tree.DefaultTraversalVisitor;
+import io.crate.sql.tree.Expression;
 import io.crate.sql.tree.Node;
 import io.crate.sql.tree.Statement;
 
@@ -64,13 +65,13 @@ final class TreeAssertions {
         }
     }
 
-    private static List<Node> linearizeTree(Node tree) {
-        final ImmutableList.Builder<Node> nodes = ImmutableList.builder();
-        new DefaultTraversalVisitor<Node, Void>() {
+    private static List<Node<Expression>> linearizeTree(Node<Expression> tree) {
+        final ImmutableList.Builder<Node<Expression>> nodes = ImmutableList.builder();
+        new DefaultTraversalVisitor<Expression<Expression>, Node<Expression>, Void>() {
             @Override
-            public Node process(Node node, @Nullable Void context) {
-                Node result = super.process(node, context);
-                nodes.add(node);
+            public Node<Expression> process(Node<Expression<Expression>> node, @Nullable Void context) {
+                Node<Expression> result = super.process(node, context);
+                nodes.add(result);
                 return result;
             }
         }.process(tree, null);
