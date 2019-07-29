@@ -21,191 +21,34 @@
 
 package io.crate.sql.tree;
 
-public abstract class DefaultTraversalVisitor<T extends Node<T>, R, C> extends AstVisitor<T, R, C> {
+public abstract class DefaultTraversalVisitor<T, R, C> extends AstVisitor<T, R, C> {
 
-    @Override
-    protected R visitExtract(Extract<T> node, C context) {
-        return process(node.getExpression(), context);
-    }
+    private final ElementVisitor<T, R, C> elementVisitor;
 
-    @Override
-    protected R visitCast(Cast<T> node, C context) {
-        return process(node.getExpression(), context);
-    }
-
-    @Override
-    protected R visitTryCast(TryCast<T> node, C context) {
-        return process(node.getExpression(), context);
-    }
-
-    @Override
-    protected R visitArithmeticExpression(ArithmeticExpression<T> node, C context) {
-        process(node.getLeft(), context);
-        process(node.getRight(), context);
-
-        return null;
-    }
-
-    @Override
-    protected R visitBetweenPredicate(BetweenPredicate<T> node, C context) {
-        process(node.getValue(), context);
-        process(node.getMin(), context);
-        process(node.getMax(), context);
-
-        return null;
-    }
-
-    @Override
-    protected R visitComparisonExpression(ComparisonExpression<T> node, C context) {
-        process(node.getLeft(), context);
-        process(node.getRight(), context);
-
-        return null;
+    protected DefaultTraversalVisitor(ElementVisitor<T, R, C> elementVisitor) {
+        this.elementVisitor = elementVisitor;
     }
 
     @Override
     protected R visitQuery(Query<T> node, C context) {
         process(node.getQueryBody(), context);
-        for (SortItem sortItem : node.getOrderBy()) {
+        for (SortItem<T> sortItem : node.getOrderBy()) {
             process(sortItem, context);
         }
-
         return null;
     }
 
     @Override
     protected R visitSelect(Select<T> node, C context) {
-        for (SelectItem item : node.getSelectItems()) {
+        for (SelectItem<T> item : node.getSelectItems()) {
             process(item, context);
         }
-
         return null;
     }
 
     @Override
     protected R visitSingleColumn(SingleColumn<T> node, C context) {
-        process(node.getExpression(), context);
-
-        return null;
-    }
-
-    @Override
-    protected R visitWhenClause(WhenClause<T> node, C context) {
-        process(node.getOperand(), context);
-        process(node.getResult(), context);
-
-        return null;
-    }
-
-    @Override
-    protected R visitInPredicate(InPredicate<T> node, C context) {
-        process(node.getValue(), context);
-        process(node.getValueList(), context);
-
-        return null;
-    }
-
-    @Override
-    protected R visitFunctionCall(FunctionCall<T> node, C context) {
-        for (T argument : node.getArguments()) {
-            process(argument, context);
-        }
-
-        return null;
-    }
-
-    @Override
-    protected R visitSimpleCaseExpression(SimpleCaseExpression<T> node, C context) {
-        process(node.getOperand(), context);
-        for (WhenClause<T> clause : node.getWhenClauses()) {
-            process(clause, context);
-        }
-        if (node.getDefaultValue() != null) {
-            process(node.getDefaultValue(), context);
-        }
-
-        return null;
-    }
-
-    @Override
-    protected R visitInListExpression(InListExpression<T> node, C context) {
-        for (T value : node.getValues()) {
-            process(value, context);
-        }
-
-        return null;
-    }
-
-    @Override
-    protected R visitIfExpression(IfExpression<T> node, C context) {
-        process(node.getCondition(), context);
-        process(node.getTrueValue(), context);
-        if (node.getFalseValue().isPresent()) {
-            process(node.getFalseValue().get(), context);
-        }
-
-        return null;
-    }
-
-    @Override
-    protected R visitNegativeExpression(NegativeExpression<T> node, C context) {
-        return process(node.getValue(), context);
-    }
-
-    @Override
-    protected R visitNotExpression(NotExpression<T> node, C context) {
-        return process(node.getValue(), context);
-    }
-
-    @Override
-    protected R visitSearchedCaseExpression(SearchedCaseExpression<T> node, C context) {
-        for (WhenClause<T> clause : node.getWhenClauses()) {
-            process(clause, context);
-        }
-        if (node.getDefaultValue() != null) {
-            process(node.getDefaultValue(), context);
-        }
-
-        return null;
-    }
-
-    @Override
-    protected R visitLikePredicate(LikePredicate<T> node, C context) {
-        process(node.getValue(), context);
-        process(node.getPattern(), context);
-        if (node.getEscape() != null) {
-            process(node.getEscape(), context);
-        }
-
-        return null;
-    }
-
-    @Override
-    protected R visitIsNotNullPredicate(IsNotNullPredicate<T> node, C context) {
-        return process(node.getValue(), context);
-    }
-
-    @Override
-    protected R visitIsNullPredicate(IsNullPredicate<T> node, C context) {
-        return process(node.getValue(), context);
-    }
-
-    @Override
-    protected R visitLogicalBinaryExpression(LogicalBinaryExpression<T> node, C context) {
-        process(node.getLeft(), context);
-        process(node.getRight(), context);
-
-        return null;
-    }
-
-    @Override
-    protected R visitSubqueryExpression(SubqueryExpression<T> node, C context) {
-        return process(node.getQuery(), context);
-    }
-
-    @Override
-    protected R visitSortItem(SortItem<T> node, C context) {
-        return process(node.getSortKey(), context);
+        return elementVisitor.visit(node.getExpression(), context);
     }
 
     @Override

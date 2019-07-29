@@ -26,7 +26,7 @@ import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class CurrentTime<T> extends Expression<T> {
+public class CurrentTime extends Expression {
 
     private final Type type;
     private final Optional<Integer> precision;
@@ -53,11 +53,6 @@ public class CurrentTime<T> extends Expression<T> {
 
     public Optional<Integer> getPrecision() {
         return precision;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitCurrentTime(this, context);
     }
 
     @Override

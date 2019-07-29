@@ -1054,30 +1054,12 @@ class AstBuilder extends SqlBaseBaseVisitor<Node<Expression>> {
         return new ArraySubQueryExpression((SubqueryExpression) visit(ctx.subqueryExpression()));
     }
 
-    /*
-    * case sensitivity like it is in postgres
-    * see also http://www.thenextage.com/wordpress/postgresql-case-sensitivity-part-1-the-ddl/
-    *
-    * unfortunately this has to be done in the parser because afterwards the
-    * knowledge of the IDENT / QUOTED_IDENT difference is lost
-    */
-    @Override
-    public Node visitUnquotedIdentifier(SqlBaseParser.UnquotedIdentifierContext context) {
-        return new StringLiteral(context.getText().toLowerCase(Locale.ENGLISH));
-    }
-
-    @Override
-    public Node visitQuotedIdentifier(SqlBaseParser.QuotedIdentifierContext context) {
-        String token = context.getText();
-        String identifier = token.substring(1, token.length() - 1)
-            .replace("\"\"", "\"");
-        return new StringLiteral(identifier);
-    }
 
     @Nullable
     private String getIdentText(@Nullable SqlBaseParser.IdentContext ident) {
         if (ident != null) {
-            return expressionBuilder.visitIdent(ident).getValue();
+            StringLiteral<Expression> expression = (StringLiteral<Expression>) expressionBuilder.visit(ident);
+            return expression.getValue();
         }
         return null;
     }

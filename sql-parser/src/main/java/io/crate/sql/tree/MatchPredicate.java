@@ -27,7 +27,7 @@ import com.google.common.base.Preconditions;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class MatchPredicate<T> extends Expression<T> {
+public class MatchPredicate<T> extends Expression {
 
     private final List<MatchPredicateColumnIdent<T>> idents;
     private final T value;

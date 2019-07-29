@@ -21,7 +21,7 @@
 
 package io.crate.sql.tree;
 
-public class SubqueryExpression<T> extends Expression<T> {
+public class SubqueryExpression<T> extends Expression {
 
     private final Query<T> query;
 
@@ -31,11 +31,6 @@ public class SubqueryExpression<T> extends Expression<T> {
 
     public Query<T> getQuery() {
         return query;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitSubqueryExpression(this, context);
     }
 
     @Override

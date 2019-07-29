@@ -26,11 +26,11 @@ import com.google.common.collect.Multimap;
 
 import javax.annotation.Nullable;
 
-public class ObjectLiteral<T> extends Literal<T> {
+public class ObjectLiteral extends Literal {
 
-    private final Multimap<String, Literal<T>> values;
+    private final Multimap<String, Literal> values;
 
-    public ObjectLiteral(@Nullable Multimap<String, Literal<T>> values) {
+    public ObjectLiteral(@Nullable Multimap<String, Literal> values) {
         if (values == null) {
             this.values = ImmutableMultimap.of();
         } else {
@@ -41,13 +41,8 @@ public class ObjectLiteral<T> extends Literal<T> {
         }
     }
 
-    public Multimap<String, Literal<T>> values() {
+    public Multimap<String, Literal> values() {
         return values;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitObjectLiteral(this, context);
     }
 
     @Override

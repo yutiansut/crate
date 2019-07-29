@@ -27,7 +27,7 @@ import com.google.common.base.Preconditions;
 
 import javax.annotation.Nullable;
 
-public class MatchPredicateColumnIdent<T> extends Expression<T> {
+public class MatchPredicateColumnIdent<T> extends Expression {
 
     private final T ident;
     private final T boost;

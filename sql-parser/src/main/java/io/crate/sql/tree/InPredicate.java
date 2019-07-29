@@ -21,27 +21,22 @@
 
 package io.crate.sql.tree;
 
-public class InPredicate<T> extends Expression<T> {
+public class InPredicate extends Expression {
 
-    private final T value;
-    private final T valueList;
+    private final Expression value;
+    private final Expression valueList;
 
-    public InPredicate(T value, T valueList) {
+    public InPredicate(Expression value, Expression valueList) {
         this.value = value;
         this.valueList = valueList;
     }
 
-    public T getValue() {
+    public Expression getValue() {
         return value;
     }
 
-    public T getValueList() {
+    public Expression getValueList() {
         return valueList;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitInPredicate(this, context);
     }
 
     @Override

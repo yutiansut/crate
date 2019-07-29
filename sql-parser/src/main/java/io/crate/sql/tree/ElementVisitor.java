@@ -22,18 +22,9 @@
 
 package io.crate.sql.tree;
 
-import io.crate.sql.Literals;
+public class ElementVisitor<T, R, C> {
 
-public class EscapedCharStringLiteral extends StringLiteral {
-
-    private final String rawValue;
-
-    public EscapedCharStringLiteral(String rawValue) {
-        super(Literals.replaceEscapedChars(rawValue));
-        this.rawValue = rawValue;
-    }
-
-    public String getRawValue() {
-        return rawValue;
+    public R visit(T expression, C context) {
+        return null;
     }
 }

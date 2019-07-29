@@ -23,7 +23,7 @@ package io.crate.sql.tree;
 
 import com.google.common.base.Preconditions;
 
-public class LongLiteral<T> extends Literal<T> {
+public class LongLiteral extends Literal {
 
     private final long value;
 
@@ -34,11 +34,6 @@ public class LongLiteral<T> extends Literal<T> {
 
     public long getValue() {
         return value;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitLongLiteral(this, context);
     }
 
     @Override

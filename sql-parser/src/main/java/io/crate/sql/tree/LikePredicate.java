@@ -23,13 +23,13 @@ package io.crate.sql.tree;
 
 import com.google.common.base.Preconditions;
 
-public class LikePredicate<T> extends Expression<T> {
+public class LikePredicate extends Expression {
 
-    private final T value;
-    private final T pattern;
-    private final T escape;
+    private final Expression value;
+    private final Expression pattern;
+    private final Expression escape;
 
-    public LikePredicate(T value, T pattern, T escape) {
+    public LikePredicate(Expression value, Expression pattern, Expression escape) {
         Preconditions.checkNotNull(value, "value is null");
         Preconditions.checkNotNull(pattern, "pattern is null");
 
@@ -38,21 +38,16 @@ public class LikePredicate<T> extends Expression<T> {
         this.escape = escape;
     }
 
-    public T getValue() {
+    public Expression getValue() {
         return value;
     }
 
-    public T getPattern() {
+    public Expression getPattern() {
         return pattern;
     }
 
-    public T getEscape() {
+    public Expression getEscape() {
         return escape;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitLikePredicate(this, context);
     }
 
     @Override

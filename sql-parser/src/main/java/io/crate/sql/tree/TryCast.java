@@ -24,12 +24,12 @@ package io.crate.sql.tree;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class TryCast<T> extends Expression<T> {
+public class TryCast extends Expression {
 
-    private final T expression;
+    private final Expression expression;
     private final ColumnType type;
 
-    public TryCast(T expression, ColumnType type) {
+    public TryCast(Expression expression, ColumnType type) {
         checkNotNull(expression, "expression is null");
         checkNotNull(type, "type is null");
 
@@ -37,17 +37,12 @@ public class TryCast<T> extends Expression<T> {
         this.type = type;
     }
 
-    public T getExpression() {
+    public Expression getExpression() {
         return expression;
     }
 
     public ColumnType getType() {
         return type;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitTryCast(this, context);
     }
 
     @Override

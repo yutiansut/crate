@@ -21,27 +21,22 @@
 
 package io.crate.sql.tree;
 
-public class WhenClause<T> extends Expression<T> {
+public class WhenClause extends Expression {
 
-    private final T operand;
-    private final T result;
+    private final Expression operand;
+    private final Expression result;
 
-    public WhenClause(T operand, T result) {
+    public WhenClause(Expression operand, Expression result) {
         this.operand = operand;
         this.result = result;
     }
 
-    public T getOperand() {
+    public Expression getOperand() {
         return operand;
     }
 
-    public T getResult() {
+    public Expression getResult() {
         return result;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitWhenClause(this, context);
     }
 
     @Override

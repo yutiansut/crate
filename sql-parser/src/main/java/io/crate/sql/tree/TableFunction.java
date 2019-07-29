@@ -26,19 +26,19 @@ import com.google.common.base.MoreObjects;
 
 import java.util.Objects;
 
-public class TableFunction<T> extends QueryBody<T> {
+public class TableFunction<U extends Expression, T extends FunctionCall<U>> extends QueryBody<T> {
 
-    private final FunctionCall<T> functionCall;
+    private final T functionCall;
 
-    public TableFunction(FunctionCall<T> functionCall) {
+    public TableFunction(T functionCall) {
         this.functionCall = functionCall;
     }
 
-    public String name() {
-        return functionCall.getName().toString();
+    public QualifiedName name() {
+        return functionCall.getName();
     }
 
-    public FunctionCall<T> functionCall() {
+    public T functionCall() {
         return functionCall;
     }
 
@@ -66,4 +66,5 @@ public class TableFunction<T> extends QueryBody<T> {
     public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
         return visitor.visitTableFunction(this, context);
     }
+
 }

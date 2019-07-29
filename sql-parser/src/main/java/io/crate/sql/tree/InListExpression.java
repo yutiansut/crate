@@ -23,21 +23,16 @@ package io.crate.sql.tree;
 
 import java.util.List;
 
-public class InListExpression<T> extends Expression<T> {
+public class InListExpression extends Expression {
 
-    private final List<T> values;
+    private final List<Expression> values;
 
-    public InListExpression(List<T> values) {
+    public InListExpression(List<Expression> values) {
         this.values = values;
     }
 
-    public List<T> getValues() {
+    public List<Expression> getValues() {
         return values;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitInListExpression(this, context);
     }
 
     @Override

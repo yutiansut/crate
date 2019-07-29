@@ -21,7 +21,7 @@
 
 package io.crate.sql.tree;
 
-public class ArithmeticExpression<T> extends Expression<T> {
+public class ArithmeticExpression extends Expression {
 
     public enum Type {
         ADD("+"),
@@ -41,10 +41,10 @@ public class ArithmeticExpression<T> extends Expression<T> {
     }
 
     private final Type type;
-    private final T left;
-    private final T right;
+    private final Expression left;
+    private final Expression right;
 
-    public ArithmeticExpression(Type type, T left, T right) {
+    public ArithmeticExpression(Type type, Expression left, Expression right) {
         this.type = type;
         this.left = left;
         this.right = right;
@@ -54,17 +54,12 @@ public class ArithmeticExpression<T> extends Expression<T> {
         return type;
     }
 
-    public T getLeft() {
+    public Expression getLeft() {
         return left;
     }
 
-    public T getRight() {
+    public Expression getRight() {
         return right;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitArithmeticExpression(this, context);
     }
 
     @Override

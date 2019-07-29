@@ -23,7 +23,7 @@ package io.crate.sql.tree;
 
 import com.google.common.base.Preconditions;
 
-public class DoubleLiteral<T> extends Literal<T> {
+public class DoubleLiteral extends Literal {
 
     private final double value;
 
@@ -34,11 +34,6 @@ public class DoubleLiteral<T> extends Literal<T> {
 
     public double getValue() {
         return value;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<T, R, C> visitor, C context) {
-        return visitor.visitDoubleLiteral(this, context);
     }
 
     @Override

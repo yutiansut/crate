@@ -32,6 +32,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 public class ExpressionBuilder extends SqlBaseBaseVisitor<Expression> {
@@ -48,9 +49,24 @@ public class ExpressionBuilder extends SqlBaseBaseVisitor<Expression> {
         return new ParameterExpression(Integer.parseInt(context.integerLiteral().getText()));
     }
 
+    /*
+     * case sensitivity like it is in postgres
+     * see also http://www.thenextage.com/wordpress/postgresql-case-sensitivity-part-1-the-ddl/
+     *
+     * unfortunately this has to be done in the parser because afterwards the
+     * knowledge of the IDENT / QUOTED_IDENT difference is lost
+     */
     @Override
-    public StringLiteral<Expression> visitIdent(SqlBaseParser.IdentContext ctx) {
-        return ctx.q
+    public StringLiteral visitUnquotedIdentifier(SqlBaseParser.UnquotedIdentifierContext context) {
+        return new StringLiteral(context.getText().toLowerCase(Locale.ENGLISH));
+    }
+
+    @Override
+    public StringLiteral visitQuotedIdentifier(SqlBaseParser.QuotedIdentifierContext context) {
+        String token = context.getText();
+        String identifier = token.substring(1, token.length() - 1)
+            .replace("\"\"", "\"");
+        return new StringLiteral(identifier);
     }
 
     public Optional<Expression> visitIfPresent(@Nullable ParseTree tree) {
