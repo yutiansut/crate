@@ -48,8 +48,8 @@ operations.
   It forces one of the nodes to form a new cluster on its own, using its local
   copy of the cluster metadata.
 
-.. Examples for the use of the crate-node CLI tool
-.. -----------------------------------------------
+.. Examples for using the crate-node CLI tool
+.. ------------------------------------------
 
 .. Find further, more detailed use-case examples and how-tos on the
 .. ``crate-node`` command at :doc:`crate-node.rst`.
