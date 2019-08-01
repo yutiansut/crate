@@ -15,13 +15,13 @@ database administrator.
 
     system-information
     runtime-config
+    cluster-management
     user-management
     privileges
     auth/index
     ssl
     optimization
     jobs-management
-    cluster-management
     monitoring
     snapshots
     discovery

@@ -4,22 +4,31 @@
 Cluster management
 ==================
 
-With the ``crate-node`` CLI tool you can manage your CrateDB clusters by forming
-new clusters, repairing broken clusters, and by repairing broken nodes.
+This document shows you how to manage your CrateDB clusters.
 
-The ``crate-node`` CLI tool
----------------------------
+Introduction
+------------
 
-The ``crate-node`` CLI tool lets you:
+CrateDB provides a ``crate-node`` command, in the ``bin`` directory, that lets
+you form new clusters, repair broken clusters, and repair broken nodes.
+
+With this command you can:
 
  * Unsafely bootstrap a cluster
  * Detach a node from its cluster
- * Change the role of a node (and may be able to recover some data after a
-   disaster)
+ * Change the role of a node
 
 .. NOTE::
 
-  Cluster management operations on a node are only possible while the node is shut down.
+  Cluster management operations on a node are only possible while the node is
+  shut down.
+
+A good way to start is to invoke ``crate-node`` with the ``-h`` option. This
+will give you an overview of available options.
+
+.. code-block:: console
+
+    sh$ ./bin/crate-node --help
 
 Synopsis
 ~~~~~~~~
@@ -27,16 +36,33 @@ Synopsis
 .. code-block:: console
 
    bin/crate-node repurpose|unsafe-bootstrap|detach-cluster
-   [--ordinal <Integer>] [-C <KeyValuePair>]
+   [--ordinal <Integer>] [-E <KeyValuePair>]
    [-h, --help] ([-s, --silent] | [-v, --verbose])
 
-Modes
-~~~~~
+Command-line options
+~~~~~~~~~~~~~~~~~~~~
 
-The ``crate-node`` CLI tool is comprised of the three modes ``repurpose``,
-``unsafe-bootstrap``, and ``detach-cluster``. You can use them to manage your
-clusters and repurpose nodes, bootstrap clusters, and detach nodes from
-clusters.
++------------------------+-------------------------------------------------------+
+| Option                 | Description                                           |
++========================+=======================================================+
+| ``--ordinal <Integer>``| Specify which node to target, if there is more than   |
+|                        | one node sharing a data path                          |
++------------------------+-------------------------------------------------------+
+| ``-E <KeyValuePair>``  | Print usage information                               |
++------------------------+-------------------------------------------------------+
+| ``-h, --help``         | Return all of the command parameters                  |
++------------------------+-------------------------------------------------------+
+| ``-s, --silent``       | Show minimal output                                   |
++------------------------+-------------------------------------------------------+
+| ``-v, --verbose``      | Shows verbose output                                  |
++------------------------+-------------------------------------------------------+
+
+Commands
+~~~~~~~~
+
+The ``crate-node`` command has three modes – ``repurpose``,
+``unsafe-bootstrap``, and ``detach-cluster``. You can use these commands to
+repurpose nodes, unsafely bootstrap clusters, and detach nodes from clusters.
 
 Repurpose
 ^^^^^^^^^
@@ -95,7 +121,7 @@ Parameters
 Examples
 --------
 
-For how-tos and usage examples regarding the ``crate-node`` CLI tool, please
-refer to `Troubleshooting with the crate-node CLI tool`_.
+For how-tos and usage examples regarding the ``crate-node`` command, please
+refer to `Troubleshooting with the crate-node command`_.
 
-.. _Troubleshooting with the crate-node CLI tool: https://crate.io/docs/crate/guide/en/latest/best-practices/crate-node.html
+.. _Troubleshooting with the crate-node command: https://crate.io/docs/crate/guide/en/latest/best-practices/crate-node.html
