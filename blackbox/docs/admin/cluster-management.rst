@@ -24,7 +24,7 @@ With this command you can:
   shut down.
 
 A good way to start is to invoke ``crate-node`` with the ``-h`` option. This
-will give you an overview of available options.
+will give you an overview of the available options.
 
 .. code-block:: console
 
@@ -41,6 +41,9 @@ Synopsis
 
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
+
+The ``crate-node`` executable supports the following command line options:
+
 
 +------------------------+-------------------------------------------------------+
 | Option                 | Description                                           |
@@ -60,68 +63,43 @@ Command-line options
 Commands
 ~~~~~~~~
 
-The ``crate-node`` command has three modes – ``repurpose``,
-``unsafe-bootstrap``, and ``detach-cluster``. You can use these commands to
+The ``crate-node`` command provides for the three operations ``repurpose``,
+``unsafe-bootstrap``, and ``detach-cluster``. You can use these options to
 repurpose nodes, unsafely bootstrap clusters, and detach nodes from clusters.
 
 Repurpose
 ^^^^^^^^^
-* Use ``crate-node repurpose`` to delete data from a node if it used to be a
-  data node or a master-eligible node but has been repurposed to have none of
+* The ``repurpose`` operation lets you delete data from a node that used to be a
+  data node, or a master-eligible node, but has been repurposed to have none of
   these roles.
+
+  .. code-block:: console
+
+      sh$ crate-node repurpose
 
 Unsafe-bootstrap
 ^^^^^^^^^^^^^^^^
-* Use ``crate-node unsafe-bootstrap`` to perform unsafe cluster bootstrapping.
-  It forces one of the nodes to form a new cluster on its own, using its local
-  copy of the cluster metadata.
+* The ``unsafe-bootstrap`` operation lets you force one of the nodes to form a
+  new cluster on its own, using its local copy of the cluster metadata. To
+  perform unsafe cluster bootstrapping, run:
+
+  .. code-block:: console
+
+      sh$ crate-node unsafe-bootstrap
 
 Detach-cluster
 ^^^^^^^^^^^^^^
-* Use ``crate-node detach-cluster`` to move nodes from one cluster to another.
-  You can also use it to move nodes into a new cluster that you have created
-  with ``crate-node unsafe-bootstrap``. If ``crate-node unsafe-bootstrap`` was
-  not possible, you can use this mode to move nodes into a brand-new cluster.
+*  The ``detach-cluster`` operation lets you move nodes from one cluster to
+   another. You can also move nodes into a cluster that you have created using
+   ``unsafe-bootstrap`` operation. If ``unsafe-bootstrap`` was not possible, it
+   also lets you move nodes into a brand-new cluster.
 
-.. NOTE::
+  .. code-block:: console
 
-  The message `Node was successfully detached from the cluster` means that the
-  ``detach-cluster`` tool successfully completed its job. It does not say that there
-  has not been a data loss.
+      sh$ crate-node detach-cluster
 
-Parameters
-~~~~~~~~~~
+.. SEEALSO::
 
-* ``repurpose``
-    Delete excess data when a node’s role is changed.
+   For step-by-step how-tos and usage examples, please refer to `Troubleshooting with crate-node CLI`_.
 
-* ``unsafe-bootstrap``
-    Unsafely bootstrap this node as a new one-node cluster.
-
-* ``detach-cluster``
-    Specify to unsafely detach this node from its cluster so it can join
-    another cluster.
-
-* ``--ordinal <Integer>``
-    Specify which node to target if there is more than one node sharing a data
-    path. Defaults to 0, meaning to use the first node in the data path.
-
-* ``-C <KeyValuePair>``
-    Configure a setting.
-
-* ``-h, --help``
-    Return all of the command parameters.
-
-* ``-s, --silent``
-    Show minimal output.
-
-* ``-v, --verbose``
-    Show verbose output.
-
-Examples
---------
-
-For how-tos and usage examples regarding the ``crate-node`` command, please
-refer to `Troubleshooting with the crate-node command`_.
-
-.. _Troubleshooting with the crate-node command: https://crate.io/docs/crate/guide/en/latest/best-practices/crate-node.html
+.. _Troubleshooting with crate-node CLI: https://crate.io/docs/crate/guide/en/latest/best-practices/crate-node.html
