@@ -1,6 +1,6 @@
 .. highlight:: sh
 .. _cli:
-.. _cluster_management:
+.. _crate-node:
 
 =========
 CLI tools
@@ -11,8 +11,8 @@ CLI tools
 .. contents::
    :local:
 
-Crate
-=====
+``crate``
+---------
 
 Running CrateDB
 ---------------
@@ -53,8 +53,6 @@ To stop the process that is running in the background send the ``TERM`` or
 
   sh$ kill -TERM `cat ./crate.pid`
 
-The ``crate`` executable supports the following command line options:
-
 Command-line options
 --------------------
 
@@ -76,10 +74,6 @@ Command-line options
 +------------------+----------------------------------------------------------+
 | ``-X``           | Set a nonstandard java option                            |
 +------------------+----------------------------------------------------------+
-
-Example::
-
-  sh$ ./bin/crate -d -p ./crate.pid
 
 .. _cli_signals:
 
@@ -108,8 +102,8 @@ The CrateDB process can handle the following signals.
     the node is stopped, you can perform a `graceful stop`_ with the
     :ref:`DECOMMISSION <alter_cluster_decommission>` statement instead.
 
-Crate-node
-==========
+``crate-node``
+--------------
 
 Managing clusters
 -----------------
@@ -178,13 +172,14 @@ The ``crate-node`` executable supports the following command line options:
 Commands
 --------
 
-The ``crate-node`` command provides for the three operations ``repurpose``,
+The ``crate-node`` command provides for the three commands ``repurpose``,
 ``unsafe-bootstrap``, and ``detach-cluster``. You can use these options to
 repurpose nodes, unsafely bootstrap clusters, and detach nodes from clusters.
 
 Repurpose
 ^^^^^^^^^
-The ``repurpose`` operation lets you delete data from a node that used to be a
+
+The ``repurpose`` command lets you delete data from a node that used to be a
 data node, or a master-eligible node, but has been repurposed to have none of
 these roles.
 
@@ -194,7 +189,8 @@ these roles.
 
 Unsafe-bootstrap
 ^^^^^^^^^^^^^^^^
-The ``unsafe-bootstrap`` operation lets you force one of the nodes to form a
+
+The ``unsafe-bootstrap`` command lets you force one of the nodes to form a
 new cluster on its own, using its local copy of the cluster metadata. To
 perform unsafe cluster bootstrapping, run:
 
@@ -202,11 +198,12 @@ perform unsafe cluster bootstrapping, run:
 
       sh$ crate-node unsafe-bootstrap
 
-Detach-cluster
-^^^^^^^^^^^^^^
-The ``detach-cluster`` operation lets you move nodes from one cluster to
+``etach-cluster``
+^^^^^^^^^^^^^^^^^
+
+The ``detach-cluster`` command lets you move nodes from one cluster to
 another. You can also move nodes into a cluster that you have created using
-``unsafe-bootstrap`` operation. If ``unsafe-bootstrap`` was not possible, it
+``unsafe-bootstrap`` command. If ``unsafe-bootstrap`` was not possible, it
 also lets you move nodes into a brand-new cluster.
 
   .. code-block:: console
@@ -214,5 +211,7 @@ also lets you move nodes into a brand-new cluster.
       sh$ crate-node detach-cluster
 
 .. _Troubleshooting with crate-node CLI: https://crate.io/docs/crate/guide/en/latest/best-practices/crate-node.html
+
 .. _Rolling Upgrade: http://crate.io/docs/crate/guide/best_practices/rolling_upgrade.html
+
 .. _graceful stop: https://crate.io/docs/crate/guide/en/latest/admin/rolling-upgrade.html#step-2-graceful-stop
