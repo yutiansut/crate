@@ -88,6 +88,7 @@ public class WindowAggProjection extends Projection {
             windowFunctions.add(function);
         }
         outputs = new ArrayList<>(windowFunctions);
+        outputs.addAll(standaloneWithInputs);
     }
 
     public WindowDefinition windowDefinition() {

@@ -155,7 +155,10 @@ public class Collect implements LogicalPlan {
                                                 Set<Symbol> usedBeforeNextFetch,
                                                 WhereClause where) {
         if (tableRelation instanceof DocTableRelation) {
-            return generateToCollectWithFetch(((DocTableRelation) tableRelation).tableInfo().ident(), toCollect, usedBeforeNextFetch);
+            return generateToCollectWithFetch(
+                ((DocTableRelation) tableRelation).tableInfo().ident(),
+                toCollect,
+                usedBeforeNextFetch);
         } else {
             if (where.hasQuery()) {
                 NoPredicateVisitor.ensureNoMatchPredicate(where.query());
@@ -177,7 +180,7 @@ public class Collect implements LogicalPlan {
             if (Symbols.containsColumn(unusedCol, DocSysColumns.SCORE)) {
                 scoreCol = unusedCol;
 
-            // literals or functions like random() shouldn't be tracked as fetchable
+                // literals or functions like random() shouldn't be tracked as fetchable
             } else if (SymbolVisitors.any(Symbols.IS_COLUMN, unusedCol)) {
                 fetchable.add(unusedCol);
             }
@@ -185,10 +188,18 @@ public class Collect implements LogicalPlan {
         if (fetchable.isEmpty()) {
             return toCollect;
         }
-        Reference fetchIdRef = DocSysColumns.forTable(relationName, DocSysColumns.FETCHID);
+        // used columns + 1 is mostly correct size guess, except cases when toCollect
+        // contains symbols with that make use of used columns.
         ArrayList<Symbol> preFetchSymbols = new ArrayList<>(usedColumns.size() + 1);
+
+        Reference fetchIdRef = DocSysColumns.forTable(relationName, DocSysColumns.FETCHID);
         preFetchSymbols.add(fetchIdRef);
-        preFetchSymbols.addAll(usedColumns);
+        for (var symbol : toCollect) {
+            if (SymbolVisitors
+                .any(s -> !unusedCols.contains(s) && usedColumns.contains(s), symbol)) {
+                preFetchSymbols.add(symbol);
+            }
+        }
         if (scoreCol != null) {
             preFetchSymbols.add(scoreCol);
         }
