@@ -37,7 +37,8 @@ The synopsis of a window function call is one of the following
 
 where ``function_name`` is a name of
 a :ref:`general-purpose window <general-purpose-window-functions>` or
-:ref:`aggregate <aggregate-functions>` function and ``expression`` is a column reference, scalar function or literal.
+:ref:`aggregate <aggregate-functions>` function 
+and ``expression`` is a column reference, scalar function or literal.
 
 If ``FILTER`` is specified, then only the rows that met the
 :ref:`sql_dql_where_clause` condition are supplied to the window
