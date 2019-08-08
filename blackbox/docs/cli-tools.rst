@@ -12,21 +12,7 @@ CLI tools
    :local:
 
 ``crate``
----------
-
-Running CrateDB
----------------
-
-This document covers the basics of running CrateDB from the command line.
-
-.. SEEALSO::
-
-   For help installing CrateDB for the first time, check out `Getting Started With CrateDB`_.
-
-   If you're deploying CrateDB, check out the `CrateDB Guide`_.
-
-.. _Getting Started With CrateDB: https://crate.io/docs/crate/getting-started/en/latest/install/index.html
-.. _CrateDB Guide: https://crate.io/docs/crate/guide/en/latest/deployment/index.html
+=========
 
 Introduction
 ------------
@@ -52,6 +38,15 @@ To stop the process that is running in the background send the ``TERM`` or
 ::
 
   sh$ kill -TERM `cat ./crate.pid`
+
+.. SEEALSO::
+
+   For help installing CrateDB for the first time, check out `Getting Started With CrateDB`_.
+
+   If you're deploying CrateDB, check out the `CrateDB Guide`_.
+
+.. _Getting Started With CrateDB: https://crate.io/docs/crate/getting-started/en/latest/install/index.html
+.. _CrateDB Guide: https://crate.io/docs/crate/guide/en/latest/deployment/index.html
 
 Command-line options
 --------------------
@@ -102,18 +97,10 @@ The CrateDB process can handle the following signals.
     the node is stopped, you can perform a `graceful stop`_ with the
     :ref:`DECOMMISSION <alter_cluster_decommission>` statement instead.
 
-``crate-node``
---------------
-
 Managing clusters
 -----------------
 
 This section shows you how to manage CrateDB clusters from the command line.
-
-.. SEEALSO::
-
-   For step-by-step how-tos and examples on how to troubleshoot CrateDB clusters and
-   nodes from the command line, please refer to `Troubleshooting with crate-node CLI`_.
 
 Introduction
 ------------
@@ -138,6 +125,11 @@ will give you an overview of the available options.
 .. code-block:: console
 
     sh$ ./bin/crate-node --help
+
+.. SEEALSO::
+
+   For step-by-step how-tos and examples on how to troubleshoot CrateDB clusters and
+   nodes from the command line, please refer to `Troubleshooting with crate-node CLI`_.
 
 Synopsis
 --------
@@ -176,8 +168,8 @@ The ``crate-node`` command provides for the three commands ``repurpose``,
 ``unsafe-bootstrap``, and ``detach-cluster``. You can use these options to
 repurpose nodes, unsafely bootstrap clusters, and detach nodes from clusters.
 
-Repurpose
-^^^^^^^^^
+``Repurpose``
+^^^^^^^^^^^^^
 
 The ``repurpose`` command lets you delete data from a node that used to be a
 data node, or a master-eligible node, but has been repurposed to have none of
@@ -187,8 +179,8 @@ these roles.
 
       sh$ crate-node repurpose
 
-Unsafe-bootstrap
-^^^^^^^^^^^^^^^^
+``Unsafe-bootstrap``
+^^^^^^^^^^^^^^^^^^^^
 
 The ``unsafe-bootstrap`` command lets you force one of the nodes to form a
 new cluster on its own, using its local copy of the cluster metadata. To
@@ -198,8 +190,8 @@ perform unsafe cluster bootstrapping, run:
 
       sh$ crate-node unsafe-bootstrap
 
-``etach-cluster``
-^^^^^^^^^^^^^^^^^
+``detach-cluster``
+^^^^^^^^^^^^^^^^^^
 
 The ``detach-cluster`` command lets you move nodes from one cluster to
 another. You can also move nodes into a cluster that you have created using
