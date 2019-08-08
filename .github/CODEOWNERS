@@ -1,0 +1,3 @@
+*.rst @docs
+blackbox/docs/ @docs
+blackbox/test_docs.py @docs
