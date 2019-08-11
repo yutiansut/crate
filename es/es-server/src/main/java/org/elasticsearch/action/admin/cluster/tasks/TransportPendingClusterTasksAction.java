@@ -28,10 +28,12 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.PendingClusterTask;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
+import java.io.IOException;
 import java.util.List;
 
 public class TransportPendingClusterTasksAction extends TransportMasterNodeReadAction<PendingClusterTasksRequest, PendingClusterTasksResponse> {
@@ -41,7 +43,7 @@ public class TransportPendingClusterTasksAction extends TransportMasterNodeReadA
     @Inject
     public TransportPendingClusterTasksAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                               ThreadPool threadPool, IndexNameExpressionResolver indexNameExpressionResolver) {
-        super(settings, PendingClusterTasksAction.NAME, transportService, clusterService, threadPool, indexNameExpressionResolver, PendingClusterTasksRequest::new);
+        super(settings, PendingClusterTasksAction.NAME, true, transportService, clusterService, threadPool, indexNameExpressionResolver, PendingClusterTasksRequest::new);
         this.clusterService = clusterService;
     }
 
@@ -57,8 +59,8 @@ public class TransportPendingClusterTasksAction extends TransportMasterNodeReadA
     }
 
     @Override
-    protected PendingClusterTasksResponse newResponse() {
-        return new PendingClusterTasksResponse();
+    protected PendingClusterTasksResponse read(StreamInput in) throws IOException {
+        return new PendingClusterTasksResponse(in);
     }
 
     @Override

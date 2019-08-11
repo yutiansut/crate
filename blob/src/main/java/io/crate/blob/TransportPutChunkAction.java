@@ -28,35 +28,44 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
+
+import java.io.IOException;
 
 public class TransportPutChunkAction extends TransportReplicationAction<PutChunkRequest, PutChunkReplicaRequest, PutChunkResponse> {
 
     private final BlobTransferTarget transferTarget;
 
     @Inject
-    public TransportPutChunkAction(Settings settings,
-                                   TransportService transportService,
+    public TransportPutChunkAction(TransportService transportService,
                                    ClusterService clusterService,
                                    IndicesService indicesService,
                                    ThreadPool threadPool,
                                    ShardStateAction shardStateAction,
                                    BlobTransferTarget transferTarget,
                                    IndexNameExpressionResolver indexNameExpressionResolver) {
-        super(settings, PutChunkAction.NAME, transportService, clusterService,
-            indicesService, threadPool, shardStateAction,
-            indexNameExpressionResolver, PutChunkRequest::new, PutChunkReplicaRequest::new, ThreadPool.Names.WRITE);
-
+        super(
+            PutChunkAction.NAME,
+            transportService,
+            clusterService,
+            indicesService,
+            threadPool,
+            shardStateAction,
+            indexNameExpressionResolver,
+            PutChunkRequest::new,
+            PutChunkReplicaRequest::new,
+            ThreadPool.Names.WRITE
+        );
         this.transferTarget = transferTarget;
     }
 
     @Override
-    protected PutChunkResponse newResponseInstance() {
-        return new PutChunkResponse();
+    protected PutChunkResponse read(StreamInput in) throws IOException {
+        return new PutChunkResponse(in);
     }
 
     @Override
@@ -69,23 +78,23 @@ public class TransportPutChunkAction extends TransportReplicationAction<PutChunk
 
     @Override
     protected PrimaryResult<PutChunkReplicaRequest, PutChunkResponse> shardOperationOnPrimary(PutChunkRequest request, IndexShard primary) {
-        PutChunkResponse response = newResponseInstance();
+        PutChunkResponse response = new PutChunkResponse();
         transferTarget.continueTransfer(request, response);
-
-        final PutChunkReplicaRequest replicaRequest = new PutChunkReplicaRequest();
-        replicaRequest.setShardId(request.shardId());
-        replicaRequest.transferId = request.transferId();
-        replicaRequest.sourceNodeId = clusterService.localNode().getId();
-        replicaRequest.currentPos = request.currentPos();
-        replicaRequest.content = request.content();
-        replicaRequest.isLast = request.isLast();
+        final PutChunkReplicaRequest replicaRequest = new PutChunkReplicaRequest(
+            request.shardId(),
+            clusterService.localNode().getId(),
+            request.transferId(),
+            request.currentPos(),
+            request.content(),
+            request.isLast()
+        );
         replicaRequest.index(request.index());
         return new PrimaryResult<>(replicaRequest, response);
     }
 
     @Override
     protected ReplicaResult shardOperationOnReplica(PutChunkReplicaRequest shardRequest, IndexShard replica) {
-        PutChunkResponse response = newResponseInstance();
+        PutChunkResponse response = new PutChunkResponse();
         transferTarget.continueTransfer(shardRequest, response);
         return new ReplicaResult();
     }

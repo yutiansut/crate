@@ -19,17 +19,14 @@
 
 package org.elasticsearch.action.admin.indices.delete;
 
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.util.CollectionUtils;
 
 import java.io.IOException;
 
-import static org.elasticsearch.action.ValidateActions.addValidationError;
 
 /**
  * A request to delete an index. Best created with {@link org.elasticsearch.client.Requests#deleteIndexRequest(String)}.
@@ -72,15 +69,6 @@ public class DeleteIndexRequest extends AcknowledgedRequest<DeleteIndexRequest> 
     }
 
     @Override
-    public ActionRequestValidationException validate() {
-        ActionRequestValidationException validationException = null;
-        if (CollectionUtils.isEmpty(indices)) {
-            validationException = addValidationError("index / indices is missing", validationException);
-        }
-        return validationException;
-    }
-
-    @Override
     public DeleteIndexRequest indices(String... indices) {
         this.indices = indices;
         return this;
@@ -94,9 +82,8 @@ public class DeleteIndexRequest extends AcknowledgedRequest<DeleteIndexRequest> 
         return indices;
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public DeleteIndexRequest(StreamInput in) throws IOException {
+        super(in);
         indices = in.readStringArray();
         indicesOptions = IndicesOptions.readIndicesOptions(in);
     }

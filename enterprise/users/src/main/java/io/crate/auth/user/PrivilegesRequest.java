@@ -19,8 +19,6 @@
 package io.crate.auth.user;
 
 import io.crate.analyze.user.Privilege;
-import org.elasticsearch.action.ActionRequestValidationException;
-import org.elasticsearch.action.ValidateActions;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -31,11 +29,8 @@ import java.util.Collection;
 
 public class PrivilegesRequest extends AcknowledgedRequest<PrivilegesRequest> {
 
-    private Collection<String> userNames;
-    private Collection<Privilege> privileges;
-
-    PrivilegesRequest() {
-    }
+    private final Collection<String> userNames;
+    private final Collection<Privilege> privileges;
 
     PrivilegesRequest(Collection<String> userNames, Collection<Privilege> privileges) {
         this.userNames = userNames;
@@ -50,21 +45,8 @@ public class PrivilegesRequest extends AcknowledgedRequest<PrivilegesRequest> {
         return privileges;
     }
 
-    @Override
-    public ActionRequestValidationException validate() {
-        ActionRequestValidationException validationException = null;
-        if (userNames == null || userNames.isEmpty()) {
-            validationException = ValidateActions.addValidationError("userNames are missing", null);
-        }
-        if (privileges == null || privileges.isEmpty()) {
-            validationException = ValidateActions.addValidationError("privileges are missing", validationException);
-        }
-        return validationException;
-    }
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public PrivilegesRequest(StreamInput in) throws IOException {
+        super(in);
         int userNamesSize = in.readVInt();
         userNames = new ArrayList<>(userNamesSize);
         for (int i = 0; i < userNamesSize; i++) {

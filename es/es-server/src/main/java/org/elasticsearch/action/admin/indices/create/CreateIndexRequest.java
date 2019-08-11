@@ -21,7 +21,6 @@ package org.elasticsearch.action.admin.indices.create;
 
 import org.elasticsearch.ElasticsearchGenerationException;
 import org.elasticsearch.ElasticsearchParseException;
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
@@ -39,7 +38,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.DeprecationHandler;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
-import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -47,7 +45,6 @@ import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,7 +52,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.elasticsearch.action.ValidateActions.addValidationError;
 import static org.elasticsearch.common.settings.Settings.Builder.EMPTY_SETTINGS;
 import static org.elasticsearch.common.settings.Settings.readSettingsFromStream;
 import static org.elasticsearch.common.settings.Settings.writeSettingsToStream;
@@ -69,7 +65,7 @@ import static org.elasticsearch.common.settings.Settings.writeSettingsToStream;
  * @see org.elasticsearch.client.Requests#createIndexRequest(String)
  * @see CreateIndexResponse
  */
-public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> implements IndicesRequest, ToXContentObject {
+public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> implements IndicesRequest {
 
     public static final ParseField MAPPINGS = new ParseField("mappings");
     public static final ParseField SETTINGS = new ParseField("settings");
@@ -105,15 +101,6 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
     public CreateIndexRequest(String index, Settings settings) {
         this.index = index;
         this.settings = settings;
-    }
-
-    @Override
-    public ActionRequestValidationException validate() {
-        ActionRequestValidationException validationException = null;
-        if (index == null) {
-            validationException = addValidationError("index is missing", validationException);
-        }
-        return validationException;
     }
 
     @Override
@@ -454,10 +441,8 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
         return waitForActiveShards(ActiveShardCount.from(waitForActiveShards));
     }
 
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public CreateIndexRequest(StreamInput in) throws IOException {
+        super(in);
         cause = in.readString();
         index = in.readString();
         settings = readSettingsFromStream(in);
@@ -469,7 +454,7 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
         }
         int aliasesSize = in.readVInt();
         for (int i = 0; i < aliasesSize; i++) {
-            aliases.add(Alias.read(in));
+            aliases.add(new Alias(in));
         }
         updateAllTypes = in.readBoolean();
         waitForActiveShards = ActiveShardCount.readFrom(in);
@@ -492,34 +477,5 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
         }
         out.writeBoolean(updateAllTypes);
         waitForActiveShards.writeTo(out);
-    }
-
-    @Override
-    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.startObject();
-        innerToXContent(builder, params);
-        builder.endObject();
-        return builder;
-    }
-
-    public XContentBuilder innerToXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.startObject(SETTINGS.getPreferredName());
-        settings.toXContent(builder, params);
-        builder.endObject();
-
-        builder.startObject(MAPPINGS.getPreferredName());
-        for (Map.Entry<String, String> entry : mappings.entrySet()) {
-            try (InputStream stream = new BytesArray(entry.getValue()).streamInput()) {
-                builder.rawField(entry.getKey(), stream, XContentType.JSON);
-            }
-        }
-        builder.endObject();
-
-        builder.startObject(ALIASES.getPreferredName());
-        for (Alias alias : aliases) {
-            alias.toXContent(builder, params);
-        }
-        builder.endObject();
-        return builder;
     }
 }

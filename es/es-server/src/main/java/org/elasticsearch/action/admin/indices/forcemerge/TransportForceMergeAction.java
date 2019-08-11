@@ -51,14 +51,22 @@ public class TransportForceMergeAction extends TransportBroadcastByNodeAction<Fo
                                      TransportService transportService,
                                      IndicesService indicesService,
                                      IndexNameExpressionResolver indexNameExpressionResolver) {
-        super(ForceMergeAction.NAME, threadPool, clusterService, transportService, indexNameExpressionResolver,
-                ForceMergeRequest::new, ThreadPool.Names.FORCE_MERGE);
+        super(
+            ForceMergeAction.NAME,
+            threadPool,
+            clusterService,
+            transportService,
+            indexNameExpressionResolver,
+            ForceMergeRequest::new,
+            ThreadPool.Names.FORCE_MERGE,
+            true
+        );
         this.indicesService = indicesService;
     }
 
     @Override
     protected EmptyResult readShardResult(StreamInput in) throws IOException {
-        return EmptyResult.readEmptyResultFrom(in);
+        return EmptyResult.INSTANCE;
     }
 
     @Override
@@ -68,9 +76,7 @@ public class TransportForceMergeAction extends TransportBroadcastByNodeAction<Fo
 
     @Override
     protected ForceMergeRequest readRequestFrom(StreamInput in) throws IOException {
-        final ForceMergeRequest request = new ForceMergeRequest();
-        request.readFrom(in);
-        return request;
+        return new ForceMergeRequest(in);
     }
 
     @Override

@@ -67,7 +67,7 @@ public class TransportUpgradeAction extends TransportBroadcastByNodeAction<Upgra
                                   IndicesService indicesService,
                                   IndexNameExpressionResolver indexNameExpressionResolver,
                                   TransportUpgradeSettingsAction upgradeSettingsAction) {
-        super(UpgradeAction.NAME, threadPool, clusterService, transportService, indexNameExpressionResolver, UpgradeRequest::new, ThreadPool.Names.FORCE_MERGE);
+        super(UpgradeAction.NAME, threadPool, clusterService, transportService, indexNameExpressionResolver, UpgradeRequest::new, ThreadPool.Names.FORCE_MERGE, true);
         this.indicesService = indicesService;
         this.upgradeSettingsAction = upgradeSettingsAction;
     }
@@ -130,16 +130,12 @@ public class TransportUpgradeAction extends TransportBroadcastByNodeAction<Upgra
 
     @Override
     protected ShardUpgradeResult readShardResult(StreamInput in) throws IOException {
-        ShardUpgradeResult result = new ShardUpgradeResult();
-        result.readFrom(in);
-        return result;
+        return new ShardUpgradeResult(in);
     }
 
     @Override
     protected UpgradeRequest readRequestFrom(StreamInput in) throws IOException {
-        UpgradeRequest request = new UpgradeRequest();
-        request.readFrom(in);
-        return request;
+        return new UpgradeRequest(in);
     }
 
     /**

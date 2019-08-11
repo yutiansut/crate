@@ -19,14 +19,12 @@
 
 package org.elasticsearch.action.admin.cluster.snapshots.delete;
 
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
 import java.io.IOException;
 
-import static org.elasticsearch.action.ValidateActions.addValidationError;
 
 /**
  * Delete snapshot request
@@ -71,19 +69,6 @@ public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotReque
         out.writeString(snapshot);
     }
 
-    @Override
-    public ActionRequestValidationException validate() {
-        ActionRequestValidationException validationException = null;
-        if (repository == null) {
-            validationException = addValidationError("repository is missing", validationException);
-        }
-        if (snapshot == null) {
-            validationException = addValidationError("snapshot is missing", validationException);
-        }
-        return validationException;
-    }
-
-
     public DeleteSnapshotRequest repository(String repository) {
         this.repository = repository;
         return this;
@@ -115,10 +100,5 @@ public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotReque
     public DeleteSnapshotRequest snapshot(String snapshot) {
         this.snapshot = snapshot;
         return this;
-    }
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 }

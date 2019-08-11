@@ -21,7 +21,6 @@ package org.elasticsearch.action.support.replication;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ShardOperationFailedException;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.Nullable;
@@ -33,32 +32,31 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.transport.TransportResponse;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken;
 
 /**
  * Base class for write action responses.
  */
-public class ReplicationResponse extends ActionResponse {
+public class ReplicationResponse extends TransportResponse {
 
     public static final ReplicationResponse.ShardInfo.Failure[] EMPTY = new ReplicationResponse.ShardInfo.Failure[0];
 
     private ShardInfo shardInfo;
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public ReplicationResponse() {
+    }
+
+    public ReplicationResponse(StreamInput in) throws IOException {
         shardInfo = new ReplicationResponse.ShardInfo(in);
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        super.writeTo(out);
         shardInfo.writeTo(out);
     }
 
@@ -94,9 +92,7 @@ public class ReplicationResponse extends ActionResponse {
             int size = in.readVInt();
             failures = new Failure[size];
             for (int i = 0; i < size; i++) {
-                Failure failure = new Failure();
-                failure.readFrom(in);
-                failures[i] = failure;
+                failures[i] = new Failure(in);
             }
         }
 
@@ -167,41 +163,6 @@ public class ReplicationResponse extends ActionResponse {
             return builder;
         }
 
-        public static ShardInfo fromXContent(XContentParser parser) throws IOException {
-            XContentParser.Token token = parser.currentToken();
-            ensureExpectedToken(XContentParser.Token.START_OBJECT, token, parser::getTokenLocation);
-
-            int total = 0, successful = 0;
-            List<Failure> failuresList = null;
-            String currentFieldName = null;
-            while ((token = parser.nextToken()) != XContentParser.Token.END_OBJECT) {
-                if (token == XContentParser.Token.FIELD_NAME) {
-                    currentFieldName = parser.currentName();
-                } else if (token.isValue()) {
-                    if (TOTAL.equals(currentFieldName)) {
-                        total = parser.intValue();
-                    } else if (SUCCESSFUL.equals(currentFieldName)) {
-                        successful = parser.intValue();
-                    } else {
-                        parser.skipChildren();
-                    }
-                } else if (token == XContentParser.Token.START_ARRAY) {
-                    if (FAILURES.equals(currentFieldName)) {
-                        failuresList = new ArrayList<>();
-                        while (parser.nextToken() != XContentParser.Token.END_ARRAY) {
-                            failuresList.add(Failure.fromXContent(parser));
-                        }
-                    } else {
-                        parser.skipChildren(); // skip potential inner arrays for forward compatibility
-                    }
-                } else if (token == XContentParser.Token.START_OBJECT) {
-                    parser.skipChildren(); // skip potential inner arrays for forward compatibility
-                }
-            }
-            Failure[] failures = failuresList == null ? EMPTY : failuresList.toArray(new Failure[0]);
-            return new ShardInfo(total, successful, failures);
-        }
-
         @Override
         public String toString() {
             return "ShardInfo{" +
@@ -220,18 +181,15 @@ public class ReplicationResponse extends ActionResponse {
             private static final String STATUS = "status";
             private static final String PRIMARY = "primary";
 
-            private ShardId shardId;
-            private String nodeId;
-            private boolean primary;
+            private final ShardId shardId;
+            private final String nodeId;
+            private final boolean primary;
 
             public Failure(ShardId  shardId, @Nullable String nodeId, Exception cause, RestStatus status, boolean primary) {
                 super(shardId.getIndexName(), shardId.getId(), ExceptionsHelper.detailedMessage(cause), status, cause);
                 this.shardId = shardId;
                 this.nodeId = nodeId;
                 this.primary = primary;
-            }
-
-            Failure() {
             }
 
             public ShardId fullShardId() {
@@ -254,8 +212,7 @@ public class ReplicationResponse extends ActionResponse {
                 return primary;
             }
 
-            @Override
-            public void readFrom(StreamInput in) throws IOException {
+            public Failure(StreamInput in) throws IOException {
                 shardId = new ShardId(in);
                 super.shardId = shardId.getId();
                 index = shardId.getIndexName();

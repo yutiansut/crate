@@ -28,11 +28,13 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.IndexTemplateMetaData;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,9 +42,21 @@ import java.util.List;
 public class TransportGetIndexTemplatesAction extends TransportMasterNodeReadAction<GetIndexTemplatesRequest, GetIndexTemplatesResponse> {
 
     @Inject
-    public TransportGetIndexTemplatesAction(Settings settings, TransportService transportService, ClusterService clusterService,
-                                            ThreadPool threadPool, IndexNameExpressionResolver indexNameExpressionResolver) {
-        super(settings, GetIndexTemplatesAction.NAME, transportService, clusterService, threadPool, indexNameExpressionResolver, GetIndexTemplatesRequest::new);
+    public TransportGetIndexTemplatesAction(Settings settings,
+                                            TransportService transportService,
+                                            ClusterService clusterService,
+                                            ThreadPool threadPool,
+                                            IndexNameExpressionResolver indexNameExpressionResolver) {
+        super(
+            settings,
+            GetIndexTemplatesAction.NAME,
+            true,
+            transportService,
+            clusterService,
+            threadPool,
+            indexNameExpressionResolver,
+            GetIndexTemplatesRequest::new
+        );
     }
 
     @Override
@@ -56,8 +70,8 @@ public class TransportGetIndexTemplatesAction extends TransportMasterNodeReadAct
     }
 
     @Override
-    protected GetIndexTemplatesResponse newResponse() {
-        return new GetIndexTemplatesResponse();
+    protected GetIndexTemplatesResponse read(StreamInput in) throws IOException {
+        return new GetIndexTemplatesResponse(in);
     }
 
     @Override

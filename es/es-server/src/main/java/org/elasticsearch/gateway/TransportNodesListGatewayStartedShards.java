@@ -80,8 +80,17 @@ public class TransportNodesListGatewayStartedShards extends
                                                   NodeEnvironment env,
                                                   IndicesService indicesService,
                                                   NamedXContentRegistry namedXContentRegistry) {
-        super(ACTION_NAME, threadPool, clusterService, transportService, indexNameExpressionResolver,
-            Request::new, NodeRequest::new, ThreadPool.Names.FETCH_SHARD_STARTED, NodeGatewayStartedShards.class);
+        super(
+            ACTION_NAME,
+            threadPool,
+            clusterService,
+            transportService,
+            indexNameExpressionResolver,
+            Request::new,
+            NodeRequest::new,
+            ThreadPool.Names.FETCH_SHARD_STARTED,
+            NodeGatewayStartedShards.class
+        );
         this.settings = settings;
         this.nodeEnv = env;
         this.indicesService = indicesService;
@@ -100,8 +109,8 @@ public class TransportNodesListGatewayStartedShards extends
     }
 
     @Override
-    protected NodeGatewayStartedShards newNodeResponse() {
-        return new NodeGatewayStartedShards();
+    protected NodeGatewayStartedShards read(StreamInput in) throws IOException {
+        return new NodeGatewayStartedShards(in);
     }
 
     @Override
@@ -171,24 +180,19 @@ public class TransportNodesListGatewayStartedShards extends
 
     public static class Request extends BaseNodesRequest<Request> {
 
-        private ShardId shardId;
-
-        public Request() {
-        }
+        private final ShardId shardId;
 
         public Request(ShardId shardId, DiscoveryNode[] nodes) {
             super(nodes);
             this.shardId = shardId;
         }
 
-
         public ShardId shardId() {
             return this.shardId;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public Request(StreamInput in) throws IOException {
+            super(in);
             shardId = new ShardId(in);
         }
 
@@ -207,32 +211,23 @@ public class TransportNodesListGatewayStartedShards extends
         }
 
         @Override
-        protected List<NodeGatewayStartedShards> readNodesFrom(StreamInput in) throws IOException {
-            return in.readStreamableList(NodeGatewayStartedShards::new);
-        }
-
-        @Override
         protected void writeNodesTo(StreamOutput out, List<NodeGatewayStartedShards> nodes) throws IOException {
-            out.writeStreamableList(nodes);
+            out.writeList(nodes);
         }
     }
 
 
     public static class NodeRequest extends BaseNodeRequest {
 
-        private ShardId shardId;
-
-        public NodeRequest() {
-        }
+        private final ShardId shardId;
 
         public NodeRequest(String nodeId, Request request) {
             super(nodeId);
             this.shardId = request.shardId();
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public NodeRequest(StreamInput in) throws IOException {
+            super(in);
             shardId = new ShardId(in);
         }
 
@@ -249,12 +244,9 @@ public class TransportNodesListGatewayStartedShards extends
 
     public static class NodeGatewayStartedShards extends BaseNodeResponse {
 
-        private String allocationId = null;
-        private boolean primary = false;
-        private Exception storeException = null;
-
-        public NodeGatewayStartedShards() {
-        }
+        private final String allocationId;
+        private final boolean primary;
+        private final Exception storeException;
 
         public NodeGatewayStartedShards(DiscoveryNode node, String allocationId, boolean primary) {
             this(node, allocationId, primary, null);
@@ -279,13 +271,14 @@ public class TransportNodesListGatewayStartedShards extends
             return this.storeException;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public NodeGatewayStartedShards(StreamInput in) throws IOException {
+            super(in);
             allocationId = in.readOptionalString();
             primary = in.readBoolean();
             if (in.readBoolean()) {
                 storeException = in.readException();
+            } else {
+                storeException = null;
             }
         }
 

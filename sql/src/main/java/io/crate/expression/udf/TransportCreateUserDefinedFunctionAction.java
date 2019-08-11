@@ -28,6 +28,7 @@ package io.crate.expression.udf;
 
 import io.crate.exceptions.ScriptException;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.support.master.TransportMasterNodeAction;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.block.ClusterBlockException;
@@ -36,12 +37,15 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Singleton;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
+import java.io.IOException;
+
 @Singleton
 public class TransportCreateUserDefinedFunctionAction
-    extends TransportMasterNodeAction<CreateUserDefinedFunctionRequest, UserDefinedFunctionResponse> {
+    extends TransportMasterNodeAction<CreateUserDefinedFunctionRequest, AcknowledgedResponse> {
 
     private final UserDefinedFunctionService udfService;
 
@@ -51,8 +55,14 @@ public class TransportCreateUserDefinedFunctionAction
                                                     ThreadPool threadPool,
                                                     UserDefinedFunctionService udfService,
                                                     IndexNameExpressionResolver indexNameExpressionResolver) {
-        super("internal:crate:sql/udf/create", transportService, clusterService, threadPool,
-            indexNameExpressionResolver, CreateUserDefinedFunctionRequest::new);
+        super(
+            "internal:crate:sql/udf/create",
+            transportService,
+            clusterService,
+            threadPool,
+            CreateUserDefinedFunctionRequest::new,
+            indexNameExpressionResolver
+        );
         this.udfService = udfService;
     }
 
@@ -62,21 +72,19 @@ public class TransportCreateUserDefinedFunctionAction
     }
 
     @Override
-    protected UserDefinedFunctionResponse newResponse() {
-        return new UserDefinedFunctionResponse();
+    protected AcknowledgedResponse read(StreamInput in) throws IOException {
+        return new AcknowledgedResponse(in);
     }
 
     @Override
     protected void masterOperation(final CreateUserDefinedFunctionRequest request,
                                    ClusterState state,
-                                   ActionListener<UserDefinedFunctionResponse> listener) throws Exception {
-
+                                   ActionListener<AcknowledgedResponse> listener) throws Exception {
         UserDefinedFunctionMetaData metaData = request.userDefinedFunctionMetaData();
         String errorMessage = udfService.getLanguage(metaData.language()).validate(metaData);
         if (errorMessage != null) {
             throw new ScriptException(errorMessage, metaData.language());
         }
-
         udfService.registerFunction(metaData, request.replace(), listener, request.masterNodeTimeout());
     }
 

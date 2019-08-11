@@ -20,7 +20,6 @@
 package org.elasticsearch.action.admin.cluster.repositories.put;
 
 import org.elasticsearch.ElasticsearchGenerationException;
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -34,10 +33,9 @@ import org.elasticsearch.common.xcontent.XContentType;
 import java.io.IOException;
 import java.util.Map;
 
-import static org.elasticsearch.action.ValidateActions.addValidationError;
+import static org.elasticsearch.common.settings.Settings.Builder.EMPTY_SETTINGS;
 import static org.elasticsearch.common.settings.Settings.readSettingsFromStream;
 import static org.elasticsearch.common.settings.Settings.writeSettingsToStream;
-import static org.elasticsearch.common.settings.Settings.Builder.EMPTY_SETTINGS;
 
 /**
  * Register repository request.
@@ -63,18 +61,6 @@ public class PutRepositoryRequest extends AcknowledgedRequest<PutRepositoryReque
      */
     public PutRepositoryRequest(String name) {
         this.name = name;
-    }
-
-    @Override
-    public ActionRequestValidationException validate() {
-        ActionRequestValidationException validationException = null;
-        if (name == null) {
-            validationException = addValidationError("name is missing", validationException);
-        }
-        if (type == null) {
-            validationException = addValidationError("type is missing", validationException);
-        }
-        return validationException;
     }
 
     /**
@@ -216,9 +202,8 @@ public class PutRepositoryRequest extends AcknowledgedRequest<PutRepositoryReque
         return this;
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public PutRepositoryRequest(StreamInput in) throws IOException {
+        super(in);
         name = in.readString();
         type = in.readString();
         settings = readSettingsFromStream(in);

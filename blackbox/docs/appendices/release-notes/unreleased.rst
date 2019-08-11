@@ -53,6 +53,13 @@ Breaking Changes
 Changes
 =======
 
+- Added :ref:`LPAD <scalar-lpad>` and :ref:`RPAD <scalar-rpad>` scalar functions.
+
+- Added the :ref:`table_parameter.codec` parameter to :ref:`ref-create-table`
+  to control the compression algorithm used to store data.
+
+- Added :ref:`AT TIME ZONE <timestamp-at-time-zone>` syntax.
+
 - Added the :ref:`cluster.routing.allocation.total_shards_per_node
   <cluster.routing.allocation.total_shards_per_node>` setting.
 
@@ -102,4 +109,12 @@ Changes
 Fixes
 =====
 
-None
+- Fixed an ``OUTER JOIN`` issue resulting in an ``ArrayOutOfBoundException``
+  if the gap between matching rows of the tables was growing to big numbers.
+
+- Fixed serialization issue that might occur in distributed queries that
+  contain window function calls with the partition by clause in the select
+  list.
+
+- Fixed a race condition which could result in a ``AlreadyClosedException``
+  when querying the ``sys.shards`` table.

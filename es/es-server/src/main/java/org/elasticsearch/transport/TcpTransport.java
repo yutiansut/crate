@@ -239,8 +239,8 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
         }
 
         @Override
-        public VersionHandshakeResponse newInstance() {
-            return new VersionHandshakeResponse();
+        public VersionHandshakeResponse read(StreamInput in) throws IOException {
+            return new VersionHandshakeResponse(in);
         }
 
         @Override
@@ -1156,7 +1156,7 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
                     if (TransportStatus.isError(status)) {
                         handlerResponseError(streamIn, handler);
                     } else {
-                        handleResponse(remoteAddress, streamIn, handler);
+                        handleResponse(streamIn, handler);
                     }
                     // Check the entire message has been read
                     final int nextByte = streamIn.read();
@@ -1190,11 +1190,10 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
         }
     }
 
-    private void handleResponse(InetSocketAddress remoteAddress, final StreamInput stream, final TransportResponseHandler handler) {
+    private void handleResponse(final StreamInput stream, final TransportResponseHandler handler) {
         final TransportResponse response;
         try {
             response = handler.read(stream);
-            response.remoteAddress(new TransportAddress(remoteAddress));
         } catch (Exception e) {
             handleException(handler, new TransportSerializationException(
                 "Failed to deserialize response from handler [" + handler.getClass().getName() + "]", e));
@@ -1266,7 +1265,6 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
                 transportChannel = new TcpTransportChannel(this, channel, transportName, action, requestId, version, features, profileName,
                     messageLengthBytes);
                 final TransportRequest request = reg.newRequest(stream);
-                request.remoteAddress(new TransportAddress(remoteAddress));
                 // in case we throw an exception, i.e. when the limit is hit, we don't want to verify
                 validateRequest(stream, requestId, action);
                 threadPool.executor(reg.getExecutor()).execute(new RequestHandler(reg, request, transportChannel));
@@ -1335,24 +1333,18 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
     }
 
     private static final class VersionHandshakeResponse extends TransportResponse {
-        private Version version;
+        private final Version version;
 
         private VersionHandshakeResponse(Version version) {
             this.version = version;
         }
 
-        private VersionHandshakeResponse() {
-        }
-
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public VersionHandshakeResponse(StreamInput in) throws IOException {
             version = Version.readVersion(in);
         }
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            super.writeTo(out);
             assert version != null;
             Version.writeVersion(version, out);
         }

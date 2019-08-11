@@ -19,8 +19,6 @@
 package io.crate.auth.user;
 
 import io.crate.user.SecureHash;
-import org.elasticsearch.action.ActionRequestValidationException;
-import org.elasticsearch.action.ValidateActions;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -30,12 +28,9 @@ import java.io.IOException;
 
 public class CreateUserRequest extends AcknowledgedRequest<CreateUserRequest> {
 
-    private String userName;
+    private final String userName;
     @Nullable
-    private SecureHash secureHash;
-
-    public CreateUserRequest() {
-    }
+    private final SecureHash secureHash;
 
     public CreateUserRequest(String userName, @Nullable SecureHash attributes) {
         this.userName = userName;
@@ -51,17 +46,8 @@ public class CreateUserRequest extends AcknowledgedRequest<CreateUserRequest> {
         return secureHash;
     }
 
-    @Override
-    public ActionRequestValidationException validate() {
-        if (userName == null) {
-            return ValidateActions.addValidationError("userName is missing", null);
-        }
-        return null;
-    }
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public CreateUserRequest(StreamInput in) throws IOException {
+        super(in);
         userName = in.readString();
         secureHash = in.readOptionalWriteable(SecureHash::readFrom);
     }

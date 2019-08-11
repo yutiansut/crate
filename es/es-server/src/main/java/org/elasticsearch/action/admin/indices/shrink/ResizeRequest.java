@@ -18,31 +18,25 @@
  */
 package org.elasticsearch.action.admin.indices.shrink;
 
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.IndicesRequest;
-import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
-import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ObjectParser;
-import org.elasticsearch.common.xcontent.ToXContentObject;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.util.Objects;
 
-import static org.elasticsearch.action.ValidateActions.addValidationError;
 
 /**
  * Request class to shrink an index into a single shard
  */
-public class ResizeRequest extends AcknowledgedRequest<ResizeRequest> implements IndicesRequest, ToXContentObject {
+public class ResizeRequest extends AcknowledgedRequest<ResizeRequest> implements IndicesRequest {
 
     public static final ObjectParser<ResizeRequest, Void> PARSER = new ObjectParser<>("resize_request", null);
     static {
@@ -64,34 +58,13 @@ public class ResizeRequest extends AcknowledgedRequest<ResizeRequest> implements
         this.sourceIndex = sourceIndex;
     }
 
-    @Override
-    public ActionRequestValidationException validate() {
-        ActionRequestValidationException validationException = targetIndexRequest == null ? null : targetIndexRequest.validate();
-        if (sourceIndex == null) {
-            validationException = addValidationError("source index is missing", validationException);
-        }
-        if (targetIndexRequest == null) {
-            validationException = addValidationError("target index request is missing", validationException);
-        }
-        if (targetIndexRequest.settings().getByPrefix("index.sort.").isEmpty() == false) {
-            validationException = addValidationError("can't override index sort when resizing an index", validationException);
-        }
-        if (type == ResizeType.SPLIT && IndexMetaData.INDEX_NUMBER_OF_SHARDS_SETTING.exists(targetIndexRequest.settings()) == false) {
-            validationException = addValidationError("index.number_of_shards is required for split operations", validationException);
-        }
-        assert copySettings == null || copySettings;
-        return validationException;
-    }
-
     public void setSourceIndex(String index) {
         this.sourceIndex = index;
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        targetIndexRequest = new CreateIndexRequest();
-        targetIndexRequest.readFrom(in);
+    public ResizeRequest(StreamInput in) throws IOException {
+        super(in);
+        targetIndexRequest = new CreateIndexRequest(in);
         sourceIndex = in.readString();
         type = in.readEnum(ResizeType.class);
         copySettings = in.readOptionalBoolean();
@@ -184,27 +157,6 @@ public class ResizeRequest extends AcknowledgedRequest<ResizeRequest> implements
 
     public Boolean getCopySettings() {
         return copySettings;
-    }
-
-    @Override
-    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.startObject();
-        {
-            builder.startObject(CreateIndexRequest.SETTINGS.getPreferredName());
-            {
-                targetIndexRequest.settings().toXContent(builder, params);
-            }
-            builder.endObject();
-            builder.startObject(CreateIndexRequest.ALIASES.getPreferredName());
-            {
-                for (Alias alias : targetIndexRequest.aliases()) {
-                    alias.toXContent(builder, params);
-                }
-            }
-            builder.endObject();
-        }
-        builder.endObject();
-        return builder;
     }
 
     public void fromXContent(XContentParser parser) throws IOException {

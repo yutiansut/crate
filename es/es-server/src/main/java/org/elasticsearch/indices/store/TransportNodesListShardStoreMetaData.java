@@ -36,7 +36,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.io.stream.Streamable;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
@@ -100,8 +100,8 @@ public class TransportNodesListShardStoreMetaData extends TransportNodesAction<T
     }
 
     @Override
-    protected NodeStoreFilesMetaData newNodeResponse() {
-        return new NodeStoreFilesMetaData();
+    protected NodeStoreFilesMetaData read(StreamInput in) throws IOException {
+        return new NodeStoreFilesMetaData(in);
     }
 
     @Override
@@ -175,12 +175,9 @@ public class TransportNodesListShardStoreMetaData extends TransportNodesAction<T
         }
     }
 
-    public static class StoreFilesMetaData implements Iterable<StoreFileMetaData>, Streamable {
-        private ShardId shardId;
-        Store.MetadataSnapshot metadataSnapshot;
-
-        StoreFilesMetaData() {
-        }
+    public static class StoreFilesMetaData implements Iterable<StoreFileMetaData>, Writeable {
+        private final ShardId shardId;
+        private final Store.MetadataSnapshot metadataSnapshot;
 
         public StoreFilesMetaData(ShardId shardId, Store.MetadataSnapshot metadataSnapshot) {
             this.shardId = shardId;
@@ -208,14 +205,7 @@ public class TransportNodesListShardStoreMetaData extends TransportNodesAction<T
             return metadataSnapshot.asMap().get(name);
         }
 
-        public static StoreFilesMetaData readStoreFilesMetaData(StreamInput in) throws IOException {
-            StoreFilesMetaData md = new StoreFilesMetaData();
-            md.readFrom(in);
-            return md;
-        }
-
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
+        public StoreFilesMetaData(StreamInput in) throws IOException {
             shardId = new ShardId(in);
             this.metadataSnapshot = new Store.MetadataSnapshot(in);
         }
@@ -245,19 +235,15 @@ public class TransportNodesListShardStoreMetaData extends TransportNodesAction<T
 
     public static class Request extends BaseNodesRequest<Request> {
 
-        private ShardId shardId;
-
-        public Request() {
-        }
+        private final ShardId shardId;
 
         public Request(ShardId shardId, DiscoveryNode[] nodes) {
             super(nodes);
             this.shardId = shardId;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public Request(StreamInput in) throws IOException {
+            super(in);
             shardId = new ShardId(in);
         }
 
@@ -275,32 +261,23 @@ public class TransportNodesListShardStoreMetaData extends TransportNodesAction<T
         }
 
         @Override
-        protected List<NodeStoreFilesMetaData> readNodesFrom(StreamInput in) throws IOException {
-            return in.readList(NodeStoreFilesMetaData::readListShardStoreNodeOperationResponse);
-        }
-
-        @Override
         protected void writeNodesTo(StreamOutput out, List<NodeStoreFilesMetaData> nodes) throws IOException {
-            out.writeStreamableList(nodes);
+            out.writeList(nodes);
         }
     }
 
 
     public static class NodeRequest extends BaseNodeRequest {
 
-        private ShardId shardId;
-
-        public NodeRequest() {
-        }
+        private final ShardId shardId;
 
         NodeRequest(String nodeId, TransportNodesListShardStoreMetaData.Request request) {
             super(nodeId);
             this.shardId = request.shardId;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public NodeRequest(StreamInput in) throws IOException {
+            super(in);
             shardId = new ShardId(in);
         }
 
@@ -313,36 +290,26 @@ public class TransportNodesListShardStoreMetaData extends TransportNodesAction<T
 
     public static class NodeStoreFilesMetaData extends BaseNodeResponse {
 
-        private StoreFilesMetaData storeFilesMetaData;
-
-        NodeStoreFilesMetaData() {
-        }
+        private final StoreFilesMetaData storeFilesMetaData;
 
         public NodeStoreFilesMetaData(DiscoveryNode node, StoreFilesMetaData storeFilesMetaData) {
             super(node);
             this.storeFilesMetaData = storeFilesMetaData;
         }
 
-        public StoreFilesMetaData storeFilesMetaData() {
-            return storeFilesMetaData;
-        }
-
-        public static NodeStoreFilesMetaData readListShardStoreNodeOperationResponse(StreamInput in) throws IOException {
-            NodeStoreFilesMetaData resp = new NodeStoreFilesMetaData();
-            resp.readFrom(in);
-            return resp;
-        }
-
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            storeFilesMetaData = StoreFilesMetaData.readStoreFilesMetaData(in);
+        public NodeStoreFilesMetaData(StreamInput in) throws IOException {
+            super(in);
+            storeFilesMetaData = new StoreFilesMetaData(in);
         }
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             super.writeTo(out);
             storeFilesMetaData.writeTo(out);
+        }
+
+        public StoreFilesMetaData storeFilesMetaData() {
+            return storeFilesMetaData;
         }
 
         @Override

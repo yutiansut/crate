@@ -20,7 +20,6 @@
 package org.elasticsearch.action.admin.indices.upgrade.post;
 
 import org.elasticsearch.Version;
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -30,7 +29,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.elasticsearch.action.ValidateActions.addValidationError;
 
 /**
  * Request for an update index settings action
@@ -51,17 +49,6 @@ public class UpgradeSettingsRequest extends AcknowledgedRequest<UpgradeSettingsR
         this.versions = versions;
     }
 
-
-    @Override
-    public ActionRequestValidationException validate() {
-        ActionRequestValidationException validationException = null;
-        if (versions.isEmpty()) {
-            validationException = addValidationError("no indices to update", validationException);
-        }
-        return validationException;
-    }
-
-
     Map<String, Tuple<Version, String>> versions() {
         return versions;
     }
@@ -74,10 +61,8 @@ public class UpgradeSettingsRequest extends AcknowledgedRequest<UpgradeSettingsR
         return this;
     }
 
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public UpgradeSettingsRequest(StreamInput in) throws IOException {
+        super(in);
         int size = in.readVInt();
         versions = new HashMap<>();
         for (int i=0; i<size; i++) {

@@ -19,10 +19,13 @@
 
 package org.elasticsearch.action;
 
+import org.elasticsearch.transport.TransportRequest;
+import org.elasticsearch.transport.TransportResponse;
+
 /**
  * A generic action. Should strive to make it a singleton.
  */
-public abstract class GenericAction<Request extends ActionRequest, Response extends ActionResponse> {
+public abstract class GenericAction<Request extends TransportRequest, Response extends TransportResponse> {
 
     private final String name;
 
@@ -39,11 +42,6 @@ public abstract class GenericAction<Request extends ActionRequest, Response exte
     public String name() {
         return this.name;
     }
-
-    /**
-     * Creates a new response instance.
-     */
-    public abstract Response newResponse();
 
     @Override
     public boolean equals(Object o) {
