@@ -110,8 +110,7 @@ final class NumericalIntervalParser {
     private static int parseInteger(String value) {
         BigInteger result = new BigDecimal(value).toBigInteger();
         if (result.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0 ||
-            result.compareTo(BigInteger.valueOf(Integer.MIN_VALUE)) < 0
-        ) {
+            result.compareTo(BigInteger.valueOf(Integer.MIN_VALUE)) < 0) {
             throw new ArithmeticException("Interval field value out of range " + value);
         }
         return result.intValue();

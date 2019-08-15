@@ -157,6 +157,8 @@ public final class IntervalParser {
     }
 
     static int nullSafeIntGet(String value) {
-        return (value == null) ? 0 : Integer.parseInt(value);
+        return (value == null) ? null : Integer.parseInt(value);
     }
+
+
 }

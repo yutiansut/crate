@@ -48,13 +48,13 @@ final class PGIntervalParser {
             return new Period();
         }
 
-        int years = 0;
-        int months = 0;
-        int days = 0;
-        int hours = 0;
-        int minutes = 0;
-        int seconds = 0;
-        int milliSeconds = 0;
+        Integer years = null;
+        Integer months = null;
+        Integer days = null;
+        Integer hours = null;
+        Integer minutes = null;
+        Integer seconds = null;
+        Integer milliSeconds = null;
 
         try {
             String valueToken = null;
@@ -87,7 +87,6 @@ final class PGIntervalParser {
                         seconds = -seconds;
                         milliSeconds = -milliSeconds;
                     }
-
                     valueToken = null;
                 } else {
                     // This handles years, months, days for both, ISO and
@@ -112,10 +111,14 @@ final class PGIntervalParser {
                 }
             }
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Conversion of interval failed", e);
-
+            throw new IllegalArgumentException("Invalid interval format " + value);
         }
-        Period period = new Period(years, months, 0, days, hours, minutes, seconds, milliSeconds);
+
+        if (years == null && months == null && days == null && hours == null && minutes == null && seconds == null) {
+            throw new IllegalArgumentException("Invalid interval format " + value);
+        }
+
+        Period period = buildPeriod(years, months, days, hours, minutes, seconds, milliSeconds);
 
         if (!ISOFormat && value.endsWith("ago")) {
             // Inverse the leading sign
@@ -127,4 +130,38 @@ final class PGIntervalParser {
     private static int parseInteger(String value) {
         return new BigDecimal(value).intValue();
     }
+
+    private static Period buildPeriod(Integer years,
+                              Integer months,
+                              Integer days,
+                              Integer hours,
+                              Integer minutes,
+                              Integer seconds,
+                              Integer millis) {
+        Period period = new Period();
+
+        if (years != null) {
+            period = period.withYears(years);
+        }
+        if (months != null) {
+            period = period.withMonths(months);
+        }
+        if (days != null) {
+            period = period.withDays(days);
+        }
+        if (hours != null) {
+            period = period.withHours(hours);
+        }
+        if (minutes != null) {
+            period = period.withMinutes(minutes);
+        }
+        if (seconds != null) {
+            period = period.withSeconds(seconds);
+        }
+        if (millis != null) {
+            period = period.withMillis(millis);
+        }
+        return period;
+    }
+
 }
