@@ -242,6 +242,10 @@ public class ExpressionAnalyzer {
             name = parts.get(1);
         }
 
+        Symbol filter = node.filter()
+            .map(expression -> convert(expression, context))
+            .orElse(null);
+
         WindowDefinition windowDefinition = getWindowDefinition(node.getWindow(), context);
         if (node.isDistinct()) {
             if (arguments.size() > 1) {
@@ -251,19 +255,23 @@ public class ExpressionAnalyzer {
             Symbol collectSetFunction = allocateFunction(
                 CollectSetAggregation.NAME,
                 arguments,
-                context);
+                filter,
+                context,
+                functions,
+                coordinatorTxnCtx);
 
             // define the outer function which contains the inner function as argument.
             String nodeName = "collection_" + name;
-            List<Symbol> outerArguments = ImmutableList.of(collectSetFunction);
+            List<Symbol> outerArguments = List.of(collectSetFunction);
             try {
-                return allocateBuiltinOrUdfFunction(schema, nodeName, outerArguments, windowDefinition, context);
+                return allocateBuiltinOrUdfFunction(
+                    schema, nodeName, outerArguments, null, windowDefinition, context);
             } catch (UnsupportedOperationException ex) {
                 throw new UnsupportedOperationException(String.format(Locale.ENGLISH,
                     "unknown function %s(DISTINCT %s)", name, arguments.get(0).valueType()), ex);
             }
         } else {
-            return allocateBuiltinOrUdfFunction(schema, name, arguments, windowDefinition, context);
+            return allocateBuiltinOrUdfFunction(schema, name, arguments, filter, windowDefinition, context);
         }
     }
 
@@ -305,8 +313,8 @@ public class ExpressionAnalyzer {
 
             FrameBoundDefinition endBound = windowFrame.getEnd()
                 .map(end -> convertToAnalyzedFrameBound(context, end))
-                .orElse(new FrameBoundDefinition(FrameBound.Type.CURRENT_ROW));
-            windowFrameDefinition = new WindowFrameDefinition(windowFrame.getType(), startBound, endBound);
+                .orElse(new FrameBoundDefinition(FrameBound.Type.CURRENT_ROW, Literal.NULL));
+            windowFrameDefinition = new WindowFrameDefinition(windowFrame.mode(), startBound, endBound);
         }
 
         return new WindowDefinition(partitionSymbols, orderBy, windowFrameDefinition);
@@ -346,7 +354,7 @@ public class ExpressionAnalyzer {
             throw new IllegalStateException("Frame start cannot be " + startType);
         }
 
-        if (windowFrame.getType() == WindowFrame.Type.RANGE) {
+        if (windowFrame.mode() == WindowFrame.Mode.RANGE) {
             if (startType.equals(FrameBound.Type.PRECEDING) && windowFrame.getStart().getValue() != null) {
                 if (window.getOrderBy().size() != 1) {
                     throw new IllegalStateException("RANGE with offset PRECEDING/FOLLOWING requires exactly one ORDER BY column");
@@ -361,7 +369,7 @@ public class ExpressionAnalyzer {
                 throw new IllegalStateException("Frame end cannot be " + endType);
             }
 
-            if (windowFrame.getType() == WindowFrame.Type.RANGE) {
+            if (windowFrame.mode() == WindowFrame.Mode.RANGE) {
                 if (endType.equals(FrameBound.Type.FOLLOWING) && windowFrame.getEnd().get().getValue() != null) {
                     if (window.getOrderBy().size() != 1) {
                         throw new IllegalStateException("RANGE with offset PRECEDING/FOLLOWING requires exactly one ORDER BY column");
@@ -372,11 +380,9 @@ public class ExpressionAnalyzer {
     }
 
     private FrameBoundDefinition convertToAnalyzedFrameBound(ExpressionAnalysisContext context, FrameBound frameBound) {
-        Symbol startBoundValue = null;
-        if (frameBound.getValue() != null) {
-            startBoundValue = convert(frameBound.getValue(), context);
-        }
-        return new FrameBoundDefinition(frameBound.getType(), startBoundValue);
+        Expression offsetExpression = frameBound.getValue();
+        Symbol offsetSymbol = offsetExpression == null ? Literal.NULL : convert(offsetExpression, context);
+        return new FrameBoundDefinition(frameBound.getType(), offsetSymbol);
     }
 
     public ExpressionAnalyzer copyForOperation(Operation operation) {
@@ -693,35 +699,14 @@ public class ExpressionAnalyzer {
         private Symbol createSubscript(Symbol name, Symbol index, ExpressionAnalysisContext context) {
             String function = name.valueType().id() == ObjectType.ID
                 // we don't know the the concrete object element (return) type
-                ? SubscriptObjectFunction.getNameForReturnType(UndefinedType.INSTANCE)
+                ? SubscriptObjectFunction.NAME
                 : SubscriptFunction.NAME;
             return allocateFunction(function, ImmutableList.of(name, index), context);
         }
 
         private Symbol createSubscript(Symbol symbol, List<String> parts, ExpressionAnalysisContext context) {
-            DataType symbolType = symbol.valueType();
             List<Symbol> arguments = mapTail(symbol, parts, Literal::of);
-            List<DataType> argumentTypes = Symbols.typeView(arguments);
-
-            if (symbolType.id() != ObjectType.ID) {
-                return allocateFunction(
-                    SubscriptObjectFunction.getNameForReturnType(UndefinedType.INSTANCE),
-                    arguments,
-                    context);
-            }
-
-            DataType innerType = ((ObjectType) symbolType).resolveInnerType(parts);
-            if (innerType == null) {
-                innerType = UndefinedType.INSTANCE;
-            }
-            // If the innerType is a object type, we must allocate the function with that concrete type to keep the
-            // allocated inner types as this return type is used on nested calls to resolve further inner types.
-            SubscriptObjectFunction funcImpl = SubscriptObjectFunction.ofReturnType(innerType, argumentTypes);
-            Function func = new Function(funcImpl.info(), arguments);
-            if (Symbols.allLiterals(func)) {
-                return funcImpl.normalizeSymbol(func, coordinatorTxnCtx);
-            }
-            return func;
+            return allocateFunction(SubscriptObjectFunction.NAME, arguments, context);
         }
 
         @Override
@@ -1021,23 +1006,27 @@ public class ExpressionAnalyzer {
     private Symbol allocateBuiltinOrUdfFunction(String schema,
                                                 String functionName,
                                                 List<Symbol> arguments,
+                                                Symbol filter,
                                                 WindowDefinition windowDefinition,
                                                 ExpressionAnalysisContext context) {
-        return allocateBuiltinOrUdfFunction(schema, functionName, arguments, context, functions, windowDefinition, coordinatorTxnCtx);
+        return allocateBuiltinOrUdfFunction(
+            schema, functionName, arguments, filter, context, functions, windowDefinition, coordinatorTxnCtx);
     }
 
     private Symbol allocateFunction(String functionName,
                                     List<Symbol> arguments,
                                     ExpressionAnalysisContext context) {
-        return allocateFunction(functionName, arguments, context, functions, coordinatorTxnCtx);
+        return allocateFunction(functionName, arguments, null, context, functions, coordinatorTxnCtx);
     }
 
     static Symbol allocateFunction(String functionName,
                                    List<Symbol> arguments,
+                                   Symbol filter,
                                    ExpressionAnalysisContext context,
                                    Functions functions,
                                    CoordinatorTxnCtx coordinatorTxnCtx) {
-        return allocateBuiltinOrUdfFunction(null, functionName, arguments, context, functions, null, coordinatorTxnCtx);
+        return allocateBuiltinOrUdfFunction(
+            null, functionName, arguments, filter, context, functions, null, coordinatorTxnCtx);
     }
 
     /**
@@ -1047,6 +1036,7 @@ public class ExpressionAnalyzer {
      * @param schema The schema for udf functions
      * @param functionName The function name of the new function.
      * @param arguments The arguments to provide to the {@link Function}.
+     * @param filter The filter clause to filter {@link Function}'s input values.
      * @param context Context holding the state for the current translation.
      * @param functions The {@link Functions} to normalize constant expressions.
      * @param windowDefinition The definition of the window the allocated function will be executed against.
@@ -1056,6 +1046,7 @@ public class ExpressionAnalyzer {
     private static Symbol allocateBuiltinOrUdfFunction(@Nullable String schema,
                                                        String functionName,
                                                        List<Symbol> arguments,
+                                                       @Nullable Symbol filter,
                                                        ExpressionAnalysisContext context,
                                                        Functions functions,
                                                        @Nullable WindowDefinition windowDefinition,
@@ -1072,8 +1063,11 @@ public class ExpressionAnalyzer {
         if (windowDefinition == null) {
             if (functionInfo.type() == FunctionInfo.Type.AGGREGATE) {
                 context.indicateAggregates();
+            } else if (filter != null) {
+                throw new UnsupportedOperationException(
+                    "Only aggregate functions allow a FILTER clause");
             }
-            newFunction = new Function(functionInfo, castArguments);
+            newFunction = new Function(functionInfo, castArguments, filter);
         } else {
             if (functionInfo.type() != FunctionInfo.Type.WINDOW && functionInfo.type() != FunctionInfo.Type.AGGREGATE) {
                 throw new IllegalArgumentException(String.format(
@@ -1081,7 +1075,11 @@ public class ExpressionAnalyzer {
                     "OVER clause was specified, but %s is neither a window nor an aggregate function.",
                     functionName));
             }
-            newFunction = new WindowFunction(functionInfo, castArguments, windowDefinition);
+            newFunction = new WindowFunction(
+                functionInfo,
+                castArguments,
+                filter,
+                windowDefinition);
         }
         if (context.isEagerNormalizationAllowed() && functionInfo.isDeterministic() && Symbols.allLiterals(newFunction)) {
             return funcImpl.normalizeSymbol(newFunction, coordinatorTxnCtx);
@@ -1188,7 +1186,8 @@ public class ExpressionAnalyzer {
             }
             left = allocateFunction(
                 opName,
-                ImmutableList.of(left, right),
+                List.of(left, right),
+                null,
                 context,
                 functions,
                 coordinatorTxnCtx);

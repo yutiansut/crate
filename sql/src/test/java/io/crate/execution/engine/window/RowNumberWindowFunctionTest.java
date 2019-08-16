@@ -25,19 +25,19 @@ package io.crate.execution.engine.window;
 import io.crate.metadata.ColumnIdent;
 import org.junit.Test;
 
-import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.Matchers.contains;
 
 public class RowNumberWindowFunctionTest extends AbstractWindowFunctionTest {
 
     @Test
-    public void testRowNumberFunction() throws Exception {
+    public void testRowNumberFunction() throws Throwable {
         Object[] expected = new Object[] {1, 2, 3, 4};
 
         assertEvaluate("row_number() over(order by x)",
             contains(expected),
-            Collections.singletonMap(new ColumnIdent("x"), 0),
+           List.of(new ColumnIdent("x")),
             new Object[] {4},
             new Object[] {3},
             new Object[] {2},
@@ -46,11 +46,11 @@ public class RowNumberWindowFunctionTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testRowNumberOverPartitionedWindow() throws Exception {
+    public void testRowNumberOverPartitionedWindow() throws Throwable {
         Object[] expected = new Object[]{1, 2, 3, 1, 2, 3, 1};
         assertEvaluate("row_number() over(partition by x>2)",
                        contains(expected),
-                       Collections.singletonMap(new ColumnIdent("x"), 0),
+                       List.of(new ColumnIdent("x")),
                        new Object[]{1},
                        new Object[]{2},
                        new Object[]{2},
@@ -61,11 +61,11 @@ public class RowNumberWindowFunctionTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testRowNumberOverPartitionedOrderedWindow() throws Exception {
+    public void testRowNumberOverPartitionedOrderedWindow() throws Throwable {
         Object[] expected = new Object[]{1, 2, 3, 1, 2, 3, 1};
         assertEvaluate("row_number() over(partition by x>2 order by x)",
                        contains(expected),
-                       Collections.singletonMap(new ColumnIdent("x"), 0),
+                       List.of(new ColumnIdent("x")),
                        new Object[]{1, 1},
                        new Object[]{2, 2},
                        new Object[]{2, 2},
@@ -76,13 +76,13 @@ public class RowNumberWindowFunctionTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testRowNumberOverUnboundedFollowingFrames() throws Exception {
+    public void testRowNumberOverUnboundedFollowingFrames() throws Throwable {
         Object[] expected = new Object[]{1, 2, 3, 1, 2, 3, 1};
         assertEvaluate("row_number() OVER(" +
                             "PARTITION BY x>2 ORDER BY x RANGE BETWEEN CURRENT ROW and UNBOUNDED FOLLOWING" +
                        ")",
                        contains(expected),
-                       Collections.singletonMap(new ColumnIdent("x"), 0),
+                       List.of(new ColumnIdent("x")),
                        new Object[]{1, 1},
                        new Object[]{2, 2},
                        new Object[]{2, 2},

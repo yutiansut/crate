@@ -22,10 +22,8 @@
 
 package io.crate.planner.operators;
 
-import io.crate.analyze.FrameBoundDefinition;
 import io.crate.analyze.OrderBy;
 import io.crate.analyze.WindowDefinition;
-import io.crate.analyze.WindowFrameDefinition;
 import io.crate.common.collections.Lists2;
 import io.crate.data.Row;
 import io.crate.execution.dsl.phases.MergePhase;
@@ -34,8 +32,10 @@ import io.crate.execution.dsl.projection.WindowAggProjection;
 import io.crate.execution.dsl.projection.builder.InputColumns;
 import io.crate.execution.dsl.projection.builder.ProjectionBuilder;
 import io.crate.execution.engine.pipeline.TopN;
+import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.WindowFunction;
+import io.crate.expression.symbol.WindowFunctionContext;
 import io.crate.planner.ExecutionPlan;
 import io.crate.planner.ExplainLeaf;
 import io.crate.planner.Merge;
@@ -43,7 +43,6 @@ import io.crate.planner.PlannerContext;
 import io.crate.planner.ResultDescription;
 import io.crate.planner.distribution.DistributionInfo;
 import io.crate.planner.distribution.DistributionType;
-import io.crate.sql.tree.WindowFrame;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -54,10 +53,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static io.crate.analyze.SymbolEvaluator.evaluate;
 import static io.crate.execution.dsl.phases.ExecutionPhases.executesOnHandler;
 import static io.crate.planner.operators.LogicalPlanner.extractColumns;
-import static io.crate.types.DataTypes.NUMERIC_AND_TIMESTAMP_TYPES;
 
 public class WindowAgg extends ForwardingLogicalPlan {
 
@@ -77,6 +74,9 @@ public class WindowAgg extends ForwardingLogicalPlan {
             LinkedHashMap<WindowDefinition, ArrayList<WindowFunction>> groupedFunctions = new LinkedHashMap<>();
             for (WindowFunction windowFunction : windowFunctions) {
                 WindowDefinition windowDefinition = windowFunction.windowDefinition();
+                if (windowFunction.filter() != null) {
+                    columnsUsedInFunctions.addAll(extractColumns(windowFunction.filter()));
+                }
                 OrderBy orderBy = windowDefinition.orderBy();
                 if (orderBy != null) {
                     columnsUsedInFunctions.addAll(extractColumns(orderBy.orderBySymbols()));
@@ -90,7 +90,7 @@ public class WindowAgg extends ForwardingLogicalPlan {
 
             LogicalPlan lastWindowAgg = sourcePlan;
             for (Map.Entry<WindowDefinition, ArrayList<WindowFunction>> entry : groupedFunctions.entrySet()) {
-                /**
+                /*
                  * Pass along the source outputs as standalone symbols as they might be required in cases like:
                  *      select x, avg(x) OVER() from t;
                  */
@@ -122,45 +122,33 @@ public class WindowAgg extends ForwardingLogicalPlan {
                                Row params,
                                SubQueryResults subQueryResults) {
         InputColumns.SourceSymbols sourceSymbols = new InputColumns.SourceSymbols(source.outputs());
-        LinkedHashMap<WindowFunction, List<Symbol>> functionsWithInputs =
-            new LinkedHashMap<>(windowFunctions.size(), 1f);
+        ArrayList<WindowFunctionContext> windowFunctionContexts =
+            new ArrayList<>(windowFunctions.size());
+
         SubQueryAndParamBinder binder = new SubQueryAndParamBinder(params, subQueryResults);
-        WindowDefinition mappedWindowDefinition = windowDefinition.map(binder);
-        WindowFrameDefinition windowFrameDefinition = mappedWindowDefinition.windowFrameDefinition();
-        FrameBoundDefinition start = windowFrameDefinition.start();
-        Object startFrameOffset = null;
-        if (start.value() != null) {
-            startFrameOffset = evaluate(
-                plannerContext.transactionContext(),
-                plannerContext.functions(),
-                binder.apply(start.value()),
-                params,
-                subQueryResults);
-            validateOffset(windowFrameDefinition.type(), start.value(), startFrameOffset);
-        }
+        for (var windowFunction : windowFunctions) {
+            var boundWindowFunction = (WindowFunction) binder.apply(windowFunction);
 
-        FrameBoundDefinition end = windowFrameDefinition.end();
-        Object endFrameOffset = null;
-        if (end.value() != null) {
-            endFrameOffset = evaluate(
-                plannerContext.transactionContext(),
-                plannerContext.functions(),
-                binder.apply(end.value()),
-                params,
-                subQueryResults);
-            validateOffset(windowFrameDefinition.type(), end.value(), endFrameOffset);
-        }
+            List<Symbol> inputs = InputColumns.create(
+                boundWindowFunction.arguments(),
+                sourceSymbols);
 
-        for (WindowFunction windowFunction : windowFunctions) {
-            List<Symbol> inputs = InputColumns.create(windowFunction.arguments(), sourceSymbols);
-            functionsWithInputs.put(windowFunction, inputs);
+            Symbol filter = boundWindowFunction.filter();
+            Symbol filterInput;
+            if (filter != null) {
+                filterInput = InputColumns.create(filter, sourceSymbols);
+            } else {
+                filterInput = Literal.BOOLEAN_TRUE;
+            }
+            windowFunctionContexts.add(new WindowFunctionContext(
+                boundWindowFunction,
+                inputs,
+                filterInput));
         }
         List<Projection> projections = new ArrayList<>();
         WindowAggProjection windowAggProjection = new WindowAggProjection(
-            mappedWindowDefinition.map(s -> InputColumns.create(s, sourceSymbols)),
-            startFrameOffset,
-            endFrameOffset,
-            functionsWithInputs,
+            windowDefinition.map(binder.andThen(s -> InputColumns.create(s, sourceSymbols))),
+            windowFunctionContexts,
             InputColumns.create(this.standalone, sourceSymbols)
         );
         projections.add(windowAggProjection);
@@ -212,20 +200,6 @@ public class WindowAgg extends ForwardingLogicalPlan {
             );
         }
         return sourcePlan;
-    }
-
-    private void validateOffset(WindowFrame.Type frameType, Symbol offsetSymbol, Object offset) {
-        if (frameType == WindowFrame.Type.ROWS) {
-            if (!(offset instanceof Long) || ((Long) offset) < 0) {
-                throw new IllegalArgumentException("In ROWS mode the offset must be a non-null, non-negative number");
-            }
-        } else if (frameType == WindowFrame.Type.RANGE) {
-            if (!NUMERIC_AND_TIMESTAMP_TYPES.contains(offsetSymbol.valueType())) {
-                throw new IllegalArgumentException(
-                    "RANGE with offset PRECEDING/FOLLOWING is not supported for column type " +
-                    offsetSymbol.valueType());
-            }
-        }
     }
 
     @Nullable

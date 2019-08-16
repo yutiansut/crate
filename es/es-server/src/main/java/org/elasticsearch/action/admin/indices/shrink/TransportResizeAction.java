@@ -35,6 +35,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.MetaDataCreateIndexService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexSettings;
@@ -43,6 +44,7 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
+import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -69,7 +71,7 @@ public class TransportResizeAction extends TransportMasterNodeAction<ResizeReque
     protected TransportResizeAction(String actionName, TransportService transportService, ClusterService clusterService,
                                  ThreadPool threadPool, MetaDataCreateIndexService createIndexService,
                                  IndexNameExpressionResolver indexNameExpressionResolver, Client client) {
-        super(actionName, transportService, clusterService, threadPool, indexNameExpressionResolver, ResizeRequest::new);
+        super(actionName, transportService, clusterService, threadPool, ResizeRequest::new, indexNameExpressionResolver);
         this.createIndexService = createIndexService;
         this.client = client;
     }
@@ -82,8 +84,8 @@ public class TransportResizeAction extends TransportMasterNodeAction<ResizeReque
     }
 
     @Override
-    protected ResizeResponse newResponse() {
-        return new ResizeResponse();
+    protected ResizeResponse read(StreamInput in) throws IOException {
+        return new ResizeResponse(in);
     }
 
     @Override
@@ -96,9 +98,9 @@ public class TransportResizeAction extends TransportMasterNodeAction<ResizeReque
                                    final ActionListener<ResizeResponse> listener) {
 
         // there is no need to fetch docs stats for split but we keep it simple and do it anyway for simplicity of the code
-        final String sourceIndex = indexNameExpressionResolver.resolveDateMathExpression(resizeRequest.getSourceIndex());
-        final String targetIndex = indexNameExpressionResolver.resolveDateMathExpression(resizeRequest.getTargetIndexRequest().index());
-        client.admin().indices().prepareStats(sourceIndex).clear().setDocs(true).execute(new ActionListener<IndicesStatsResponse>() {
+        final String sourceIndex = resizeRequest.getSourceIndex();
+        final String targetIndex = resizeRequest.getTargetIndexRequest().index();
+        client.admin().indices().prepareStats(sourceIndex).clear().setDocs(true).execute(new ActionListener<>() {
             @Override
             public void onResponse(IndicesStatsResponse indicesStatsResponse) {
                 CreateIndexClusterStateUpdateRequest updateRequest = prepareCreateIndexRequest(resizeRequest, state,

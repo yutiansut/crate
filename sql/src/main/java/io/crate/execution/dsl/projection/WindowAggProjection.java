@@ -22,88 +22,79 @@
 
 package io.crate.execution.dsl.projection;
 
-import com.google.common.collect.ImmutableMap;
 import io.crate.analyze.WindowDefinition;
+import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.Symbols;
 import io.crate.expression.symbol.WindowFunction;
+import io.crate.expression.symbol.WindowFunctionContext;
 import io.crate.planner.ExplainLeaf;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 public class WindowAggProjection extends Projection {
 
     private final WindowDefinition windowDefinition;
     private final List<Symbol> standaloneWithInputs;
-    private final LinkedHashMap<WindowFunction, List<Symbol>> functionsWithInputs;
     private final ArrayList<Symbol> outputs;
-    @Nullable
-    private Object startFrameOffset;
-    @Nullable
-    private Object endFrameOffset;
+    private final ArrayList<WindowFunctionContext> windowFunctionContexts;
+    private final ArrayList<WindowFunction> windowFunctions;
 
     public WindowAggProjection(WindowDefinition windowDefinition,
-                               @Nullable Object startFrameOffset,
-                               @Nullable Object endFrameOffset,
-                               LinkedHashMap<WindowFunction, List<Symbol>> functionsWithInputs,
+                               ArrayList<WindowFunctionContext> windowFunctionContexts,
                                List<Symbol> standaloneWithInputs) {
-        Set<WindowFunction> windowFunctions = functionsWithInputs.keySet();
+        this.windowFunctions = windowFunctionContexts.stream()
+            .map(WindowFunctionContext::function)
+            .collect(Collectors.toCollection(ArrayList::new));
         assert windowFunctions.stream().noneMatch(Symbols.IS_COLUMN)
             : "Cannot operate on Reference or Field: " + windowFunctions;
         assert standaloneWithInputs.stream().noneMatch(Symbols.IS_COLUMN)
             : "Cannot operate on Reference or Field: " + standaloneWithInputs;
         this.windowDefinition = windowDefinition;
-        this.startFrameOffset = startFrameOffset;
-        this.endFrameOffset = endFrameOffset;
-        this.functionsWithInputs = functionsWithInputs;
+        this.windowFunctionContexts = windowFunctionContexts;
         this.standaloneWithInputs = standaloneWithInputs;
-        outputs = new ArrayList<>(windowFunctions);
-        outputs.addAll(standaloneWithInputs);
+        outputs = new ArrayList<>(standaloneWithInputs);
+        outputs.addAll(windowFunctions);
     }
 
-    public WindowAggProjection(StreamInput in) throws IOException {
+    WindowAggProjection(StreamInput in) throws IOException {
         windowDefinition = new WindowDefinition(in);
-        if (in.getVersion().onOrAfter(Version.V_4_1_0)) {
-            startFrameOffset = in.readGenericValue();
-            endFrameOffset = in.readGenericValue();
-        }
         standaloneWithInputs = Symbols.listFromStream(in);
         int functionsCount = in.readVInt();
-        functionsWithInputs = new LinkedHashMap<>(functionsCount, 1f);
+        windowFunctionContexts = new ArrayList<>(functionsCount);
+        windowFunctions = new ArrayList<>(functionsCount);
+        boolean onOrAfter4_1_0 = in.getVersion().onOrAfter(Version.V_4_1_0);
         for (int i = 0; i < functionsCount; i++) {
             WindowFunction function = (WindowFunction) Symbols.fromStream(in);
+            Symbol filter;
+            if (onOrAfter4_1_0) {
+                filter = Symbols.fromStream(in);
+            } else {
+                filter = Literal.BOOLEAN_TRUE;
+            }
             List<Symbol> inputs = Symbols.listFromStream(in);
-            functionsWithInputs.put(function, inputs);
+            windowFunctionContexts.add(
+                new WindowFunctionContext(function, inputs, filter));
+            windowFunctions.add(function);
         }
-        outputs = new ArrayList<>(functionsWithInputs.keySet());
+        outputs = new ArrayList<>(standaloneWithInputs);
+        outputs.addAll(windowFunctions);
     }
 
     public WindowDefinition windowDefinition() {
         return windowDefinition;
     }
 
-    @Nullable
-    public Object startFrameOffset() {
-        return startFrameOffset;
-    }
-
-    @Nullable
-    public Object endFrameOffset() {
-        return endFrameOffset;
-    }
-
-    public LinkedHashMap<WindowFunction, List<Symbol>> functionsWithInputs() {
-        return functionsWithInputs;
+    public List<WindowFunctionContext> windowFunctionContexts() {
+        return windowFunctionContexts;
     }
 
     public List<Symbol> standalone() {
@@ -112,16 +103,20 @@ public class WindowAggProjection extends Projection {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         WindowAggProjection that = (WindowAggProjection) o;
         return Objects.equals(windowDefinition, that.windowDefinition) &&
-               Objects.equals(functionsWithInputs, that.functionsWithInputs);
+               Objects.equals(windowFunctionContexts, that.windowFunctionContexts);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), windowDefinition, functionsWithInputs);
+        return Objects.hash(super.hashCode(), windowDefinition, windowFunctionContexts);
     }
 
     @Override
@@ -134,6 +129,12 @@ public class WindowAggProjection extends Projection {
         return visitor.visitWindowAgg(this, context);
     }
 
+    /**
+     * Returns the output symbols list in a defined order.
+     *
+     * The standalone input symbols placed first followed by the
+     * window function symbols.
+     */
     @Override
     public List<? extends Symbol> outputs() {
         return outputs;
@@ -142,24 +143,23 @@ public class WindowAggProjection extends Projection {
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         windowDefinition.writeTo(out);
-        if (out.getVersion().onOrAfter(Version.V_4_1_0)) {
-            out.writeGenericValue(startFrameOffset);
-            out.writeGenericValue(endFrameOffset);
-        }
         Symbols.toStream(standaloneWithInputs, out);
-        out.writeVInt(functionsWithInputs.size());
-        for (Map.Entry<WindowFunction, List<Symbol>> functionWithInputs : functionsWithInputs.entrySet()) {
-            Symbols.toStream(functionWithInputs.getKey(), out);
-            Symbols.toStream(functionWithInputs.getValue(), out);
+        out.writeVInt(windowFunctionContexts.size());
+        boolean onOrAfter4_1_0 = out.getVersion().onOrAfter(Version.V_4_1_0);
+        for (var windowFunctionContext : windowFunctionContexts) {
+            Symbols.toStream(windowFunctionContext.function(), out);
+            if (onOrAfter4_1_0) {
+                Symbols.toStream(windowFunctionContext.filter(), out);
+            }
+            Symbols.toStream(windowFunctionContext.inputs(), out);
         }
     }
 
     @Override
     public Map<String, Object> mapRepresentation() {
-        return ImmutableMap.of(
+        return Map.of(
             "type", "WindowAggregation",
-            "windowFunctions",
-            ExplainLeaf.printList(new ArrayList<>(functionsWithInputs.keySet()))
+            "windowFunctions", ExplainLeaf.printList(windowFunctions)
         );
     }
 }

@@ -20,13 +20,23 @@
  * agreement.
  */
 
-package io.crate.execution.ddl;
+package io.crate.expression.scalar.timestamp;
 
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import io.crate.sql.parser.SqlParser;
+import io.crate.sql.tree.FunctionCall;
+import io.crate.sql.tree.QualifiedName;
+import io.crate.sql.tree.StringLiteral;
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
-public class SchemaUpdateResponse extends AcknowledgedResponse {
+public class AtTimezoneSyntaxFunctionTest {
 
-    public SchemaUpdateResponse(boolean isAcknowledged) {
-        super(isAcknowledged);
+    @Test
+    public void test_at_time_zone_is_parsed_as_timezone_function_call() {
+        FunctionCall func = (FunctionCall) SqlParser.createExpression("'1978-02-28T10:00:00+01:00' AT TIME ZONE 'Europe/Madrid'");
+        assertEquals(func.getName(), QualifiedName.of("timezone"));
+        assertEquals(func.getArguments().size(), 2);
+        assertEquals(func.getArguments().get(0), StringLiteral.fromObject("Europe/Madrid"));
+        assertEquals(func.getArguments().get(1), StringLiteral.fromObject("1978-02-28T10:00:00+01:00"));
     }
 }

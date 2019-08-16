@@ -23,23 +23,17 @@
 package io.crate.execution.ddl.tables;
 
 import io.crate.metadata.RelationName;
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
 import java.io.IOException;
 
-import static org.elasticsearch.action.ValidateActions.addValidationError;
-
 public class RenameTableRequest extends AcknowledgedRequest<RenameTableRequest> {
 
-    private RelationName sourceRelationName;
-    private RelationName targetRelationName;
-    private boolean isPartitioned;
-
-    RenameTableRequest() {
-    }
+    private final RelationName sourceRelationName;
+    private final RelationName targetRelationName;
+    private final boolean isPartitioned;
 
     public RenameTableRequest(RelationName sourceRelationName, RelationName targetRelationName, boolean isPartitioned) {
         this.sourceRelationName = sourceRelationName;
@@ -59,18 +53,8 @@ public class RenameTableRequest extends AcknowledgedRequest<RenameTableRequest> 
         return isPartitioned;
     }
 
-    @Override
-    public ActionRequestValidationException validate() {
-        ActionRequestValidationException validationException = null;
-        if (sourceRelationName == null || targetRelationName == null) {
-            validationException = addValidationError("source and target table ident must not be null", null);
-        }
-        return validationException;
-    }
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public RenameTableRequest(StreamInput in) throws IOException {
+        super(in);
         sourceRelationName = new RelationName(in);
         targetRelationName = new RelationName(in);
         isPartitioned = in.readBoolean();

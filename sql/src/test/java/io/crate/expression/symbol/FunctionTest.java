@@ -21,36 +21,43 @@
 
 package io.crate.expression.symbol;
 
-import com.google.common.collect.ImmutableList;
 import io.crate.metadata.FunctionIdent;
 import io.crate.metadata.FunctionInfo;
 import io.crate.test.integration.CrateUnitTest;
 import io.crate.testing.TestingHelpers;
 import io.crate.types.DataTypes;
+import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 import static com.carrotsearch.randomizedtesting.RandomizedTest.randomAsciiLettersOfLength;
-import static org.hamcrest.Matchers.equalTo;
+import static io.crate.testing.TestingHelpers.createReference;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 
 public class FunctionTest extends CrateUnitTest {
 
+    private FunctionIdent functionIdent = new FunctionIdent(
+        randomAsciiLettersOfLength(10),
+        List.of(DataTypes.BOOLEAN)
+    );
+
     @Test
-    public void testSerialization() throws Exception {
+    public void test_serialization_without_filter() throws Exception {
         Function fn = new Function(
             new FunctionInfo(
-                new FunctionIdent(
-                    randomAsciiLettersOfLength(10),
-                    ImmutableList.of(DataTypes.BOOLEAN)
-                ),
-                TestingHelpers.randomPrimitiveType(), FunctionInfo.Type.SCALAR, randomFeatures()),
-            Collections.singletonList(TestingHelpers.createReference(randomAsciiLettersOfLength(2), DataTypes.BOOLEAN))
+                functionIdent,
+                TestingHelpers.randomPrimitiveType(),
+                FunctionInfo.Type.SCALAR,
+                randomFeatures()
+            ),
+            List.of(createReference(randomAsciiLettersOfLength(2), DataTypes.BOOLEAN))
         );
 
         BytesStreamOutput output = new BytesStreamOutput();
@@ -59,11 +66,57 @@ public class FunctionTest extends CrateUnitTest {
         StreamInput input = output.bytes().streamInput();
         Function fn2 = (Function) Symbols.fromStream(input);
 
-        assertThat(fn, is(equalTo(fn2)));
-        assertThat(fn.hashCode(), is(fn2.hashCode()));
+        assertThat(fn, is(fn2));
     }
 
-    private Set<FunctionInfo.Feature> randomFeatures() {
+    @Test
+    public void test_serialization_with_filter() throws Exception {
+        Function fn = new Function(
+            new FunctionInfo(
+                functionIdent,
+                TestingHelpers.randomPrimitiveType(),
+                FunctionInfo.Type.SCALAR,
+                randomFeatures()
+            ),
+            List.of(createReference(randomAsciiLettersOfLength(2), DataTypes.BOOLEAN)),
+            Literal.of(true)
+        );
+
+        BytesStreamOutput output = new BytesStreamOutput();
+        Symbols.toStream(fn, output);
+
+        StreamInput input = output.bytes().streamInput();
+        Function fn2 = (Function) Symbols.fromStream(input);
+
+        assertThat(fn2.filter(), not(nullValue()));
+        assertThat(fn, is(fn2));
+    }
+
+    @Test
+    public void test_serialization_before_version_4_1_0() throws Exception {
+        Function fn = new Function(
+            new FunctionInfo(
+                functionIdent,
+                TestingHelpers.randomPrimitiveType(),
+                FunctionInfo.Type.SCALAR,
+                randomFeatures()
+            ),
+            List.of(createReference(randomAsciiLettersOfLength(2), DataTypes.BOOLEAN))
+        );
+
+        var output = new BytesStreamOutput();
+        output.setVersion(Version.V_4_0_0);
+        Symbols.toStream(fn, output);
+
+        var input = output.bytes().streamInput();
+        input.setVersion(Version.V_4_0_0);
+        Function fn2 = (Function) Symbols.fromStream(input);
+
+        assertThat(fn2.filter(), is(nullValue()));
+        assertThat(fn, is(fn2));
+    }
+
+    private static Set<FunctionInfo.Feature> randomFeatures() {
         Set<FunctionInfo.Feature> features = EnumSet.noneOf(FunctionInfo.Feature.class);
         for (FunctionInfo.Feature feature : FunctionInfo.Feature.values()) {
             if (randomBoolean()) {

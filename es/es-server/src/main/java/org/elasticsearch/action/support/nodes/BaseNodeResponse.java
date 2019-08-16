@@ -31,10 +31,7 @@ import java.io.IOException;
  */
 public abstract class BaseNodeResponse extends TransportResponse {
 
-    private DiscoveryNode node;
-
-    protected BaseNodeResponse() {
-    }
+    private final DiscoveryNode node;
 
     protected BaseNodeResponse(DiscoveryNode node) {
         assert node != null;
@@ -48,15 +45,12 @@ public abstract class BaseNodeResponse extends TransportResponse {
         return node;
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public BaseNodeResponse(StreamInput in) throws IOException {
         node = new DiscoveryNode(in);
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        super.writeTo(out);
         node.writeTo(out);
     }
 }

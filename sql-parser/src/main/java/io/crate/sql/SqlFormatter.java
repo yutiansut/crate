@@ -364,10 +364,9 @@ public final class SqlFormatter {
         protected Void visitSingleColumn(SingleColumn node, Integer indent) {
             builder.append(formatStandaloneExpression(node.getExpression(), parameters));
             if (node.getAlias() != null) {
-                builder.append(' ')
-                    .append('"')
-                    .append(node.getAlias())
-                    .append('"'); // TODO: handle quoting properly
+                builder
+                    .append(' ')
+                    .append(quoteIdentifierIfNeeded(node.getAlias()));
             }
 
             return null;
@@ -874,7 +873,7 @@ public final class SqlFormatter {
         @Override
         public Void visitWindowFrame(WindowFrame frame, Integer indent) {
             append(indent, " ");
-            append(indent, frame.getType().name());
+            append(indent, frame.mode().name());
 
             append(indent, " ");
             Expression startOffset = frame.getStart().getValue();

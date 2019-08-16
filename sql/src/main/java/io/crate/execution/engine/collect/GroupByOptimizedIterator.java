@@ -35,6 +35,7 @@ import io.crate.execution.dsl.projection.Projection;
 import io.crate.execution.engine.aggregation.AggregationContext;
 import io.crate.execution.engine.aggregation.AggregationFunction;
 import io.crate.execution.jobs.SharedShardContext;
+import io.crate.expression.InputCondition;
 import io.crate.expression.InputFactory;
 import io.crate.expression.InputRow;
 import io.crate.expression.reference.doc.lucene.CollectorContext;
@@ -81,6 +82,7 @@ import java.util.function.Supplier;
 
 import static io.crate.breaker.RamAccountingContext.roundUp;
 import static io.crate.execution.dsl.projection.Projections.shardProjections;
+import static io.crate.execution.engine.collect.LuceneShardCollectorProvider.formatSource;
 import static io.crate.execution.engine.collect.LuceneShardCollectorProvider.getCollectorContext;
 
 final class GroupByOptimizedIterator {
@@ -136,10 +138,9 @@ final class GroupByOptimizedIterator {
 
         ShardId shardId = indexShard.shardId();
         SharedShardContext sharedShardContext = collectTask.sharedShardContexts().getOrCreateContext(shardId);
-        Engine.Searcher searcher = sharedShardContext.acquireSearcher();
+        Engine.Searcher searcher = sharedShardContext.acquireSearcher(formatSource(collectPhase));
         try {
-            QueryShardContext queryShardContext =
-                sharedShardContext.indexService().newQueryShardContext(System::currentTimeMillis);
+            QueryShardContext queryShardContext = sharedShardContext.indexService().newQueryShardContext();
             collectTask.addSearcher(sharedShardContext.readerId(), searcher);
 
             InputFactory.Context<? extends LuceneCollectorExpression<?>> docCtx = docInputFactory.getCtx(collectTask.txnCtx());
@@ -346,12 +347,15 @@ final class GroupByOptimizedIterator {
                                         Object[] states) {
         for (int i = 0; i < aggregations.size(); i++) {
             AggregationContext aggregation = aggregations.get(i);
-            //noinspection unchecked
-            states[i] = aggregation.function().iterate(
-                ramAccounting,
-                states[i],
-                aggregation.inputs()
-            );
+
+            if (InputCondition.matches(aggregation.filter())) {
+                //noinspection unchecked
+                states[i] = aggregation.function().iterate(
+                    ramAccounting,
+                    states[i],
+                    aggregation.inputs()
+                );
+            }
         }
     }
 
@@ -362,12 +366,18 @@ final class GroupByOptimizedIterator {
         for (int i = 0; i < aggregations.size(); i++) {
             AggregationContext aggregation = aggregations.get(i);
             AggregationFunction function = aggregation.function();
-            //noinspection unchecked
-            states[i] = function.iterate(
-                ramAccounting,
-                function.newState(ramAccounting, Version.CURRENT, bigArrays),
-                aggregation.inputs()
-            );
+
+            var newState = function.newState(ramAccounting, Version.CURRENT, bigArrays);
+            if (InputCondition.matches(aggregation.filter())) {
+                //noinspection unchecked
+                states[i] = function.iterate(
+                    ramAccounting,
+                    newState,
+                    aggregation.inputs()
+                );
+            } else {
+                states[i] = newState;
+            }
         }
         return states;
     }

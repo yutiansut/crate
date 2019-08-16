@@ -140,7 +140,7 @@ public class SelectWindowFunctionAnalyzerTest extends CrateDummyClusterServiceUn
         WindowFunction windowFunction = (WindowFunction) outputSymbols.get(0);
         assertThat(windowFunction.arguments().size(), is(1));
         WindowFrameDefinition frameDefinition = windowFunction.windowDefinition().windowFrameDefinition();
-        assertThat(frameDefinition.type(), is(WindowFrame.Type.RANGE));
+        assertThat(frameDefinition.mode(), is(WindowFrame.Mode.RANGE));
         assertThat(frameDefinition.start().type(), is(FrameBound.Type.UNBOUNDED_PRECEDING));
         assertThat(frameDefinition.end().type(), is(FrameBound.Type.UNBOUNDED_FOLLOWING));
     }
@@ -182,5 +182,14 @@ public class SelectWindowFunctionAnalyzerTest extends CrateDummyClusterServiceUn
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("Window w does not exist");
         e.analyze("SELECT AVG(x) OVER w FROM t WINDOW ww AS ()");
+    }
+
+    @Test
+    public void test_window_function_symbols_not_in_grouping_raises_an_error() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("'x' must appear in the GROUP BY clause or be used in an aggregation function.");
+        e.analyze("select y, sum(x) over(partition by x) " +
+                "FROM unnest([1], [6]) as t(x, y) " +
+                "group by 1");
     }
 }

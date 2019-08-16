@@ -60,38 +60,27 @@ public class GroupingProjector implements Projector {
 
         AggregationFunction[] functions = new AggregationFunction[aggregations.length];
         Input[][] inputs = new Input[aggregations.length][];
+        Input<Boolean>[] filters = new Input[aggregations.length];
         for (int i = 0; i < aggregations.length; i++) {
             AggregationContext aggregation = aggregations[i];
             functions[i] = aggregation.function();
             inputs[i] = aggregation.inputs();
+            filters[i] = aggregation.filter();
         }
         if (keys.size() == 1) {
             Symbol key = keys.get(0);
-            if (GroupBySingleNumberCollector.SUPPORTED_TYPES.contains(key.valueType())) {
-                collector = new GroupBySingleNumberCollector(
-                    key.valueType(),
-                    collectExpressions,
-                    mode,
-                    functions,
-                    inputs,
-                    ramAccountingContext,
-                    keyInputs.get(0),
-                    indexVersionCreated,
-                    bigArrays
-                );
-            } else {
-                collector = GroupingCollector.singleKey(
-                    collectExpressions,
-                    mode,
-                    functions,
-                    inputs,
-                    ramAccountingContext,
-                    keyInputs.get(0),
-                    key.valueType(),
-                    indexVersionCreated,
-                    bigArrays
-                );
-            }
+            collector = GroupingCollector.singleKey(
+                collectExpressions,
+                mode,
+                functions,
+                inputs,
+                filters,
+                ramAccountingContext,
+                keyInputs.get(0),
+                key.valueType(),
+                indexVersionCreated,
+                bigArrays
+            );
         } else {
             //noinspection unchecked
             collector = (GroupingCollector<Object>) (GroupingCollector) GroupingCollector.manyKeys(
@@ -99,6 +88,7 @@ public class GroupingProjector implements Projector {
                 mode,
                 functions,
                 inputs,
+                filters,
                 ramAccountingContext,
                 keyInputs,
                 typeView(keys),

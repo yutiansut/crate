@@ -30,14 +30,14 @@ import static io.crate.common.collections.Lists2.findFirstGTEProbeValue;
 import static io.crate.common.collections.Lists2.findFirstLTEProbeValue;
 import static io.crate.common.collections.Lists2.findFirstNonPeer;
 import static io.crate.common.collections.Lists2.findFirstPreviousPeer;
-import static io.crate.sql.tree.WindowFrame.Type.ROWS;
+import static io.crate.sql.tree.WindowFrame.Mode.ROWS;
 
 public class FrameBound extends Node {
 
     public enum Type {
         UNBOUNDED_PRECEDING {
             @Override
-            public <T> int getStart(WindowFrame.Type frameType,
+            public <T> int getStart(WindowFrame.Mode mode,
                                     int pStart,
                                     int pEnd,
                                     int currentRowIdx,
@@ -49,7 +49,7 @@ public class FrameBound extends Node {
             }
 
             @Override
-            public <T> int getEnd(WindowFrame.Type frameType,
+            public <T> int getEnd(WindowFrame.Mode mode,
                                   int pStart,
                                   int pEnd,
                                   int currentRowIdx,
@@ -60,9 +60,24 @@ public class FrameBound extends Node {
                 throw new IllegalStateException("UNBOUNDED PRECEDING cannot be the start of a frame");
             }
         },
+        /**
+         * <pre>
+         * {@code
+         * { ROWS | RANGE } <offset> PRECEDING
+         *
+         * ROWS mode:
+         *   ROWS <offset> PRECEDING
+         *   the start of the frame is *literally* <offset> number of rows before the current row
+         *
+         * RANGE MODE:
+         *   ORDER BY x RANGE <offset> PRECEDING
+         *   Every row before the current row where the value for `x` is >= `x@currentRow - <offset>` is within the frame
+         * }
+         * </pre>
+         */
         PRECEDING {
             @Override
-            public <T> int getStart(WindowFrame.Type frameType,
+            public <T> int getStart(WindowFrame.Mode mode,
                                     int pStart,
                                     int pEnd,
                                     int currentRowIdx,
@@ -70,22 +85,21 @@ public class FrameBound extends Node {
                                     @Nullable T offsetProbeValue,
                                     @Nullable Comparator<T> cmp,
                                     List<T> rows) {
-                if (frameType == ROWS) {
+                if (mode == ROWS) {
                     assert offset instanceof Long : "In ROWS mode the offset must be a non-null, non-negative number";
-                    int startIndex = Math.max(pStart, currentRowIdx - ((Long) offset).intValue());
-                    return startIndex > 0 ? startIndex : 0;
+                    return Math.max(pStart, currentRowIdx - ((Long) offset).intValue());
                 } else {
-                    int firstGTEProbeValue = findFirstGTEProbeValue(rows, currentRowIdx, offsetProbeValue, cmp);
+                    int firstGTEProbeValue = findFirstGTEProbeValue(rows, pStart, currentRowIdx, offsetProbeValue, cmp);
                     if (firstGTEProbeValue == -1) {
                         return currentRowIdx;
                     } else {
-                        return Math.max(pStart, firstGTEProbeValue);
+                        return firstGTEProbeValue;
                     }
                 }
             }
 
             @Override
-            public <T> int getEnd(WindowFrame.Type frameType,
+            public <T> int getEnd(WindowFrame.Mode mode,
                                   int pStart,
                                   int pEnd,
                                   int currentRowIdx,
@@ -93,7 +107,8 @@ public class FrameBound extends Node {
                                   @Nullable T offsetProbeValue,
                                   @Nullable Comparator<T> cmp,
                                   List<T> rows) {
-                throw new UnsupportedOperationException("Custom PRECEDING frames are not supported");
+                throw new UnsupportedOperationException(
+                    "`<offset> PRECEDING` cannot be used to calculate the end of a window frame");
             }
         },
         /*
@@ -105,7 +120,7 @@ public class FrameBound extends Node {
          */
         CURRENT_ROW {
             @Override
-            public <T> int getStart(WindowFrame.Type frameType,
+            public <T> int getStart(WindowFrame.Mode mode,
                                     int pStart,
                                     int pEnd,
                                     int currentRowIdx,
@@ -113,7 +128,7 @@ public class FrameBound extends Node {
                                     @Nullable T offsetProbeValue,
                                     @Nullable Comparator<T> cmp,
                                     List<T> rows) {
-                if (frameType == ROWS) {
+                if (mode == ROWS) {
                     return currentRowIdx;
                 }
 
@@ -129,7 +144,7 @@ public class FrameBound extends Node {
             }
 
             @Override
-            public <T> int getEnd(WindowFrame.Type frameType,
+            public <T> int getEnd(WindowFrame.Mode mode,
                                   int pStart,
                                   int pEnd,
                                   int currentRowIdx,
@@ -137,16 +152,31 @@ public class FrameBound extends Node {
                                   @Nullable T offsetProbeValue,
                                   @Nullable Comparator<T> cmp,
                                   List<T> rows) {
-                if (frameType == ROWS) {
+                if (mode == ROWS) {
                     return currentRowIdx + 1;
                 }
 
                 return findFirstNonPeer(rows, currentRowIdx, pEnd, cmp);
             }
         },
+        /**
+         * <pre>
+         * {@code
+         * { ROWS | RANGE } [..] <offset> FOLLOWING
+         *
+         * ROWS mode:
+         *   ROWS [...] <offset> FOLLOWING
+         *   the end of the frame is *literally* <offset> number of rows after the current row
+         *
+         * RANGE MODE:
+         *   ORDER BY x RANGE [...] <offset> FOLLOWING
+         *   Every row after the current row where the value for `x` is <= `x@currentRow + <offset>` is within the frame
+         * }
+         * </pre>
+         */
         FOLLOWING {
             @Override
-            public <T> int getStart(WindowFrame.Type frameType,
+            public <T> int getStart(WindowFrame.Mode mode,
                                     int pStart,
                                     int pEnd,
                                     int currentRowIdx,
@@ -154,11 +184,12 @@ public class FrameBound extends Node {
                                     @Nullable T offsetProbeValue,
                                     @Nullable Comparator<T> cmp,
                                     List<T> rows) {
-                throw new UnsupportedOperationException("Custom FOLLOWING frames are not supported");
+                throw new UnsupportedOperationException(
+                    "`<offset> FOLLOWING` cannot be used to calculate the start of a window frame");
             }
 
             @Override
-            public <T> int getEnd(WindowFrame.Type frameType,
+            public <T> int getEnd(WindowFrame.Mode mode,
                                   int pStart,
                                   int pEnd,
                                   int currentRowIdx,
@@ -167,17 +198,17 @@ public class FrameBound extends Node {
                                   @Nullable Comparator<T> cmp,
                                   List<T> rows) {
                 // end index is exclusive so we increment it by one when finding the interval end index
-                if (frameType == ROWS) {
+                if (mode == ROWS) {
                     assert offset instanceof Long : "In ROWS mode the offset must be a non-null, non-negative number";
                     return Math.min(pEnd, currentRowIdx + ((Long) offset).intValue() + 1);
                 } else {
-                    return Math.min(pEnd, findFirstLTEProbeValue(rows, currentRowIdx, offsetProbeValue, cmp) + 1);
+                    return findFirstLTEProbeValue(rows, pEnd, currentRowIdx, offsetProbeValue, cmp) + 1;
                 }
             }
         },
         UNBOUNDED_FOLLOWING {
             @Override
-            public <T> int getStart(WindowFrame.Type frameType,
+            public <T> int getStart(WindowFrame.Mode mode,
                                     int pStart,
                                     int pEnd,
                                     int currentRowIdx,
@@ -189,7 +220,7 @@ public class FrameBound extends Node {
             }
 
             @Override
-            public <T> int getEnd(WindowFrame.Type frameType,
+            public <T> int getEnd(WindowFrame.Mode mode,
                                   int pStart,
                                   int pEnd,
                                   int currentRowIdx,
@@ -201,7 +232,7 @@ public class FrameBound extends Node {
             }
         };
 
-        public abstract <T> int getStart(WindowFrame.Type frameType,
+        public abstract <T> int getStart(WindowFrame.Mode mode,
                                          int pStart,
                                          int pEnd,
                                          int currentRowIdx,
@@ -210,7 +241,7 @@ public class FrameBound extends Node {
                                          @Nullable Comparator<T> cmp,
                                          List<T> rows);
 
-        public abstract <T> int getEnd(WindowFrame.Type frameType,
+        public abstract <T> int getEnd(WindowFrame.Mode mode,
                                        int pStart,
                                        int pEnd,
                                        int currentRowIdx,

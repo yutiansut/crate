@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.action.admin.indices.template.get;
 
-import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.cluster.metadata.IndexTemplateMetaData;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -26,6 +25,7 @@ import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
+import org.elasticsearch.transport.TransportResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,13 +33,9 @@ import java.util.List;
 
 import static java.util.Collections.singletonMap;
 
-public class GetIndexTemplatesResponse extends ActionResponse implements ToXContentObject {
+public class GetIndexTemplatesResponse extends TransportResponse implements ToXContentObject {
 
     private final List<IndexTemplateMetaData> indexTemplates;
-
-    GetIndexTemplatesResponse() {
-        indexTemplates = new ArrayList<>();
-    }
 
     GetIndexTemplatesResponse(List<IndexTemplateMetaData> indexTemplates) {
         this.indexTemplates = indexTemplates;
@@ -49,11 +45,9 @@ public class GetIndexTemplatesResponse extends ActionResponse implements ToXCont
         return indexTemplates;
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public GetIndexTemplatesResponse(StreamInput in) throws IOException {
         int size = in.readVInt();
-        indexTemplates.clear();
+        indexTemplates = new ArrayList<>(size);
         for (int i = 0 ; i < size ; i++) {
             indexTemplates.add(0, IndexTemplateMetaData.readFrom(in));
         }
@@ -61,7 +55,6 @@ public class GetIndexTemplatesResponse extends ActionResponse implements ToXCont
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        super.writeTo(out);
         out.writeVInt(indexTemplates.size());
         for (IndexTemplateMetaData indexTemplate : indexTemplates) {
             indexTemplate.writeTo(out);

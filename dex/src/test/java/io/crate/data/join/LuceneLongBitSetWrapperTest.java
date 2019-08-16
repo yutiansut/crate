@@ -19,16 +19,24 @@
  * software solely pursuant to the terms of the relevant commercial
  * agreement.
  */
-package org.elasticsearch.action.admin.cluster.configuration;
 
-import org.elasticsearch.test.ESTestCase;
+package io.crate.data.join;
 
-import java.io.IOException;
+import org.junit.Test;
 
-public class ClearVotingConfigExclusionsResponseTests extends ESTestCase {
-    public void testSerialization() throws IOException {
-        final ClearVotingConfigExclusionsResponse originalRequest = new ClearVotingConfigExclusionsResponse();
-        copyStreamable(originalRequest, writableRegistry(), ClearVotingConfigExclusionsResponse::new);
-        // there are no fields so we're just checking that this doesn't throw anything
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
+public class LuceneLongBitSetWrapperTest {
+
+    @Test
+    public void testCapacityIsIncreasedDynamically() {
+        LuceneLongBitSetWrapper bitSet = new LuceneLongBitSetWrapper();
+
+        // we had a regression which threw an exception if the index was greater than the step * 2.
+        long index = LuceneLongBitSetWrapper.INCREASE_BY_STEP * 3;
+        bitSet.set(index);
+
+        assertThat(bitSet.get(index), is(true));
     }
 }

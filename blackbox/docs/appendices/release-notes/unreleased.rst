@@ -53,7 +53,30 @@ Breaking Changes
 Changes
 =======
 
-- Addded support for `offset PRECEDING` and `offset FOLLOWING`
+- Added the :ref:`PG_TYPEOF <pg_typeof>` system function.
+
+- Support implicit object creation in update statements. E.g. ``UPDATE t SET
+  obj['x'] = 10`` will now implicitly set ``obj`` to ``{obj: {x: 10}}`` on rows
+  where ``obj`` was previously ``null``.
+
+- Added :ref:`LPAD <scalar-lpad>` and :ref:`RPAD <scalar-rpad>` scalar functions.
+
+- Added the :ref:`table_parameter.codec` parameter to :ref:`ref-create-table`
+  to control the compression algorithm used to store data.
+
+- Added :ref:`AT TIME ZONE <timestamp-at-time-zone>` syntax.
+
+- Added the :ref:`cluster.routing.allocation.total_shards_per_node
+  <cluster.routing.allocation.total_shards_per_node>` setting.
+
+- Added :ref:`TIMEZONE <scalar-timezone>` scalar function.
+
+- Added support for the filter clause in
+  :ref:`aggregate expressions <aggregate-expressions>` and
+  :ref:`window functions <window-function-call>` that are
+  :ref:` aggregates <aggregation>`.
+
+- Added support for `offset PRECEDING` and `offset FOLLOWING`
   :ref:`window definitions <window-definition>`.
 
 - Added support for using :ref:`ref-values` as top-level relation.
@@ -92,5 +115,15 @@ Changes
 Fixes
 =====
 
-- Fixed an issue that could cause startup to fail with early access builds of
-  Java.
+- Improved error handling if an argument of a window function is not used as a
+  grouping symbol.
+
+- Fixed an ``OUTER JOIN`` issue resulting in an ``ArrayOutOfBoundException``
+  if the gap between matching rows of the tables was growing to big numbers.
+
+- Fixed serialization issue that might occur in distributed queries that
+  contain window function calls with the partition by clause in the select
+  list.
+
+- Fixed a race condition which could result in a ``AlreadyClosedException``
+  when querying the ``sys.shards`` table.

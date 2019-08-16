@@ -25,11 +25,13 @@ package io.crate.execution.engine.window;
 import com.google.common.collect.ImmutableMap;
 import io.crate.analyze.FrameBoundDefinition;
 import io.crate.analyze.OrderBy;
+import io.crate.analyze.SymbolEvaluator;
 import io.crate.analyze.WindowFrameDefinition;
 import io.crate.analyze.relations.AnalyzedRelation;
 import io.crate.analyze.relations.DocTableRelation;
 import io.crate.auth.user.User;
 import io.crate.breaker.RamAccountingContext;
+import io.crate.common.collections.Lists2;
 import io.crate.data.BatchIterator;
 import io.crate.data.BatchIterators;
 import io.crate.data.InMemoryBatchIterator;
@@ -39,8 +41,10 @@ import io.crate.data.RowN;
 import io.crate.execution.dsl.projection.builder.InputColumns;
 import io.crate.execution.engine.aggregation.AggregationFunction;
 import io.crate.execution.engine.collect.InputCollectExpression;
+import io.crate.expression.ExpressionsInput;
 import io.crate.expression.InputFactory;
 import io.crate.expression.reference.ReferenceResolver;
+import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.Symbol;
 import io.crate.metadata.ColumnIdent;
 import io.crate.metadata.CoordinatorTxnCtx;
@@ -49,6 +53,7 @@ import io.crate.metadata.Functions;
 import io.crate.metadata.RelationName;
 import io.crate.metadata.TransactionContext;
 import io.crate.metadata.doc.DocTableInfo;
+import io.crate.planner.operators.SubQueryResults;
 import io.crate.sql.tree.QualifiedName;
 import io.crate.test.integration.CrateDummyClusterServiceUnitTest;
 import io.crate.testing.SQLExecutor;
@@ -62,11 +67,11 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -74,30 +79,16 @@ import static io.crate.data.SentinelRow.SENTINEL;
 import static io.crate.execution.engine.sort.Comparators.createComparator;
 import static io.crate.sql.tree.FrameBound.Type.CURRENT_ROW;
 import static io.crate.sql.tree.FrameBound.Type.UNBOUNDED_FOLLOWING;
-import static io.crate.sql.tree.FrameBound.Type.UNBOUNDED_PRECEDING;
-import static io.crate.sql.tree.WindowFrame.Type.RANGE;
-import static io.crate.sql.tree.WindowFrame.Type.ROWS;
+import static io.crate.sql.tree.WindowFrame.Mode.RANGE;
 import static org.elasticsearch.common.util.BigArrays.NON_RECYCLING_INSTANCE;
 import static org.hamcrest.Matchers.instanceOf;
 
 public abstract class AbstractWindowFunctionTest extends CrateDummyClusterServiceUnitTest {
 
-    public static final WindowFrameDefinition RANGE_CURRENT_ROW_UNBOUNDED_FOLLOWING = new WindowFrameDefinition(
+    static final WindowFrameDefinition RANGE_CURRENT_ROW_UNBOUNDED_FOLLOWING = new WindowFrameDefinition(
         RANGE,
-        new FrameBoundDefinition(CURRENT_ROW),
-        new FrameBoundDefinition(UNBOUNDED_FOLLOWING)
-    );
-
-    public static final WindowFrameDefinition RANGE_UNBOUNDED_PRECEDING_UNBOUNDED_FOLLOWING = new WindowFrameDefinition(
-        RANGE,
-        new FrameBoundDefinition(UNBOUNDED_PRECEDING),
-        new FrameBoundDefinition(UNBOUNDED_FOLLOWING)
-    );
-
-    public static final WindowFrameDefinition ROWS_UNBOUNDED_PRECEDING_CURRENT_ROW = new WindowFrameDefinition(
-        ROWS,
-        new FrameBoundDefinition(UNBOUNDED_PRECEDING),
-        new FrameBoundDefinition(CURRENT_ROW)
+        new FrameBoundDefinition(CURRENT_ROW, Literal.NULL),
+        new FrameBoundDefinition(UNBOUNDED_FOLLOWING, Literal.NULL)
     );
 
     private RamAccountingContext RAM_ACCOUNTING_CONTEXT = new RamAccountingContext
@@ -131,7 +122,7 @@ public abstract class AbstractWindowFunctionTest extends CrateDummyClusterServic
         inputFactory = new InputFactory(functions);
     }
 
-    private void performInputSanityChecks(Object[]... inputs) {
+    private static void performInputSanityChecks(Object[]... inputs) {
         List<Integer> inputSizes = Arrays.stream(inputs)
             .map(Array::getLength)
             .distinct()
@@ -142,35 +133,22 @@ public abstract class AbstractWindowFunctionTest extends CrateDummyClusterServic
         }
     }
 
-    protected <T> void assertEvaluate(String functionExpression,
-                                      Matcher<T> expectedValue,
-                                      Map<ColumnIdent, Integer> positionInRowByColumn,
-                                      Object[]... inputRows) throws Exception {
-        assertEvaluate(functionExpression,
-            expectedValue,
-            positionInRowByColumn,
-            null,
-            null,
-            inputRows);
-    }
-
     @SuppressWarnings("unchecked")
     protected <T> void assertEvaluate(String functionExpression,
                                       Matcher<T> expectedValue,
-                                      Map<ColumnIdent, Integer> positionInRowByColumn,
-                                      @Nullable Object startOffsetValue,
-                                      @Nullable Object endOffsetValue,
-                                      Object[]... inputRows) throws Exception {
+                                      List<ColumnIdent> rowsColumnDescription,
+                                      Object[]... inputRows) throws Throwable {
         performInputSanityChecks(inputRows);
 
         Symbol normalizedFunctionSymbol = sqlExpressions.normalize(sqlExpressions.asSymbol(functionExpression));
         assertThat(normalizedFunctionSymbol, instanceOf(io.crate.expression.symbol.WindowFunction.class));
 
-        io.crate.expression.symbol.WindowFunction windowFunctionSymbol =
-            (io.crate.expression.symbol.WindowFunction) normalizedFunctionSymbol;
+        var windowFunctionSymbol = (io.crate.expression.symbol.WindowFunction) normalizedFunctionSymbol;
         ReferenceResolver<InputCollectExpression> referenceResolver =
-            r -> new InputCollectExpression(positionInRowByColumn.get(r.column()));
+            r -> new InputCollectExpression(rowsColumnDescription.indexOf(r.column()));
 
+        var sourceSymbols = Lists2.map(rowsColumnDescription, x -> sqlExpressions.normalize(sqlExpressions.asSymbol(x.sqlFqn())));
+        ensureInputRowsHaveCorrectType(sourceSymbols, inputRows);
         var argsCtx = inputFactory.ctxForRefs(txnCtx, referenceResolver);
         argsCtx.add(windowFunctionSymbol.arguments());
 
@@ -180,6 +158,7 @@ public abstract class AbstractWindowFunctionTest extends CrateDummyClusterServic
         if (impl instanceof AggregationFunction) {
             windowFunctionImpl = new AggregateToWindowFunctionAdapter(
                 (AggregationFunction) impl,
+                new ExpressionsInput<>(Literal.BOOLEAN_TRUE, List.of()),
                 Version.CURRENT,
                 NON_RECYCLING_INSTANCE,
                 RAM_ACCOUNTING_CONTEXT
@@ -189,13 +168,17 @@ public abstract class AbstractWindowFunctionTest extends CrateDummyClusterServic
         }
 
         int numCellsInSourceRows = inputRows[0].length;
-        InputColumns.SourceSymbols sourceSymbols = new InputColumns.SourceSymbols(windowFunctionSymbol.arguments());
+        InputColumns.SourceSymbols inputColSources = new InputColumns.SourceSymbols(sourceSymbols);
         var windowDef = windowFunctionSymbol.windowDefinition();
         var partitionOrderBy = windowDef.partitions().isEmpty() ? null : new OrderBy(windowDef.partitions());
+        Object startOffsetValue = SymbolEvaluator.evaluate(
+            txnCtx, functions, windowDef.windowFrameDefinition().start().value(), Row.EMPTY, SubQueryResults.EMPTY);
+        Object endOffsetValue = SymbolEvaluator.evaluate(
+            txnCtx, functions, windowDef.windowFrameDefinition().end().value(), Row.EMPTY, SubQueryResults.EMPTY);
         BatchIterator<Row> iterator = WindowFunctionBatchIterator.of(
             InMemoryBatchIterator.of(Arrays.stream(inputRows).map(RowN::new).collect(Collectors.toList()), SENTINEL),
             new IgnoreRowAccounting(),
-            windowDef.map(s -> InputColumns.create(s, sourceSymbols)),
+            windowDef.map(s -> InputColumns.create(s, inputColSources)),
             startOffsetValue,
             endOffsetValue,
             createComparator(() -> inputFactory.ctxForRefs(txnCtx, referenceResolver), partitionOrderBy),
@@ -207,9 +190,22 @@ public abstract class AbstractWindowFunctionTest extends CrateDummyClusterServic
             argsCtx.expressions(),
             argsCtx.topLevelInputs().toArray(new Input[0])
         );
-        List<Object> actualResult = BatchIterators.collect(
-            iterator,
-            Collectors.mapping(row -> row.get(numCellsInSourceRows), Collectors.toList())).get(5, TimeUnit.SECONDS);
+        List<Object> actualResult;
+        try {
+            actualResult = BatchIterators.collect(
+                iterator,
+                Collectors.mapping(row -> row.get(numCellsInSourceRows), Collectors.toList())).get(5, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+            throw e.getCause();
+        }
         assertThat((T) actualResult, expectedValue);
+    }
+
+    private static void ensureInputRowsHaveCorrectType(List<Symbol> sourceSymbols, Object[][] inputRows) {
+        for (int i = 0; i < sourceSymbols.size(); i++) {
+            for (Object[] inputRow : inputRows) {
+                inputRow[i] = sourceSymbols.get(i).valueType().value(inputRow[i]);
+            }
+        }
     }
 }

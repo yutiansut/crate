@@ -40,7 +40,8 @@ import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.CheckedSupplier;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.shard.IndexShard;
@@ -56,7 +57,6 @@ import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Base class for performing Crate-specific TransportWriteActions like Delete or Upsert.
@@ -69,18 +69,27 @@ public abstract class TransportShardAction<Request extends ShardRequest<Request,
     private final Multimap<UUID, KillableCallable> activeOperations = Multimaps.synchronizedMultimap(HashMultimap.<UUID, KillableCallable>create());
     private final MappingUpdatePerformer mappingUpdate;
 
-    protected TransportShardAction(Settings settings,
-                                   String actionName,
+    protected TransportShardAction(String actionName,
                                    TransportService transportService,
                                    IndexNameExpressionResolver indexNameExpressionResolver,
                                    ClusterService clusterService,
                                    IndicesService indicesService,
                                    ThreadPool threadPool,
                                    ShardStateAction shardStateAction,
-                                   Supplier<Request> requestSupplier,
+                                   Writeable.Reader<Request> reader,
                                    SchemaUpdateClient schemaUpdateClient) {
-        super(settings, actionName, transportService, clusterService, indicesService, threadPool, shardStateAction,
-            indexNameExpressionResolver, requestSupplier, requestSupplier,ThreadPool.Names.WRITE);
+        super(
+            actionName,
+            transportService,
+            clusterService,
+            indicesService,
+            threadPool,
+            shardStateAction,
+            indexNameExpressionResolver,
+            reader,
+            reader,
+            ThreadPool.Names.WRITE
+        );
         this.mappingUpdate = (update, shardId, type) -> {
             validateMapping(update.root().iterator(), false);
             schemaUpdateClient.blockingUpdateOnMaster(shardId.getIndex(), update);
@@ -88,8 +97,8 @@ public abstract class TransportShardAction<Request extends ShardRequest<Request,
     }
 
     @Override
-    protected ShardResponse newResponseInstance() {
-        return new ShardResponse();
+    protected ShardResponse read(StreamInput in) throws IOException {
+        return new ShardResponse(in);
     }
 
     @Override

@@ -420,6 +420,56 @@ Examples::
       +------------------------+
       SELECT 1 row in set (... sec)
 
+.. _scalar-lpad:
+
+``lpad('string1', len[, 'string2'])``
+-------------------------------------
+
+Fill up ``string1`` to length ``len`` by prepending the characters ``string2``
+(a space by default). If string1 is already longer than len then it is truncated
+(on the right).
+
+Synopsis::
+
+    lpad(string1, len[, string2])
+
+Example::
+
+   cr> select lpad(' I like CrateDB!!', 41, 'yes! ');
+   +-------------------------------------------+
+   | lpad(' I like CrateDB!!', 41, 'yes! ')    |
+   +-------------------------------------------+
+   | yes! yes! yes! yes! yes! I like CrateDB!! |
+   +-------------------------------------------+
+   SELECT 1 row in set (... sec)
+
+.. _scalar-rpad:
+
+``rpad('string1', len[, 'string2'])``
+-------------------------------------
+
+Fill up ``string1`` to length ``len`` by appending the characters ``string2``
+(a space by default). If string1 is already longer than len then it is truncated.
+
+Synopsis::
+
+    rpad(string1, len[, string2])
+
+Example::
+
+   cr> select rpad('Do you like Crate?', 38, ' yes!');
+   +-----------------------------------------+
+   | rpad('Do you like Crate?', 38, ' yes!') |
+   +-----------------------------------------+
+   | Do you like Crate? yes! yes! yes! yes!  |
+   +-----------------------------------------+
+   SELECT 1 row in set (... sec)
+
+.. NOTE::
+
+   In both cases, the scalar functions lpad and rpad, do now accept a len
+   greater than 50000.
+
 Date and time functions
 =======================
 
@@ -706,6 +756,8 @@ If no ``format_string`` is given the default format will be used::
     +-----------------------------+
     SELECT 1 row in set (... sec)
 
+.. _date-format-timezone:
+
 Timezone
 ........
 
@@ -732,6 +784,74 @@ The ``timezone`` will be ``UTC`` if not provided::
     +------------------+
     | 1969/12/31 19:00 |
     +------------------+
+    SELECT 1 row in set (... sec)
+
+.. _scalar-timezone:
+
+``timezone(timezone, timestamp)``
+---------------------------------
+
+The timezone scalar function converts values of ``timestamp`` without time zone to/from
+timestamp with time zone.
+
+Synopsis
+........
+
+::
+
+    TIMEZONE(timezone, timestamp)
+
+It has two variants depending on the type of ``timestamp``:
+
+.. csv-table::
+   :header: "Type of timestamp", "Return Type", "Description"
+
+   "timestamp without time zone OR bigint", "timestamp with time zone", "Treat \
+   given timestamp without time zone as located in the specified timezone"
+   "timestamp with time zone", "timestamp without time zone", "Convert given \
+   timestamp with time zone to the new timezone with no time zone designation"
+
+::
+
+    cr> select
+    ... 257504400000 as no_tz,
+    ... date_format('%Y-%m-%d %h:%i', 257504400000) as no_tz_str,
+    ... timezone('Europe/Madrid', 257504400000) as in_madrid,
+    ... date_format('%Y-%m-%d %h:%i', timezone('Europe/Madrid',
+    ... 257504400000)) as in_madrid_str;
+    +--------------+------------------+--------------+------------------+
+    |        no_tz | no_tz_str        |    in_madrid | in_madrid_str    |
+    +--------------+------------------+--------------+------------------+
+    | 257504400000 | 1978-02-28 09:00 | 257500800000 | 1978-02-28 08:00 |
+    +--------------+------------------+--------------+------------------+
+    SELECT 1 row in set (... sec)
+
+::
+
+    cr> select
+    ... timezone('Europe/Madrid',
+    ... '1978-02-28T10:00:00.000+01:00'::timestamp with time zone) as epoque,
+    ... date_format('%Y-%m-%d %h:%i', timezone('Europe/Madrid',
+    ... '1978-02-28T10:00:00.000+01:00'::timestamp with time zone)) as epoque_str;
+    +--------------+------------------+
+    |       epoque | epoque_str       |
+    +--------------+------------------+
+    | 257508000000 | 1978-02-28 10:00 |
+    +--------------+------------------+
+    SELECT 1 row in set (... sec)
+
+::
+
+    cr> select
+    ... timezone('Europe/Madrid',
+    ... '1978-02-28T10:00:00.000+01:00'::timestamp without time zone) as epoque,
+    ... date_format('%Y-%m-%d %h:%i', timezone('Europe/Madrid',
+    ... '1978-02-28T10:00:00.000+01:00'::timestamp without time zone)) as epoque_str;
+    +--------------+------------------+
+    |       epoque | epoque_str       |
+    +--------------+------------------+
+    | 257504400000 | 1978-02-28 09:00 |
+    +--------------+------------------+
     SELECT 1 row in set (... sec)
 
 Geo functions
@@ -2216,6 +2336,32 @@ Example::
     +--------------------+
     |              crate |
     +--------------------+
+    SELECT 1 row in set (... sec)
+
+.. _pg_typeof:
+
+``pg_typeof``
+=============
+
+The function ``pg_typeof`` returns the text representation of the value's data
+type passed to it.
+
+Returns: ``text``
+
+Synopsis::
+
+   pg_typeof(expression)
+
+Example:
+
+::
+
+    cr> select pg_typeof([1, 2, 3]) as typeof;
+    +--------------+
+    | typeof       |
+    +--------------+
+    | bigint_array |
+    +--------------+
     SELECT 1 row in set (... sec)
 
 Special functions

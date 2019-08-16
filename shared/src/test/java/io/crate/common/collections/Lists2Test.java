@@ -30,9 +30,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-import static io.crate.common.collections.Lists2.arePeers;
-import static io.crate.common.collections.Lists2.findFirstLTEProbeValue;
 import static io.crate.common.collections.Lists2.findFirstGTEProbeValue;
+import static io.crate.common.collections.Lists2.findFirstLTEProbeValue;
 import static io.crate.common.collections.Lists2.findFirstNonPeer;
 import static io.crate.common.collections.Lists2.findFirstPreviousPeer;
 import static org.hamcrest.core.Is.is;
@@ -70,37 +69,6 @@ public class Lists2Test {
     }
 
     @Test
-    public void testEqualValuesArePeers() {
-        var numbers = List.of(1, 2, 2, 4, 5, 6, 6, 7);
-        assertThat(arePeers(numbers, 1, 2, integerComparator),
-                   is(true));
-        assertThat(arePeers(numbers, 5, 6, integerComparator),
-                   is(true));
-    }
-
-    @Test
-    public void testAllItemsArePeersForNullComparator() {
-        var numbers = List.of(1, 2, 3, 4, 5, 6, 7, 8);
-        for (int i = 0; i < numbers.size() - 1; i++) {
-            assertThat(
-                arePeers(numbers, i, i + 1, null),
-                is(true)
-            );
-        }
-    }
-
-    @Test
-    public void testArePeersWithAllUniqueReturnsFalse() {
-        var numbers = List.of(1, 2, 3, 4, 5, 6, 7, 8);
-        for (int i = 0; i < numbers.size() - 1; i++) {
-            assertThat(
-                arePeers(numbers, i, i + 1, integerComparator),
-                is(false)
-            );
-        }
-    }
-
-    @Test
     public void testFindFirstPreviousPeerReturnZeroForNullComparator() {
         var numbers = List.of(1, 1, 2, 4, 4, 4, 4, 5);
         assertThat(findFirstPreviousPeer(numbers, 5, null), is(0));
@@ -129,24 +97,24 @@ public class Lists2Test {
     @Test
     public void test_find_first_gte_probe_when_exists_in_slice() {
         var numbers = List.of(1, 2, 3, 6, 7, 8);
-        assertThat(findFirstGTEProbeValue(numbers, 4, 4, integerComparator), is(3));
+        assertThat(findFirstGTEProbeValue(numbers, 0, 4, 4, integerComparator), is(3));
     }
 
     @Test
     public void test_find_first_gte_probe_when_greater_than_all_items_is_minus_one() {
         var numbers = List.of(1, 2, 3, 6, 7, 8);
-        assertThat(findFirstGTEProbeValue(numbers, 3, 4, integerComparator), is(-1));
+        assertThat(findFirstGTEProbeValue(numbers, 0, 3, 4, integerComparator), is(-1));
     }
 
     @Test
     public void test_find_first_lte_probe_when_exists_in_slice() {
         var numbers = List.of(1, 2, 3, 6, 7, 8);
-        assertThat(findFirstLTEProbeValue(numbers, 3, 7, integerComparator), is(4));
+        assertThat(findFirstLTEProbeValue(numbers, numbers.size(), 3, 7, integerComparator), is(4));
     }
 
     @Test
     public void test_find_first_lte_probe_when_less_than_all_items_is_minus_one() {
         var numbers = List.of(1, 2, 3, 4, 5, 6, 7, 8);
-        assertThat(findFirstLTEProbeValue(numbers, 5, 0, integerComparator), is(-1));
+        assertThat(findFirstLTEProbeValue(numbers, numbers.size(), 5, 0, integerComparator), is(-1));
     }
 }

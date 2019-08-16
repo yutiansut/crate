@@ -19,14 +19,12 @@
 
 package org.elasticsearch.action.admin.cluster.repositories.delete;
 
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
 import java.io.IOException;
 
-import static org.elasticsearch.action.ValidateActions.addValidationError;
 
 /**
  * Unregister repository request.
@@ -49,15 +47,6 @@ public class DeleteRepositoryRequest extends AcknowledgedRequest<DeleteRepositor
         this.name = name;
     }
 
-    @Override
-    public ActionRequestValidationException validate() {
-        ActionRequestValidationException validationException = null;
-        if (name == null) {
-            validationException = addValidationError("name is missing", validationException);
-        }
-        return validationException;
-    }
-
     /**
      * Sets the name of the repository to unregister.
      *
@@ -77,9 +66,8 @@ public class DeleteRepositoryRequest extends AcknowledgedRequest<DeleteRepositor
         return this.name;
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public DeleteRepositoryRequest(StreamInput in) throws IOException {
+        super(in);
         name = in.readString();
     }
 

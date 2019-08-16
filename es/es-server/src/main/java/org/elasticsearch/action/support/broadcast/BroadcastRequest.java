@@ -19,16 +19,15 @@
 
 package org.elasticsearch.action.support.broadcast;
 
-import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.transport.TransportRequest;
 
 import java.io.IOException;
 
-public class BroadcastRequest<Request extends BroadcastRequest<Request>> extends ActionRequest implements IndicesRequest.Replaceable {
+public class BroadcastRequest<Request extends BroadcastRequest<Request>> extends TransportRequest implements IndicesRequest.Replaceable {
 
     protected String[] indices;
     private IndicesOptions indicesOptions = IndicesOptions.strictExpandOpenAndForbidClosed();
@@ -53,11 +52,6 @@ public class BroadcastRequest<Request extends BroadcastRequest<Request>> extends
     }
 
     @Override
-    public ActionRequestValidationException validate() {
-        return null;
-    }
-
-    @Override
     public IndicesOptions indicesOptions() {
         return indicesOptions;
     }
@@ -75,9 +69,8 @@ public class BroadcastRequest<Request extends BroadcastRequest<Request>> extends
         indicesOptions.writeIndicesOptions(out);
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public BroadcastRequest(StreamInput in) throws IOException {
+        super(in);
         indices = in.readStringArray();
         indicesOptions = IndicesOptions.readIndicesOptions(in);
     }

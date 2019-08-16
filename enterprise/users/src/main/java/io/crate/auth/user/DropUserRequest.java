@@ -18,8 +18,6 @@
 
 package io.crate.auth.user;
 
-import org.elasticsearch.action.ActionRequestValidationException;
-import org.elasticsearch.action.ValidateActions;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -28,11 +26,8 @@ import java.io.IOException;
 
 public class DropUserRequest extends AcknowledgedRequest<DropUserRequest> {
 
-    private String userName;
-    private boolean ifExists;
-
-    DropUserRequest() {
-    }
+    private final String userName;
+    private final boolean ifExists;
 
     DropUserRequest(String userName, boolean ifExists) {
         this.userName = userName;
@@ -47,17 +42,8 @@ public class DropUserRequest extends AcknowledgedRequest<DropUserRequest> {
         return ifExists;
     }
 
-    @Override
-    public ActionRequestValidationException validate() {
-        if (userName == null) {
-            return ValidateActions.addValidationError("userName is missing", null);
-        }
-        return null;
-    }
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public DropUserRequest(StreamInput in) throws IOException {
+        super(in);
         userName = in.readString();
         ifExists = in.readBoolean();
     }

@@ -135,6 +135,10 @@ where
     : WHERE condition=booleanExpression
     ;
 
+filter
+    : FILTER '(' where ')'
+    ;
+
 relation
     : left=relation
       ( CROSS JOIN right=aliasedRelation
@@ -222,9 +226,9 @@ valueExpression
 primaryExpression
     : parameterOrLiteral                                                             #defaultParamOrLiteral
     | explicitFunction                                                               #explicitFunctionDefault
-    | qname '(' ASTERISK ')' over?                                                   #functionCall
+    | qname '(' ASTERISK ')' filter? over?                                           #functionCall
     | ident                                                                          #columnReference
-    | qname '(' (setQuant? expr (',' expr)*)? ')' over?                              #functionCall
+    | qname '(' (setQuant? expr (',' expr)*)? ')' filter? over?                      #functionCall
     | subqueryExpression                                                             #subqueryExpressionDefault
     // This case handles a simple parenthesized expression.
     | '(' expr ')'                                                                   #nestedExpression
@@ -233,6 +237,7 @@ primaryExpression
     | value=primaryExpression '[' index=valueExpression ']'                          #subscript
     | ident ('.' ident)*                                                             #dereference
     | primaryExpression CAST_OPERATOR dataType                                       #doubleColonCast
+    | timestamp=primaryExpression AT TIME ZONE zone=primaryExpression                #atTimezone
     ;
 
 explicitFunction
@@ -633,7 +638,7 @@ isolationLevel
     ;
 
 nonReserved
-    : ALIAS | ANALYZE | ANALYZER | BERNOULLI | BLOB | CATALOGS | CHAR_FILTERS | CLUSTERED
+    : ALIAS | ANALYZE | ANALYZER | AT | BERNOULLI | BLOB | CATALOGS | CHAR_FILTERS | CLUSTERED
     | COLUMNS | COPY | CURRENT |  DAY | DEALLOCATE | DISTRIBUTED | DUPLICATE | DYNAMIC | EXPLAIN
     | EXTENDS | FOLLOWING | FORMAT | FULLTEXT | FUNCTIONS | GEO_POINT | GEO_SHAPE | GLOBAL
     | GRAPHVIZ | HOUR | IGNORED | KEY | KILL | LICENSE | LOGICAL | LOCAL | MATERIALIZED | MINUTE
@@ -644,7 +649,7 @@ nonReserved
     | REPOSITORY | SNAPSHOT | RESTORE | GENERATED | ALWAYS | BEGIN | COMMIT
     | ISOLATION | TRANSACTION | CHARACTERISTICS | LEVEL | LANGUAGE | OPEN | CLOSE | RENAME
     | PRIVILEGES | SCHEMA | PREPARE
-    | REROUTE | MOVE | SHARD | ALLOCATE | REPLICA | CANCEL | CLUSTER | RETRY | FAILED
+    | REROUTE | MOVE | SHARD | ALLOCATE | REPLICA | CANCEL | CLUSTER | RETRY | FAILED | FILTER
     | DO | NOTHING | CONFLICT | TRANSACTION_ISOLATION | RETURN | SUMMARY
     | WORK | SERIALIZABLE | REPEATABLE | COMMITTED | UNCOMMITTED | READ | WRITE | WINDOW | DEFERRABLE
     | STRING_TYPE | IP | DOUBLE | FLOAT | TIMESTAMP | LONG | INT | INTEGER | SHORT | BYTE | BOOLEAN | PRECISION
@@ -656,6 +661,7 @@ SELECT: 'SELECT';
 FROM: 'FROM';
 TO: 'TO';
 AS: 'AS';
+AT: 'AT';
 ALL: 'ALL';
 ANY: 'ANY';
 SOME: 'SOME';
@@ -864,6 +870,7 @@ SHARDS: 'SHARDS';
 PRIMARY_KEY: 'PRIMARY KEY';
 OFF: 'OFF';
 FULLTEXT: 'FULLTEXT';
+FILTER: 'FILTER';
 PLAIN: 'PLAIN';
 INDEX: 'INDEX';
 STORAGE: 'STORAGE';

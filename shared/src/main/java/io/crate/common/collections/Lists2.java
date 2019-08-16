@@ -122,6 +122,9 @@ public final class Lists2 {
      * Opposed to {@link java.util.stream.Stream#map(Function)} / {@link Collectors#toList()} this minimizes allocations.
      */
     public static <I, O> List<O> map(Collection<I> list, Function<? super I, ? extends O> mapper) {
+        if (list.isEmpty()) {
+            return List.of();
+        }
         List<O> copy = new ArrayList<>(list.size());
         for (I item : list) {
             copy.add(mapper.apply(item));
@@ -243,9 +246,13 @@ public final class Lists2 {
      * specified by @param itemIdx, according to the provided comparator.
      * @return the index of the first LTE item, or -1 if there isn't any (eg. probe is less than all items)
      */
-    public static <T> int findFirstLTEProbeValue(List<T> sortedItems, int itemIdx, T probe, Comparator<T> cmp) {
+    public static <T> int findFirstLTEProbeValue(List<T> sortedItems,
+                                                 int upperBoundary,
+                                                 int itemIdx,
+                                                 T probe,
+                                                 Comparator<T> cmp) {
         int start = itemIdx;
-        int end = sortedItems.size() - 1;
+        int end = upperBoundary - 1;
 
         int firstLTEProbeIdx = -1;
         while (start <= end) {
@@ -266,8 +273,8 @@ public final class Lists2 {
      * specified by @param itemIdx, according to the provided comparator.
      * @return the index of the first GTE item, or -1 if there isn't any (eg. probe is greater than all items)
      */
-    public static <T> int findFirstGTEProbeValue(List<T> sortedItems, int itemIdx, T probe, Comparator<T> cmp) {
-        int start = 0;
+    public static <T> int findFirstGTEProbeValue(List<T> sortedItems, int lowerBoundary, int itemIdx, T probe, Comparator<T> cmp) {
+        int start = lowerBoundary;
         int end = itemIdx - 1;
 
         int firstGTEProbeIdx = -1;
@@ -283,17 +290,4 @@ public final class Lists2 {
         }
         return firstGTEProbeIdx;
     }
-
-    /**
-     * Indicates if the items at pos1 and pos2 are equal (ie. peers)  with respect to the provided comparator.
-     * @return true if the comparator is null, or true/false if the comparator designates the two items as true or false.
-     */
-    public static <T> boolean arePeers(List<T> items, int pos1, int pos2, @Nullable Comparator<T> cmp) {
-        if (cmp == null) {
-            return true;
-        }
-        T fst = items.get(pos1);
-        return cmp.compare(fst, items.get(pos2)) == 0;
-    }
-
 }

@@ -43,12 +43,10 @@ class RecoveryResponse extends TransportResponse {
     int phase2Operations;
     long phase2Time;
 
-    RecoveryResponse() {
+    public RecoveryResponse() {
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public RecoveryResponse(StreamInput in) throws IOException {
         int size = in.readVInt();
         phase1FileNames = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
@@ -82,7 +80,6 @@ class RecoveryResponse extends TransportResponse {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        super.writeTo(out);
         out.writeVInt(phase1FileNames.size());
         for (String name : phase1FileNames) {
             out.writeString(name);

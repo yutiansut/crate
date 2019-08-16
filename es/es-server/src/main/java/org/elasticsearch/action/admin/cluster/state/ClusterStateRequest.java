@@ -19,7 +19,6 @@
 
 package org.elasticsearch.action.admin.cluster.state;
 
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.MasterNodeReadRequest;
@@ -40,11 +39,6 @@ public class ClusterStateRequest extends MasterNodeReadRequest<ClusterStateReque
     private IndicesOptions indicesOptions = IndicesOptions.lenientExpandOpen();
 
     public ClusterStateRequest() {
-    }
-
-    @Override
-    public ActionRequestValidationException validate() {
-        return null;
     }
 
     public ClusterStateRequest all() {
@@ -133,9 +127,8 @@ public class ClusterStateRequest extends MasterNodeReadRequest<ClusterStateReque
         return customs;
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public ClusterStateRequest(StreamInput in) throws IOException {
+        super(in);
         routingTable = in.readBoolean();
         nodes = in.readBoolean();
         metaData = in.readBoolean();

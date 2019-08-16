@@ -53,13 +53,16 @@ public class TransportIndicesStatsAction extends TransportBroadcastByNodeAction<
                                        TransportService transportService,
                                        IndicesService indicesService,
                                        IndexNameExpressionResolver indexNameExpressionResolver) {
-        super(IndicesStatsAction.NAME,
+        super(
+            IndicesStatsAction.NAME,
             threadPool,
             clusterService,
             transportService,
             indexNameExpressionResolver,
             IndicesStatsRequest::new,
-            ThreadPool.Names.MANAGEMENT);
+            ThreadPool.Names.MANAGEMENT,
+            true
+        );
         this.indicesService = indicesService;
     }
 
@@ -83,7 +86,7 @@ public class TransportIndicesStatsAction extends TransportBroadcastByNodeAction<
 
     @Override
     protected ShardStats readShardResult(StreamInput in) throws IOException {
-        return ShardStats.readShardStats(in);
+        return new ShardStats(in);
     }
 
     @Override
@@ -93,9 +96,7 @@ public class TransportIndicesStatsAction extends TransportBroadcastByNodeAction<
 
     @Override
     protected IndicesStatsRequest readRequestFrom(StreamInput in) throws IOException {
-        IndicesStatsRequest request = new IndicesStatsRequest();
-        request.readFrom(in);
-        return request;
+        return new IndicesStatsRequest(in);
     }
 
     @Override

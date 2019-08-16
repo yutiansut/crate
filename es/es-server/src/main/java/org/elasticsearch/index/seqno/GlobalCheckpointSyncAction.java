@@ -32,7 +32,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.IndexShardClosedException;
@@ -54,11 +54,10 @@ public class GlobalCheckpointSyncAction extends TransportReplicationAction<
         GlobalCheckpointSyncAction.Request,
         ReplicationResponse> {
 
-    public static String ACTION_NAME = "indices:admin/seq_no/global_checkpoint_sync";
+    public static final String ACTION_NAME = "indices:admin/seq_no/global_checkpoint_sync";
 
     @Inject
     public GlobalCheckpointSyncAction(
-            final Settings settings,
             final TransportService transportService,
             final ClusterService clusterService,
             final IndicesService indicesService,
@@ -66,7 +65,6 @@ public class GlobalCheckpointSyncAction extends TransportReplicationAction<
             final ShardStateAction shardStateAction,
             final IndexNameExpressionResolver indexNameExpressionResolver) {
         super(
-                settings,
                 ACTION_NAME,
                 transportService,
                 clusterService,
@@ -95,8 +93,8 @@ public class GlobalCheckpointSyncAction extends TransportReplicationAction<
     }
 
     @Override
-    protected ReplicationResponse newResponseInstance() {
-        return new ReplicationResponse();
+    protected ReplicationResponse read(StreamInput in) throws IOException {
+        return new ReplicationResponse(in);
     }
 
     @Override
@@ -129,12 +127,12 @@ public class GlobalCheckpointSyncAction extends TransportReplicationAction<
 
     public static final class Request extends ReplicationRequest<Request> {
 
-        private Request() {
-            super();
-        }
-
         public Request(final ShardId shardId) {
             super(shardId);
+        }
+
+        public Request(StreamInput in) throws IOException {
+            super(in);
         }
 
         @Override

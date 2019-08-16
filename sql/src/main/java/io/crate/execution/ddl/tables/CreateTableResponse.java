@@ -22,36 +22,30 @@
 
 package io.crate.execution.ddl.tables;
 
-import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.transport.TransportResponse;
 
 import java.io.IOException;
 
-public final class CreateTableResponse extends ActionResponse {
+public final class CreateTableResponse extends TransportResponse {
 
-    private boolean allShardsAcked;
+    private final boolean allShardsAcked;
 
     public CreateTableResponse(boolean allShardsAcked) {
         this.allShardsAcked = allShardsAcked;
-    }
-
-    CreateTableResponse() {
     }
 
     public boolean isAllShardsAcked() {
         return allShardsAcked;
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public CreateTableResponse(StreamInput in) throws IOException {
         allShardsAcked = in.readBoolean();
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        super.writeTo(out);
         out.writeBoolean(allShardsAcked);
     }
 }

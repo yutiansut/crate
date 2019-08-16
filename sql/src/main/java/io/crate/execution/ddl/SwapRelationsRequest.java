@@ -23,7 +23,6 @@
 package io.crate.execution.ddl;
 
 import io.crate.metadata.RelationName;
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -33,11 +32,8 @@ import java.util.List;
 
 public final class SwapRelationsRequest extends AcknowledgedRequest<SwapRelationsRequest> {
 
-    private List<RelationNameSwap> swapRelations;
-    private List<RelationName> dropRelations;
-
-    SwapRelationsRequest() {
-    }
+    private final List<RelationNameSwap> swapRelations;
+    private final List<RelationName> dropRelations;
 
     public SwapRelationsRequest(List<RelationNameSwap> swapRelations, List<RelationName> dropRelations) {
         this.swapRelations = swapRelations;
@@ -59,14 +55,8 @@ public final class SwapRelationsRequest extends AcknowledgedRequest<SwapRelation
         return dropRelations;
     }
 
-    @Override
-    public ActionRequestValidationException validate() {
-        return null;
-    }
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public SwapRelationsRequest(StreamInput in) throws IOException {
+        super(in);
         swapRelations = in.readList(RelationNameSwap::new);
         dropRelations = in.readList(RelationName::new);
     }

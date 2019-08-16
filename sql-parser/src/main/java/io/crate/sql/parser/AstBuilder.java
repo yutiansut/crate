@@ -1432,6 +1432,13 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
     }
 
     @Override
+    public Node visitAtTimezone(SqlBaseParser.AtTimezoneContext context) {
+        Expression zone = (Expression) visit(context.zone);
+        Expression timestamp = (Expression) visit(context.timestamp);
+        return new FunctionCall(QualifiedName.of("timezone"), List.of(zone, timestamp));
+    }
+
+    @Override
     public Node visitLeft(SqlBaseParser.LeftContext context) {
         Expression strOrColName = (Expression) visit(context.strOrColName);
         Expression len = (Expression) visit(context.len);
@@ -1547,12 +1554,18 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
     }
 
     @Override
+    public Node visitFilter(SqlBaseParser.FilterContext context) {
+        return visit(context.where());
+    }
+
+    @Override
     public Node visitFunctionCall(SqlBaseParser.FunctionCallContext context) {
         return new FunctionCall(
             getQualifiedName(context.qname()),
             isDistinct(context.setQuant()),
             visitCollection(context.expr(), Expression.class),
-            visitIfPresent(context.over(), Window.class)
+            visitIfPresent(context.over(), Window.class),
+            visitIfPresent(context.filter(), Expression.class)
         );
     }
 
@@ -1910,12 +1923,12 @@ class AstBuilder extends SqlBaseBaseVisitor<Node> {
         }
     }
 
-    private static WindowFrame.Type getFrameType(Token type) {
+    private static WindowFrame.Mode getFrameType(Token type) {
         switch (type.getType()) {
             case SqlBaseLexer.RANGE:
-                return WindowFrame.Type.RANGE;
+                return WindowFrame.Mode.RANGE;
             case SqlBaseLexer.ROWS:
-                return WindowFrame.Type.ROWS;
+                return WindowFrame.Mode.ROWS;
             default:
                 throw new IllegalArgumentException("Unsupported frame type: " + type.getText());
         }

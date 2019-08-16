@@ -22,8 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.tasks.Task;
@@ -34,47 +32,37 @@ import org.elasticsearch.transport.TransportRequestHandler;
 import org.elasticsearch.transport.TransportResponse;
 import org.elasticsearch.transport.TransportService;
 
-import java.util.function.Supplier;
-
 /**
  * A TransportAction that self registers a handler into the transport service
  */
-public abstract class HandledTransportAction<Request extends ActionRequest, Response extends ActionResponse>
+public abstract class HandledTransportAction<Request extends TransportRequest, Response extends TransportResponse>
         extends TransportAction<Request, Response> {
 
     protected final Logger logger = LogManager.getLogger(getClass());
 
-    protected HandledTransportAction(String actionName, ThreadPool threadPool, TransportService transportService,
-                                     IndexNameExpressionResolver indexNameExpressionResolver,
-                                     Supplier<Request> request) {
-        this(actionName, true, threadPool, transportService, indexNameExpressionResolver, request);
-    }
-
     protected HandledTransportAction(String actionName,
                                      ThreadPool threadPool,
                                      TransportService transportService,
-                                     Writeable.Reader<Request> requestReader,
+                                     Writeable.Reader<Request> reader,
                                      IndexNameExpressionResolver indexNameExpressionResolver) {
-        this(actionName, true, threadPool, transportService, requestReader, indexNameExpressionResolver);
+        this(actionName, true, threadPool, transportService, reader, indexNameExpressionResolver);
     }
 
     protected HandledTransportAction(String actionName,
                                      boolean canTripCircuitBreaker,
                                      ThreadPool threadPool,
                                      TransportService transportService,
-                                     IndexNameExpressionResolver indexNameExpressionResolver,
-                                     Supplier<Request> request) {
+                                     Writeable.Reader<Request> requestReader,
+                                     IndexNameExpressionResolver indexNameExpressionResolver) {
         super(actionName, threadPool, indexNameExpressionResolver, transportService.getTaskManager());
-        transportService.registerRequestHandler(actionName, request, ThreadPool.Names.SAME, false, canTripCircuitBreaker,
-            new TransportHandler());
-    }
-
-    protected HandledTransportAction(String actionName, boolean canTripCircuitBreaker, ThreadPool threadPool,
-                                     TransportService transportService,
-                                     Writeable.Reader<Request> requestReader, IndexNameExpressionResolver indexNameExpressionResolver) {
-        super(actionName, threadPool, indexNameExpressionResolver, transportService.getTaskManager());
-        transportService.registerRequestHandler(actionName, ThreadPool.Names.SAME, false, canTripCircuitBreaker, requestReader,
-            new TransportHandler());
+        transportService.registerRequestHandler(
+            actionName,
+            ThreadPool.Names.SAME,
+            false,
+            canTripCircuitBreaker,
+            requestReader,
+            new TransportHandler()
+        );
     }
 
     class TransportHandler implements TransportRequestHandler<Request> {

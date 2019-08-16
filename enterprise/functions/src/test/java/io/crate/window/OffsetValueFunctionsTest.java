@@ -27,8 +27,7 @@ import io.crate.metadata.ColumnIdent;
 import io.crate.module.EnterpriseFunctionsModule;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 
 import static org.hamcrest.Matchers.contains;
 
@@ -39,10 +38,11 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLagWithSingleArgumentAndEmptyOver() throws Exception {
-        assertEvaluate("lag(x) over()",
+    public void testLagWithSingleArgumentAndEmptyOver() throws Throwable {
+        assertEvaluate(
+            "lag(x) over()",
             contains(new Object[]{null, 1, null, 2}),
-            Collections.singletonMap(new ColumnIdent("x"), 0),
+            List.of(new ColumnIdent("x")),
             new Object[]{1},
             new Object[]{null},
             new Object[]{2},
@@ -51,10 +51,11 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLagWithOffsetAndEmptyOver() throws Exception {
-        assertEvaluate("lag(x, 2) over()",
+    public void testLagWithOffsetAndEmptyOver() throws Throwable {
+        assertEvaluate(
+            "lag(x, 2) over()",
             contains(new Object[]{null, null, 1, 2}),
-            Collections.singletonMap(new ColumnIdent("x"), 0),
+            List.of(new ColumnIdent("x")),
             new Object[]{1},
             new Object[]{2},
             new Object[]{3},
@@ -63,10 +64,11 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLagWithNullOffset() throws Exception {
-        assertEvaluate("lag(x, null) over()",
+    public void testLagWithNullOffset() throws Throwable {
+        assertEvaluate(
+            "lag(x, null) over()",
             contains(new Object[]{null, null, null}),
-            Collections.singletonMap(new ColumnIdent("x"), 0),
+            List.of(new ColumnIdent("x")),
             new Object[]{1},
             new Object[]{null},
             new Object[]{2}
@@ -74,30 +76,33 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLagZeroOffsetAndEmptyOver() throws Exception {
-        assertEvaluate("lag(x, 0) over()",
+    public void testLagZeroOffsetAndEmptyOver() throws Throwable {
+        assertEvaluate(
+            "lag(x, 0) over()",
             contains(new Object[]{1, 2}),
-            Collections.singletonMap(new ColumnIdent("x"), 0),
+            List.of(new ColumnIdent("x")),
             new Object[]{1},
             new Object[]{2}
         );
     }
 
     @Test
-    public void testLagNegativeOffsetAndEmptyOver() throws Exception {
-        assertEvaluate("lag(x, -1) over()",
+    public void testLagNegativeOffsetAndEmptyOver() throws Throwable {
+        assertEvaluate(
+            "lag(x, -1) over()",
             contains(new Object[]{2, null}),
-            Collections.singletonMap(new ColumnIdent("x"), 0),
+            List.of(new ColumnIdent("x")),
             new Object[]{1},
             new Object[]{2}
         );
     }
 
     @Test
-    public void testLagWithDefaultValueAndEmptyOver() throws Exception {
-        assertEvaluate("lag(x, 1, -1) over()",
+    public void testLagWithDefaultValueAndEmptyOver() throws Throwable {
+        assertEvaluate(
+            "lag(x, 1, -1) over()",
             contains(new Object[]{-1, 1, 2, 3}),
-            Collections.singletonMap(new ColumnIdent("x"), 0),
+            List.of(new ColumnIdent("x")),
             new Object[]{1},
             new Object[]{2},
             new Object[]{3},
@@ -106,10 +111,11 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLagWithExpressionAsArgumentAndEmptyOver() throws Exception {
-        assertEvaluate("lag(coalesce(x, 1), 1, -1) over()",
+    public void testLagWithExpressionAsArgumentAndEmptyOver() throws Throwable {
+        assertEvaluate(
+            "lag(coalesce(x, 1), 1, -1) over()",
             contains(new Object[]{-1, 1, 1}),
-            Map.of(new ColumnIdent("x"), 0),
+            List.of(new ColumnIdent("x")),
             new Object[]{1},
             new Object[]{null},
             new Object[]{2}
@@ -117,10 +123,11 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLagWithOrderBy() throws Exception {
-        assertEvaluate("lag(x) over(order by y)",
+    public void testLagWithOrderBy() throws Throwable {
+        assertEvaluate(
+            "lag(x) over(order by y)",
             contains(new Object[]{null, 1, 3, 1}),
-            Map.of(new ColumnIdent("x"), 0, new ColumnIdent("y"), 1),
+            List.of(new ColumnIdent("x"), new ColumnIdent("y")),
             new Object[]{1, 1},
             new Object[]{1, 3},
             new Object[]{3, 2},
@@ -129,10 +136,11 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLagWithOrderByReferenceUsedInFunction() throws Exception {
-        assertEvaluate("lag(x) over(order by y, x)",
+    public void testLagWithOrderByReferenceUsedInFunction() throws Throwable {
+        assertEvaluate(
+            "lag(x) over(order by y, x)",
             contains(new Object[]{null, 1, 1, 3}),
-            Map.of(new ColumnIdent("x"), 0, new ColumnIdent("y"), 1),
+            List.of(new ColumnIdent("x"), new ColumnIdent("y")),
             new Object[]{1, 1},
             new Object[]{1, 2},
             new Object[]{3, 2},
@@ -141,10 +149,10 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLagOverPartitionedWindow() throws Exception {
+    public void testLagOverPartitionedWindow() throws Throwable {
         assertEvaluate("lag(x) over(partition by x > 2)",
             contains(new Object[]{null, 1, 2, null, 3, 4}),
-            Collections.singletonMap(new ColumnIdent("x"), 0),
+            List.of(new ColumnIdent("x")),
             new Object[]{1},
             new Object[]{2},
             new Object[]{2},
@@ -154,10 +162,11 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLagOperatesOnPartitionAndIgnoresFrameRange() throws Exception {
-        assertEvaluate("lag(x) over(RANGE BETWEEN CURRENT ROW and UNBOUNDED FOLLOWING)",
+    public void testLagOperatesOnPartitionAndIgnoresFrameRange() throws Throwable {
+        assertEvaluate(
+            "lag(x) over(RANGE BETWEEN CURRENT ROW and UNBOUNDED FOLLOWING)",
             contains(new Object[]{null, 1, 2, 3}),
-            Collections.singletonMap(new ColumnIdent("x"), 0),
+            List.of(new ColumnIdent("x")),
             new Object[]{1},
             new Object[]{2},
             new Object[]{3},
@@ -166,10 +175,11 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLeadOverPartitionedWindow() throws Exception {
-        assertEvaluate("lead(x) over(partition by x > 2)",
+    public void testLeadOverPartitionedWindow() throws Throwable {
+        assertEvaluate(
+            "lead(x) over(partition by x > 2)",
             contains(new Object[]{2, 2, null, 4, 5, null}),
-            Collections.singletonMap(new ColumnIdent("x"), 0),
+            List.of(new ColumnIdent("x")),
             new Object[]{1},
             new Object[]{2},
             new Object[]{2},
@@ -179,10 +189,10 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLeadWithOrderBy() throws Exception {
+    public void testLeadWithOrderBy() throws Throwable {
         assertEvaluate("lead(x) over(order by y)",
                        contains(new Object[]{3, 1, 2, null}),
-                       Map.of(new ColumnIdent("x"), 0, new ColumnIdent("y"), 1),
+                       List.of(new ColumnIdent("x"), new ColumnIdent("y")),
                        new Object[]{1, 1},
                        new Object[]{1, 3},
                        new Object[]{3, 2},
@@ -191,10 +201,11 @@ public class OffsetValueFunctionsTest extends AbstractWindowFunctionTest {
     }
 
     @Test
-    public void testLeadOverCurrentRowUnboundedFollowingWithDefaultValue() throws Exception {
-        assertEvaluate("lead(x, 2, 42) over(RANGE BETWEEN CURRENT ROW and UNBOUNDED FOLLOWING)",
+    public void testLeadOverCurrentRowUnboundedFollowingWithDefaultValue() throws Throwable {
+        assertEvaluate(
+            "lead(x, 2, 42) over(RANGE BETWEEN CURRENT ROW and UNBOUNDED FOLLOWING)",
             contains(new Object[]{2, 3, 4, 42, 42}),
-            Collections.singletonMap(new ColumnIdent("x"), 0),
+            List.of(new ColumnIdent("x")),
             new Object[]{1},
             new Object[]{2},
             new Object[]{2},

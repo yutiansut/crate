@@ -314,9 +314,17 @@ public final class ExpressionFormatter {
                 builder.append('(').append(arguments).append(')');
             }
 
-            if (node.getWindow().isPresent()) {
-                builder.append(" OVER ").append(visitWindow(node.getWindow().get(), parameters));
-            }
+            node.filter()
+                .ifPresent(filter -> builder
+                    .append(" FILTER (WHERE ")
+                    .append(formatExpression(filter))
+                    .append(")"));
+
+            node.getWindow()
+                .ifPresent(window -> builder
+                    .append(" OVER ")
+                    .append(visitWindow(window, parameters)));
+
             return builder.toString();
         }
 
@@ -354,7 +362,7 @@ public final class ExpressionFormatter {
         public String visitWindowFrame(WindowFrame node, @Nullable List<Expression> parameters) {
             StringBuilder builder = new StringBuilder(" ");
 
-            builder.append(node.getType().toString()).append(' ');
+            builder.append(node.mode().toString()).append(' ');
 
             if (node.getEnd().isPresent()) {
                 builder.append("BETWEEN ")

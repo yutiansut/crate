@@ -57,14 +57,22 @@ public class TransportRecoveryAction extends TransportBroadcastByNodeAction<Reco
                                    TransportService transportService,
                                    IndicesService indicesService,
                                    IndexNameExpressionResolver indexNameExpressionResolver) {
-        super(RecoveryAction.NAME, threadPool, clusterService, transportService, indexNameExpressionResolver,
-                RecoveryRequest::new, ThreadPool.Names.MANAGEMENT);
+        super(
+            RecoveryAction.NAME,
+            threadPool,
+            clusterService,
+            transportService,
+            indexNameExpressionResolver,
+            RecoveryRequest::new,
+            ThreadPool.Names.MANAGEMENT,
+            true
+        );
         this.indicesService = indicesService;
     }
 
     @Override
     protected RecoveryState readShardResult(StreamInput in) throws IOException {
-        return RecoveryState.readRecoveryState(in);
+        return new RecoveryState(in);
     }
 
     @Override
@@ -91,9 +99,7 @@ public class TransportRecoveryAction extends TransportBroadcastByNodeAction<Reco
 
     @Override
     protected RecoveryRequest readRequestFrom(StreamInput in) throws IOException {
-        final RecoveryRequest recoveryRequest = new RecoveryRequest();
-        recoveryRequest.readFrom(in);
-        return recoveryRequest;
+        return new RecoveryRequest(in);
     }
 
     @Override

@@ -18,14 +18,12 @@
  */
 package org.elasticsearch.action.admin.indices.template.delete;
 
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
 import java.io.IOException;
 
-import static org.elasticsearch.action.ValidateActions.addValidationError;
 
 /**
  * A request to delete an index template.
@@ -52,15 +50,6 @@ public class DeleteIndexTemplateRequest extends MasterNodeRequest<DeleteIndexTem
         return this;
     }
 
-    @Override
-    public ActionRequestValidationException validate() {
-        ActionRequestValidationException validationException = null;
-        if (name == null) {
-            validationException = addValidationError("name is missing", validationException);
-        }
-        return validationException;
-    }
-
     /**
      * The index template name to delete.
      */
@@ -68,9 +57,8 @@ public class DeleteIndexTemplateRequest extends MasterNodeRequest<DeleteIndexTem
         return name;
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public DeleteIndexTemplateRequest(StreamInput in) throws IOException {
+        super(in);
         name = in.readString();
     }
 

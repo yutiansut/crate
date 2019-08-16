@@ -96,8 +96,8 @@ public class TransportClearVotingConfigExclusionsActionTests extends ESTestCase 
         transportService = transport.createTransportService(Settings.EMPTY, threadPool,
             TransportService.NOOP_TRANSPORT_INTERCEPTOR, boundTransportAddress -> localNode, null, emptySet());
 
-        new TransportClearVotingConfigExclusionsAction(transportService, clusterService, threadPool,
-            new IndexNameExpressionResolver(Settings.EMPTY)); // registers action
+        new TransportClearVotingConfigExclusionsAction(
+            transportService, clusterService, threadPool, new IndexNameExpressionResolver()); // registers action
 
         transportService.start();
         transportService.acceptIncomingRequests();
@@ -208,9 +208,7 @@ public class TransportClearVotingConfigExclusionsActionTests extends ESTestCase 
 
             @Override
             public ClearVotingConfigExclusionsResponse read(StreamInput in) throws IOException {
-                ClearVotingConfigExclusionsResponse response = new ClearVotingConfigExclusionsResponse();
-                response.readFrom(in);
-                return response;
+                return new ClearVotingConfigExclusionsResponse(in);
             }
         };
     }

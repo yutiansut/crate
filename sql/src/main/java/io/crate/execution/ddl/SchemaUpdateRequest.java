@@ -22,7 +22,6 @@
 
 package io.crate.execution.ddl;
 
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -32,20 +31,12 @@ import java.io.IOException;
 
 public class SchemaUpdateRequest extends MasterNodeRequest<SchemaUpdateRequest> {
 
-    private Index index;
-    private String mappingSource;
-
-    public SchemaUpdateRequest() {
-    }
+    private final Index index;
+    private final String mappingSource;
 
     public SchemaUpdateRequest(Index index, String mappingSource) {
         this.index = index;
         this.mappingSource = mappingSource;
-    }
-
-    @Override
-    public ActionRequestValidationException validate() {
-        return null;
     }
 
     public Index index() {
@@ -63,9 +54,8 @@ public class SchemaUpdateRequest extends MasterNodeRequest<SchemaUpdateRequest> 
         out.writeString(mappingSource);
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public SchemaUpdateRequest(StreamInput in) throws IOException {
+        super(in);
         index = new Index(in);
         mappingSource = in.readString();
     }

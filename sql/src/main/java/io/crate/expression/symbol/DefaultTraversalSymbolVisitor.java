@@ -38,6 +38,10 @@ public abstract class DefaultTraversalSymbolVisitor<C, R> extends SymbolVisitor<
         for (Symbol arg : symbol.arguments()) {
             process(arg, context);
         }
+        var filter = symbol.filter();
+        if (filter != null) {
+            process(filter, context);
+        }
         return null;
     }
 
@@ -45,6 +49,9 @@ public abstract class DefaultTraversalSymbolVisitor<C, R> extends SymbolVisitor<
     public R visitWindowFunction(WindowFunction symbol, C context) {
         for (Symbol arg : symbol.arguments()) {
             process(arg, context);
+        }
+        if (symbol.filter() != null) {
+            process(symbol.filter(), context);
         }
         WindowDefinition windowDefinition = symbol.windowDefinition();
         OrderBy orderBy = windowDefinition.orderBy();

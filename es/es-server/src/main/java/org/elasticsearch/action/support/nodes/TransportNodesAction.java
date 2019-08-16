@@ -22,12 +22,12 @@ package org.elasticsearch.action.support.nodes;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.FailedNodeException;
-import org.elasticsearch.action.NoSuchNodeException;
 import org.elasticsearch.action.support.HandledTransportAction;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.NodeShouldNotConnectException;
@@ -39,13 +39,12 @@ import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
-import java.util.function.Supplier;
 
 public abstract class TransportNodesAction<NodesRequest extends BaseNodesRequest<NodesRequest>,
                                            NodesResponse extends BaseNodesResponse,
@@ -64,11 +63,11 @@ public abstract class TransportNodesAction<NodesRequest extends BaseNodesRequest
                                    ClusterService clusterService,
                                    TransportService transportService,
                                    IndexNameExpressionResolver indexNameExpressionResolver,
-                                   Supplier<NodesRequest> request,
-                                   Supplier<NodeRequest> nodeRequest,
+                                   Writeable.Reader<NodesRequest> nodesRequestReader,
+                                   Writeable.Reader<NodeRequest> nodeRequestReader,
                                    String nodeExecutor,
                                    Class<NodeResponse> nodeResponseClass) {
-        super(actionName, threadPool, transportService, indexNameExpressionResolver, request);
+        super(actionName, threadPool, transportService, nodesRequestReader, indexNameExpressionResolver);
         this.clusterService = Objects.requireNonNull(clusterService);
         this.transportService = Objects.requireNonNull(transportService);
         this.nodeResponseClass = Objects.requireNonNull(nodeResponseClass);
@@ -76,7 +75,7 @@ public abstract class TransportNodesAction<NodesRequest extends BaseNodesRequest
         this.transportNodeAction = actionName + "[n]";
 
         transportService.registerRequestHandler(
-            transportNodeAction, nodeRequest, nodeExecutor, new NodeTransportHandler());
+            transportNodeAction, nodeRequestReader, nodeExecutor, new NodeTransportHandler());
     }
 
     @Override
@@ -133,23 +132,13 @@ public abstract class TransportNodesAction<NodesRequest extends BaseNodesRequest
 
     protected abstract NodeRequest newNodeRequest(String nodeId, NodesRequest request);
 
-    protected abstract NodeResponse newNodeResponse();
+    protected abstract NodeResponse read(StreamInput in) throws IOException;
 
     protected abstract NodeResponse nodeOperation(NodeRequest request);
 
     protected NodeResponse nodeOperation(NodeRequest request, Task task) {
         return nodeOperation(request);
     }
-
-    /**
-     * resolve node ids to concrete nodes of the incoming request
-     **/
-    protected void resolveRequest(NodesRequest request, ClusterState clusterState) {
-        assert request.concreteNodes() == null : "request concreteNodes shouldn't be set";
-        String[] nodesIds = clusterState.nodes().resolveNodes(request.nodesIds());
-        request.setConcreteNodes(Arrays.stream(nodesIds).map(clusterState.nodes()::get).toArray(DiscoveryNode[]::new));
-    }
-
 
     class AsyncAction {
 
@@ -163,10 +152,7 @@ public abstract class TransportNodesAction<NodesRequest extends BaseNodesRequest
             this.task = task;
             this.request = request;
             this.listener = listener;
-            if (request.concreteNodes() == null) {
-                resolveRequest(request, clusterService.state());
-                assert request.concreteNodes() != null;
-            }
+            assert request.concreteNodes() != null : "concreteNodes on NodesRequest must not be null";
             this.responses = new AtomicReferenceArray<>(request.concreteNodes().length);
         }
 
@@ -187,19 +173,20 @@ public abstract class TransportNodesAction<NodesRequest extends BaseNodesRequest
                 final DiscoveryNode node = nodes[i];
                 final String nodeId = node.getId();
                 try {
-                    if (node == null) {
-                        onFailure(idx, nodeId, new NoSuchNodeException(nodeId));
-                    } else {
-                        TransportRequest nodeRequest = newNodeRequest(nodeId, request);
-                        if (task != null) {
-                            nodeRequest.setParentTask(clusterService.localNode().getId(), task.getId());
-                        }
+                    TransportRequest nodeRequest = newNodeRequest(nodeId, request);
+                    if (task != null) {
+                        nodeRequest.setParentTask(clusterService.localNode().getId(), task.getId());
+                    }
+                    transportService.sendRequest(
+                        node,
+                        transportNodeAction,
+                        nodeRequest,
+                        builder.build(),
+                        new TransportResponseHandler<NodeResponse>() {
 
-                        transportService.sendRequest(node, transportNodeAction, nodeRequest, builder.build(),
-                                                     new TransportResponseHandler<NodeResponse>() {
                             @Override
-                            public NodeResponse newInstance() {
-                                return newNodeResponse();
+                            public NodeResponse read(StreamInput in) throws IOException {
+                                return TransportNodesAction.this.read(in);
                             }
 
                             @Override
@@ -216,8 +203,7 @@ public abstract class TransportNodesAction<NodesRequest extends BaseNodesRequest
                             public String executor() {
                                 return ThreadPool.Names.SAME;
                             }
-                        });
-                    }
+                    });
                 } catch (Exception e) {
                     onFailure(idx, nodeId, e);
                 }

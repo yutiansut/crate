@@ -22,7 +22,6 @@ package org.elasticsearch.action.support.master;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionListenerResponseHandler;
-import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.cluster.ClusterState;
@@ -35,6 +34,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.discovery.MasterNotDiscoveredException;
@@ -43,30 +43,22 @@ import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.ConnectTransportException;
 import org.elasticsearch.transport.TransportException;
+import org.elasticsearch.transport.TransportResponse;
 import org.elasticsearch.transport.TransportService;
 
+import java.io.IOException;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * A base class for operations that needs to be performed on the master node.
  */
-public abstract class TransportMasterNodeAction<Request extends MasterNodeRequest<Request>, Response extends ActionResponse>
+public abstract class TransportMasterNodeAction<Request extends MasterNodeRequest<Request>, Response extends TransportResponse>
     extends HandledTransportAction<Request, Response> {
 
     protected final TransportService transportService;
     protected final ClusterService clusterService;
 
     private final String executor;
-
-    protected TransportMasterNodeAction(String actionName,
-                                        TransportService transportService,
-                                        ClusterService clusterService,
-                                        ThreadPool threadPool,
-                                        IndexNameExpressionResolver indexNameExpressionResolver,
-                                        Supplier<Request> request) {
-        this(actionName, true, transportService, clusterService, threadPool, indexNameExpressionResolver, request);
-    }
 
     protected TransportMasterNodeAction(String actionName,
                                         TransportService transportService,
@@ -82,16 +74,6 @@ public abstract class TransportMasterNodeAction<Request extends MasterNodeReques
                                         TransportService transportService,
                                         ClusterService clusterService,
                                         ThreadPool threadPool,
-                                        IndexNameExpressionResolver indexNameExpressionResolver,
-                                        Supplier<Request> request) {
-        super(actionName, canTripCircuitBreaker, threadPool, transportService, indexNameExpressionResolver, request);
-        this.transportService = transportService;
-        this.clusterService = clusterService;
-        this.executor = executor();
-    }
-
-    protected TransportMasterNodeAction(String actionName, boolean canTripCircuitBreaker,
-                                        TransportService transportService, ClusterService clusterService, ThreadPool threadPool,
                                         Writeable.Reader<Request> request,
                                         IndexNameExpressionResolver indexNameExpressionResolver) {
         super(actionName, canTripCircuitBreaker, threadPool, transportService, request, indexNameExpressionResolver);
@@ -102,7 +84,7 @@ public abstract class TransportMasterNodeAction<Request extends MasterNodeReques
 
     protected abstract String executor();
 
-    protected abstract Response newResponse();
+    protected abstract Response read(StreamInput in) throws IOException;
 
     protected abstract void masterOperation(Request request, ClusterState state, ActionListener<Response> listener) throws Exception;
 
@@ -209,7 +191,7 @@ public abstract class TransportMasterNodeAction<Request extends MasterNodeReques
                         DiscoveryNode masterNode = nodes.getMasterNode();
                         final String actionName = getMasterActionName(masterNode);
                         transportService.sendRequest(masterNode, actionName, request, new ActionListenerResponseHandler<Response>(listener,
-                            TransportMasterNodeAction.this::newResponse) {
+                            TransportMasterNodeAction.this::read) {
                             @Override
                             public void handleException(final TransportException exp) {
                                 Throwable cause = exp.unwrapCause();

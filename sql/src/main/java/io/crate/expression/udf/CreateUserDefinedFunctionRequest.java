@@ -26,8 +26,6 @@
 
 package io.crate.expression.udf;
 
-import org.elasticsearch.action.ActionRequestValidationException;
-import org.elasticsearch.action.ValidateActions;
 import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -36,14 +34,10 @@ import java.io.IOException;
 
 public class CreateUserDefinedFunctionRequest extends MasterNodeRequest<CreateUserDefinedFunctionRequest> {
 
-    private UserDefinedFunctionMetaData userDefinedFunctionMetaData;
-    private boolean replace;
+    private final UserDefinedFunctionMetaData userDefinedFunctionMetaData;
+    private final boolean replace;
 
-    public CreateUserDefinedFunctionRequest() {
-    }
-
-    public CreateUserDefinedFunctionRequest(UserDefinedFunctionMetaData userDefinedFunctionMetaData,
-                                            boolean replace) {
+    public CreateUserDefinedFunctionRequest(UserDefinedFunctionMetaData userDefinedFunctionMetaData, boolean replace) {
         this.userDefinedFunctionMetaData = userDefinedFunctionMetaData;
         this.replace = replace;
     }
@@ -56,18 +50,9 @@ public class CreateUserDefinedFunctionRequest extends MasterNodeRequest<CreateUs
         return replace;
     }
 
-    @Override
-    public ActionRequestValidationException validate() {
-        if (userDefinedFunctionMetaData == null) {
-            return ValidateActions.addValidationError("userDefinedFunctionMetaData is missing", null);
-        }
-        return null;
-    }
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        userDefinedFunctionMetaData = UserDefinedFunctionMetaData.fromStream(in);
+    public CreateUserDefinedFunctionRequest(StreamInput in) throws IOException {
+        super(in);
+        userDefinedFunctionMetaData = new UserDefinedFunctionMetaData(in);
         replace = in.readBoolean();
     }
 

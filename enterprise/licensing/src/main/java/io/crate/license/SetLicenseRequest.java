@@ -18,8 +18,6 @@
 
 package io.crate.license;
 
-import org.elasticsearch.action.ActionRequestValidationException;
-import org.elasticsearch.action.ValidateActions;
 import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -28,10 +26,7 @@ import java.io.IOException;
 
 public class SetLicenseRequest extends MasterNodeRequest<SetLicenseRequest> {
 
-    private LicenseKey licenseKey;
-
-    SetLicenseRequest() {
-    }
+    private final LicenseKey licenseKey;
 
     SetLicenseRequest(LicenseKey licenseKey) {
         this.licenseKey = licenseKey;
@@ -41,17 +36,8 @@ public class SetLicenseRequest extends MasterNodeRequest<SetLicenseRequest> {
         return licenseKey;
     }
 
-    @Override
-    public ActionRequestValidationException validate() {
-        if (licenseKey == null) {
-            return ValidateActions.addValidationError("licenseMetaData is missing", null);
-        }
-        return null;
-    }
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    public SetLicenseRequest(StreamInput in) throws IOException {
+        super(in);
         licenseKey = new LicenseKey(in);
     }
 

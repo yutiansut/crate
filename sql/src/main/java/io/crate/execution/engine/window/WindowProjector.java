@@ -23,6 +23,7 @@
 package io.crate.execution.engine.window;
 
 import io.crate.analyze.OrderBy;
+import io.crate.analyze.SymbolEvaluator;
 import io.crate.analyze.WindowDefinition;
 import io.crate.breaker.RamAccountingContext;
 import io.crate.breaker.RowAccounting;
@@ -34,21 +35,20 @@ import io.crate.data.Row;
 import io.crate.execution.dsl.projection.WindowAggProjection;
 import io.crate.execution.engine.aggregation.AggregationFunction;
 import io.crate.execution.engine.collect.CollectExpression;
+import io.crate.expression.ExpressionsInput;
 import io.crate.expression.InputFactory;
-import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.Symbols;
 import io.crate.metadata.FunctionImplementation;
 import io.crate.metadata.Functions;
 import io.crate.metadata.TransactionContext;
+import io.crate.planner.operators.SubQueryResults;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.util.BigArrays;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
@@ -81,23 +81,36 @@ public class WindowProjector implements Projector {
                                                  Version indexVersionCreated,
                                                  IntSupplier numThreads,
                                                  Executor executor) {
-        LinkedHashMap<io.crate.expression.symbol.WindowFunction, List<Symbol>> functionsWithInputs = projection.functionsWithInputs();
-        ArrayList<WindowFunction> windowFunctions = new ArrayList<>(functionsWithInputs.size());
-        List<CollectExpression<Row, ?>> windowFuncArgsExpressions = new ArrayList<>(functionsWithInputs.size());
-        Input[][] windowFuncArgsInputs = new Input[functionsWithInputs.size()][];
-        int inputsIndex = 0;
-        for (Map.Entry<io.crate.expression.symbol.WindowFunction, List<Symbol>> functionAndInputsEntry : functionsWithInputs.entrySet()) {
-            InputFactory.Context<CollectExpression<Row, ?>> ctx = inputFactory.ctxForInputColumns(txnCtx);
-            ctx.add(functionAndInputsEntry.getValue());
-            windowFuncArgsInputs[inputsIndex] = ctx.topLevelInputs().toArray(new Input[0]);
-            inputsIndex++;
-            windowFuncArgsExpressions.addAll(ctx.expressions());
+        var windowFunctionContexts = projection.windowFunctionContexts();
+        var numWindowFunctions = windowFunctionContexts.size();
 
-            FunctionImplementation impl = functions.getQualified(functionAndInputsEntry.getKey().info().ident());
+        ArrayList<WindowFunction> windowFunctions = new ArrayList<>(numWindowFunctions);
+        ArrayList<CollectExpression<Row, ?>> windowFuncArgsExpressions = new ArrayList<>(numWindowFunctions);
+        Input[][] windowFuncArgsInputs = new Input[numWindowFunctions][];
+
+        for (int idx = 0; idx < numWindowFunctions; idx++) {
+            var windowFunctionContext = windowFunctionContexts.get(idx);
+
+            InputFactory.Context<CollectExpression<Row, ?>> ctx = inputFactory.ctxForInputColumns(txnCtx);
+            ctx.add(windowFunctionContext.inputs());
+
+            FunctionImplementation impl = functions.getQualified(
+                windowFunctionContext.function().info().ident());
             if (impl instanceof AggregationFunction) {
+
+                var filterInputFactoryCtx = inputFactory.ctxForInputColumns(txnCtx);
+                //noinspection unchecked
+                Input<Boolean> filterInput =
+                    (Input<Boolean>) filterInputFactoryCtx.add(windowFunctionContext.filter());
+
+                ExpressionsInput<Row, Boolean> filter = new ExpressionsInput<>(
+                    filterInput,
+                    filterInputFactoryCtx.expressions());
+
                 windowFunctions.add(
                     new AggregateToWindowFunctionAdapter(
                         (AggregationFunction) impl,
+                        filter,
                         indexVersionCreated,
                         bigArrays,
                         ramAccountingContext)
@@ -107,6 +120,8 @@ public class WindowProjector implements Projector {
             } else {
                 throw new AssertionError("Function needs to be either a window or an aggregate function");
             }
+            windowFuncArgsExpressions.addAll(ctx.expressions());
+            windowFuncArgsInputs[idx] = ctx.topLevelInputs().toArray(new Input[0]);
         }
         var windowDefinition = projection.windowDefinition();
         var partitions = windowDefinition.partitions();
@@ -118,8 +133,8 @@ public class WindowProjector implements Projector {
         return new WindowProjector(
             accounting,
             windowDefinition,
-            projection.startFrameOffset(),
-            projection.endFrameOffset(),
+            SymbolEvaluator.evaluate(txnCtx, functions, windowDefinition.windowFrameDefinition().start().value(), Row.EMPTY, SubQueryResults.EMPTY),
+            SymbolEvaluator.evaluate(txnCtx, functions, windowDefinition.windowFrameDefinition().end().value(), Row.EMPTY, SubQueryResults.EMPTY),
             partitions.isEmpty() ? null : createComparator(createInputFactoryContext, new OrderBy(windowDefinition.partitions())),
             createComparator(createInputFactoryContext, windowDefinition.orderBy()),
             projection.standalone().size(),
@@ -139,7 +154,7 @@ public class WindowProjector implements Projector {
                             Comparator<Object[]> cmpOrderBy,
                             int cellOffset,
                             ArrayList<WindowFunction> windowFunctions,
-                            List<CollectExpression<Row, ?>> argsExpressions,
+                            ArrayList<CollectExpression<Row, ?>> argsExpressions,
                             Input[][] args,
                             IntSupplier numThreads,
                             Executor executor) {

@@ -202,7 +202,9 @@ public class InputFactory {
         @Override
         public Input<?> visitAggregation(Aggregation symbol, Void context) {
             FunctionImplementation impl = functions.getQualified(symbol.functionIdent());
-            AggregationContext aggregationContext = new AggregationContext((AggregationFunction) impl);
+            //noinspection unchecked
+            Input<Boolean> filter = (Input<Boolean>) process(symbol.filter(), context);
+            AggregationContext aggregationContext = new AggregationContext((AggregationFunction) impl, filter);
             for (Symbol aggInput : symbol.inputs()) {
                 aggregationContext.addInput(process(aggInput, context));
             }
