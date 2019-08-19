@@ -42,6 +42,10 @@ Unreleased Changes
 Breaking Changes
 ================
 
+- Arithmetic operations ``*``, ``+`` and ``-`` of types ``integer`` and
+  ``bigint`` that result in an under/over-flow, do throw an exception, where
+  before the situation was ignored.
+
 - Changed how columns of type :ref:`geo_point_data_type` are being communicated
   to PostgreSQL clients: Before clients were told that those columns are double
   arrays, now they're correctly mapped to the PostgreSQL ``point`` type. This
@@ -114,9 +118,6 @@ Changes
 
 Fixes
 =====
-
-- Fixed a regression introduced in 4.0 that broke the ``MATCH`` predicate if
-  used on aliased relations.
 
 - Improved error handling if an argument of a window function is not used as a
   grouping symbol.
