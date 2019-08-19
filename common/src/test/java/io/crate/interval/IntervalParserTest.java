@@ -150,7 +150,7 @@ public class IntervalParserTest extends CrateUnitTest {
     }
 
     @Test
-    public void parse_characters_invalid() {
+    public void parse_invalid_input_4() {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("Invalid interval format A-B C D:E:F");
         IntervalParser.apply("A-B C D:E:F");

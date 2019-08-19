@@ -53,12 +53,9 @@ Breaking Changes
 Changes
 =======
 
-- Extended :ref:`table-functions-generate-series` to work with timestamp and
-  interval types.
-
-- Added support for the :ref:`INTERVAL <interval_data_type>` datatype.
-
-- Added :ref:`PG_TYPEOF <pg_typeof>` system function.
+- Added the :ref:`INTERVAL <interval_data_type>` datatype and extended
+  :ref:`table-functions-generate-series` to work with timestamps and the
+  new :ref:`INTERVAL <interval_data_type>` type
 
 - Added the :ref:`PG_TYPEOF <pg_typeof>` system function.
 

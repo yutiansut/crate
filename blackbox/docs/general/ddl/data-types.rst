@@ -387,13 +387,15 @@ subset of these fields.
         INTERVAL [ {+ | -} ]'yy' <interval_qualifier> |
         INTERVAL [ {+ | -} ]'[ yy- ] mm' <interval_qualifier>
 
-For example
+For example::
 
-::
-
-    INTERVAL '01' YEAR              - 1 year
-    INTERVAL '02' MONTH             - 2 months
-    INTERVAL '01-02' YEAR TO MONTH  - 1 year and 2 months
+    cr> select INTERVAL '01-02' YEAR TO MONTH;
+    +--------------------------------+
+    | INTERVAL '01-02' YEAR TO MONTH |
+    +--------------------------------+
+    | 1 year 2 mons 00:00:00         |
+    +--------------------------------+
+    SELECT 1 row in set (... sec)
 
 .. _day-time-literal:
 
@@ -415,40 +417,31 @@ seconds precision of ``SECOND`` ranges from 0 to 6 digits.
         INTERVAL [ {+ | -} ]'mm [ :ss [ .nn ]]' <interval_qualifier>
         INTERVAL [ {+ | -} ]'ss [ .nn ]' <interval_qualifier>
 
-For example
+For example::
 
-::
+    cr> select INTERVAL '10 23:10' DAY TO MINUTE;
+    +-----------------------------------+
+    | INTERVAL '10 23:10' DAY TO MINUTE |
+    +-----------------------------------+
+    | 1 weeks 3 days 23:10:00           |
+    +-----------------------------------+
+    SELECT 1 row in set (... sec)
 
-    INTERVAL '100.123' SECOND           - 100.123 seconds
-    INTERVAL '40 23' DAY TO HOUR        - 40 days and 23 hours
-    INTERVAL '10 23:10' DAY TO MINUTE   - 10 days, 23 hours and 10 minutes
 
 .. _string-literal:
 
 string-literal
 ^^^^^^^^^^^^^^
 
-An interval ``string-literal`` can be defined either defined in ``sql-standard``, ``iso-8601`` or ``postgres`` format.
+An interval ``string-literal`` can be defined by a combination of
+:ref:`day-time-literal <day-time-literal>` and
+:ref:`year-month-literal <year-month-literal>`
+or using the :ref:`iso-8601-format <iso-8601-format>` or
+:ref:`PostgreSQL-format <postgresql-format>`.
 
-sql-standard
-""""""""""""
-
-The ``sql-standard`` format includes either ``YEAR``, ``MONTH``, ``DAY``, ``HOUR``, ``MINUTE``,
-``SECOND`` or a contiguous subset of these fields.
-
-``Y-M D``: Using a single value defines days only; using two values defines years
-and months.
-
-``H:M:S``: Using a single value defines seconds only; using two values defines hours
- and minutes.
-
-All values must be integers and each Y-M D and H:M:S are optional. Start and end fields
-are optionally supported.
-
-for example::
+For example::
 
     cr> select INTERVAL '1-2 3 4:5:6';
-    CREATE OK, 1 row affected (... sec)
     +---------------------------------+
     | CAST('1-2 3 4:5:6' AS interval) |
     +---------------------------------+
@@ -457,13 +450,15 @@ for example::
     SELECT 1 row in set (... sec)
 
 
-iso-8601
-""""""""
+.. _iso-8601-format:
 
-The ``iso-8601`` format can be used to define a duration using the `ISO 8601 Duration`_ standard  following the
- pattern PyYmMwWdDThHmMsS.
+ISO-8601 format
+"""""""""""""""
 
-The interval of 1 years 2 months 3 days 4 hours 5 minutes 6 second can be expressed using ISO 8601 as followed::
+The iso-8601 format describes a duration of time using the
+`ISO 8601 duration format`_ syntax.
+
+For example::
 
     cr> select INTERVAL 'P1Y2M3DT4H5M6S';
     +------------------------------------+
@@ -474,15 +469,14 @@ The interval of 1 years 2 months 3 days 4 hours 5 minutes 6 second can be expres
     SELECT 1 row in set (... sec)
 
 
+.. _postgresql-format:
 
-postgres
-""""""""
+PostgreSQL format
+"""""""""""""""""
 
-The ``postgres`` format describes a duration of time using the psql interval format 'POSTGRES_INTERVAL'
+The ``PostgreSQL`` format describes a duration of time using the `PostgreSQL interval format`_ syntax.
 
-Traditional PostgreSQL Format: '1 year 2 months 3 days 4 hours 5 minutes 6 seconds'
-
-for example::
+For example::
 
     cr> select INTERVAL '1 year 2 months 3 days 4 hours 5 minutes 6 seconds';
     +------------------------------------------------------------------------+
@@ -492,10 +486,6 @@ for example::
     +------------------------------------------------------------------------+
     SELECT 1 row in set (... sec)
 
-
-
-All values must be integers, negative values are supported and each values are optional.
-Start and end fields are optionally supported.
 
 .. _temporal-arithmetic:
 
@@ -1186,6 +1176,6 @@ See the table below for a full list of aliases:
 .. _Trie: https://en.wikipedia.org/wiki/Trie
 .. _Tries: https://en.wikipedia.org/wiki/Trie
 .. _IEEE 754: http://ieeexplore.ieee.org/document/30711/?arnumber=30711&filter=AND(p_Publication_Number:2355)
-.. _Postgres interval format: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
-.. _ISO 8601 Durations: https://en.wikipedia.org/wiki/ISO_8601#Durations
+.. _PostgreSQL interval format: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
+.. _ISO 8601 duration format: https://en.wikipedia.org/wiki/ISO_8601#Durations
 

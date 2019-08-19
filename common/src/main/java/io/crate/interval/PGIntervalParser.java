@@ -118,7 +118,14 @@ final class PGIntervalParser {
             throw new IllegalArgumentException("Invalid interval format " + value);
         }
 
-        Period period = buildPeriod(years, months, days, hours, minutes, seconds, milliSeconds);
+        Period period = new Period(setToDefault(years),
+                                   setToDefault(months),
+                                   0,
+                                   setToDefault(days),
+                                   setToDefault(hours),
+                                   setToDefault(minutes),
+                                   setToDefault(seconds),
+                                   setToDefault(milliSeconds));
 
         if (!ISOFormat && value.endsWith("ago")) {
             // Inverse the leading sign
@@ -131,37 +138,11 @@ final class PGIntervalParser {
         return new BigDecimal(value).intValue();
     }
 
-    private static Period buildPeriod(Integer years,
-                              Integer months,
-                              Integer days,
-                              Integer hours,
-                              Integer minutes,
-                              Integer seconds,
-                              Integer millis) {
-        Period period = new Period();
-
-        if (years != null) {
-            period = period.withYears(years);
+    private static Integer setToDefault(Integer x) {
+        if (x == null) {
+            return 0;
         }
-        if (months != null) {
-            period = period.withMonths(months);
-        }
-        if (days != null) {
-            period = period.withDays(days);
-        }
-        if (hours != null) {
-            period = period.withHours(hours);
-        }
-        if (minutes != null) {
-            period = period.withMinutes(minutes);
-        }
-        if (seconds != null) {
-            period = period.withSeconds(seconds);
-        }
-        if (millis != null) {
-            period = period.withMillis(millis);
-        }
-        return period;
+        return x;
     }
 
 }
