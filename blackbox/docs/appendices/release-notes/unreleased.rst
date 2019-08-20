@@ -42,9 +42,9 @@ Unreleased Changes
 Breaking Changes
 ================
 
-- Arithmetic operations ``*``, ``+`` and ``-`` of types ``integer`` and
-  ``bigint`` that result in an under/over-flow, do throw an exception, where
-  before the situation was ignored.
+- Changed arithmetic operations ``*``, ``+`` and ``-`` of types ``integer``
+  and ``bigint`` to throw an exception instead of rolling over from positive
+  to negative or the other way around.
 
 - Changed how columns of type :ref:`geo_point_data_type` are being communicated
   to PostgreSQL clients: Before clients were told that those columns are double
