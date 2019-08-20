@@ -47,14 +47,14 @@ final class PGIntervalParser {
         if (!ISOFormat && value.length() == 3 && value.charAt(2) == '0') {
             return new Period();
         }
-
-        Integer years = null;
-        Integer months = null;
-        Integer days = null;
-        Integer hours = null;
-        Integer minutes = null;
-        Integer seconds = null;
-        Integer milliSeconds = null;
+        boolean dataParsed = false;
+        int years = 0;
+        int months = 0;
+        int days = 0;
+        int hours = 0;
+        int minutes = 0;
+        int seconds = 0;
+        int milliSeconds = 0;
 
         try {
             String valueToken = null;
@@ -88,6 +88,7 @@ final class PGIntervalParser {
                         milliSeconds = -milliSeconds;
                     }
                     valueToken = null;
+                    dataParsed = true;
                 } else {
                     // This handles years, months, days for both, ISO and
                     // Non-ISO intervals. Hours, minutes, seconds and microseconds
@@ -107,25 +108,21 @@ final class PGIntervalParser {
                     } else if (token.startsWith("sec")) {
                         seconds = parseInteger(valueToken);
                         milliSeconds = parseMilliSeconds(valueToken);
+                    } else {
+                        throw new IllegalArgumentException("Invalid interval format " + value);
                     }
+                    dataParsed = true;
                 }
             }
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid interval format " + value);
         }
 
-        if (years == null && months == null && days == null && hours == null && minutes == null && seconds == null) {
+        if (dataParsed == false) {
             throw new IllegalArgumentException("Invalid interval format " + value);
         }
 
-        Period period = new Period(setToDefault(years),
-                                   setToDefault(months),
-                                   0,
-                                   setToDefault(days),
-                                   setToDefault(hours),
-                                   setToDefault(minutes),
-                                   setToDefault(seconds),
-                                   setToDefault(milliSeconds));
+        Period period = new Period(years, months, 0, days, hours, minutes, seconds, milliSeconds);
 
         if (!ISOFormat && value.endsWith("ago")) {
             // Inverse the leading sign
@@ -137,12 +134,4 @@ final class PGIntervalParser {
     private static int parseInteger(String value) {
         return new BigDecimal(value).intValue();
     }
-
-    private static Integer setToDefault(Integer x) {
-        if (x == null) {
-            return 0;
-        }
-        return x;
-    }
-
 }
